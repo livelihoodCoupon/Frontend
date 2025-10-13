@@ -33,7 +33,7 @@ jobs:
           npm install @expo/webpack-config@^18.0.0 react-dom react-native-web --legacy-peer-deps                  
 
       - name: Build Web
-        run: npm run build
+        run: npm run web-build
 
       # 4. EC2에 빌드 결과 전송
       - name: Copy build folder to EC2
