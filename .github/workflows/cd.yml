@@ -1,0 +1,75 @@
+  name: Frontend CD (App)
+
+on:
+  push:
+    branches: [ "feature/3_deploy" ]
+#  pull_request:
+#    branches: [ "feature/3_deploy" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Node.js 설치
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # 3. 의존성 설치 & 빌드
+      - name: Install dependencies and build
+        run: |
+          npm ci --legacy-peer-deps
+          npm install @expo/webpack-config@^18.0.0 react-dom react-native-web --legacy-peer-deps                  
+
+      - name: Build Web
+        run: npm run build
+
+      # 4. EC2에 빌드 결과 전송
+      - name: Copy build folder to EC2
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: web-build/**
+          target: ~/frontend/web-build/
+          overwrite: true
+
+      # 5. EC2에서 npm start 실행
+      - name: Run frontend on EC2
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/frontend
+
+            echo "Creating .env file..."
+            cat > .env <<EOL
+            KAKAO_MAP_JS_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
+            KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+            API_BASE_URL=${{ secrets.API_BASE_URL }}
+            EXPO_PUBLIC_USE_HARDCODED_LOCATION=${{ secrets.EXPO_PUBLIC_USE_HARDCODED_LOCATION }}
+            EXPO_PUBLIC_HARDCODED_LATITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LATITUDE }}
+            EXPO_PUBLIC_HARDCODED_LONGITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LONGITUDE }}
+            EOL
+
+            echo "Stopping existing process (if any)..."
+            pkill -f "npm start" || true
+
+            echo "Starting frontend with npm start..."
+            nohup npm start > frontend.log 2>&1 &
+
+            echo "✅ Frontend started successfully!"
