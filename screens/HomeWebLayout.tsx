@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Animated,
+  TouchableOpacity,
 } from "react-native";
 import KakaoMap from "../components/KakaoMap";
 import Header from "../components/layout/Header";
@@ -22,6 +23,7 @@ interface HomeWebLayoutProps {
   location: { latitude: number; longitude: number } | null;
   mapCenter: { latitude: number; longitude: number } | null;
   setMapCenter: (center: { latitude: number; longitude: number }) => void;
+  onMapIdle: (lat: number, lng: number) => void;
   markers: any[]; // Adjust type as needed
   isMenuOpen: boolean;
   setIsMenuOpen: (isOpen: boolean) => void;
@@ -33,7 +35,6 @@ interface HomeWebLayoutProps {
   isLoading: boolean;
   errorMsg: string | null;
   onSearch: () => Promise<void>;
-  onSearchNearMe: () => Promise<void>; // Add this prop
   onSelectResult: (item: SearchResult) => void;
   onMarkerPress: (placeId: string, lat?: number, lng?: number) => void;
   searchOptions: SearchOptions;
@@ -50,6 +51,8 @@ interface HomeWebLayoutProps {
   routeError?: string | null;
   startRoute?: any;
   clearRoute?: () => void;
+  showSearchInAreaButton: boolean;
+  handleSearchInArea: () => void;
 }
 
 const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
@@ -61,6 +64,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   location,
   mapCenter,
   setMapCenter,
+  onMapIdle,
   markers,
   isMenuOpen,
   setIsMenuOpen,
@@ -72,7 +76,6 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   isLoading,
   errorMsg,
   onSearch,
-  onSearchNearMe, // Destructure the new prop
   onSelectResult,
   onMarkerPress,
   searchOptions,
@@ -89,6 +92,8 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   routeError,
   startRoute,
   clearRoute,
+  showSearchInAreaButton,
+  handleSearchInArea,
 }) => {
   return (
     <View style={webStyles.container}>
@@ -111,7 +116,6 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearch={onSearch}
-          onSearchNearMe={onSearchNearMe} // Pass the new prop to SideMenu
           searchOptions={searchOptions}
           setSearchOptions={setSearchOptions}
           loadingNextPage={loadingNextPage}
@@ -129,27 +133,42 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
         />
         <View style={webStyles.mapContainer}>
           {mapCenter ? (
-            <KakaoMap
-              latitude={mapCenter.latitude}
-              longitude={mapCenter.longitude}
-              markers={markers}
-              routeResult={routeResult}
-              onMapCenterChange={(lat, lng) =>
-                setMapCenter({ latitude: lat, longitude: lng })
-              }
-              onMarkerPress={(id, lat, lng) => id && onMarkerPress(id, lat, lng)}
-              showInfoWindow={showInfoWindow}
-              selectedPlaceId={selectedPlaceId || undefined}
-              selectedMarkerLat={selectedMarkerPosition?.lat}
-              selectedMarkerLng={selectedMarkerPosition?.lng}
-              onCloseInfoWindow={() => setShowInfoWindow(false)}
-              onSetRouteLocation={onSetRouteLocation}
-            />
+            <>
+              <KakaoMap
+                latitude={mapCenter.latitude}
+                longitude={mapCenter.longitude}
+                markers={markers}
+                routeResult={routeResult}
+                onMapIdle={onMapIdle}
+                onMarkerPress={(id, lat, lng) => id && onMarkerPress(id, lat, lng)}
+                showInfoWindow={showInfoWindow}
+                selectedPlaceId={selectedPlaceId || undefined}
+                selectedMarkerLat={selectedMarkerPosition?.lat}
+                selectedMarkerLng={selectedMarkerPosition?.lng}
+                onCloseInfoWindow={() => setShowInfoWindow(false)}
+                onSetRouteLocation={onSetRouteLocation}
+              />
+              {showSearchInAreaButton && (
+                <TouchableOpacity
+                  style={webStyles.searchInAreaButton}
+                  onPress={handleSearchInArea}
+                >
+                  <Text style={webStyles.searchInAreaButtonText}>현재 지도에서 검색</Text>
+                </TouchableOpacity>
+              )}
+            </>
           ) : (
             <View style={webStyles.loadingContainer}>
               <ActivityIndicator size="large" color="#0000ff" />
               <Text>지도를 불러오는 중입니다...</Text>
             </View>
+          )}
+          {location && (
+            <TouchableOpacity 
+              style={webStyles.currentLocationButton}
+              onPress={() => setMapCenter({ latitude: location.latitude, longitude: location.longitude })}>
+              <Text style={webStyles.currentLocationButtonIcon}>📍</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -191,6 +210,41 @@ const webStyles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     fontSize: 16,
+  },
+  currentLocationButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.25)',
+    zIndex: 999,
+  },
+  currentLocationButtonIcon: {
+    fontSize: 24,
+  },
+  searchInAreaButton: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    backgroundColor: '#007bff',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    zIndex: 999,
+  },
+  searchInAreaButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

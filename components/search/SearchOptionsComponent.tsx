@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Switch } from 'react-native';
 import { SearchOptions } from '../../types/search';
-import CustomRadiusSlider from './CustomRadiusSlider';
 
 interface Props {
   searchOptions: SearchOptions;
@@ -11,13 +10,6 @@ interface Props {
 const SearchOptionsComponent: React.FC<Props> = ({ searchOptions, setSearchOptions }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.optionGroup}>
-        <Text style={styles.label}>검색 반경</Text>
-        <CustomRadiusSlider 
-          value={searchOptions.radius}
-          onValueChange={(radius) => setSearchOptions({ radius })}
-        />
-      </View>
       <View style={styles.optionGroup}>
         <Text style={styles.label}>정렬</Text>
         <View style={styles.buttonGroup}>
@@ -76,6 +68,12 @@ const styles = StyleSheet.create({
   buttonTextActive: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
 });
 

@@ -23,7 +23,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
     longitude,
     markers,
     routeResult,
-    onMapCenterChange,
+    onMapIdle,
     onMarkerPress,
     showInfoWindow,
     selectedPlaceId,
@@ -58,14 +58,6 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
         const map = new window.kakao.maps.Map(mapContainer, mapOption);
         mapInstance.current = map;
 
-        const debouncedOnMapCenterChange = debounce(() => {
-          const latlng = map.getCenter();
-          onMapCenterChange &&
-            onMapCenterChange(latlng.getLat(), latlng.getLng());
-        }, 300); // 300ms debounce
-
-        window.kakao.maps.event.addListener(map, "center_changed", debouncedOnMapCenterChange);
-
         clustererInstance.current = new window.kakao.maps.MarkerClusterer({
           map: map,
           averageCenter: true,
@@ -75,7 +67,26 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
         infowindowInstance.current = new window.kakao.maps.InfoWindow({ disableAutoPan: true });
         setIsMapReady(true); // Map is ready
       }
-    }, [isLoaded, mapRef.current, latitude, longitude]);
+    }, [isLoaded, latitude, longitude]);
+
+    // Effect for idle listener
+    useEffect(() => {
+      const map = mapInstance.current;
+      if (!map || !onMapIdle) return;
+
+      const idleHandler = () => {
+        const latlng = map.getCenter();
+        onMapIdle(latlng.getLat(), latlng.getLng());
+      };
+
+      window.kakao.maps.event.addListener(map, 'idle', idleHandler);
+
+      return () => {
+        if (window.kakao && window.kakao.maps && window.kakao.maps.event) {
+          window.kakao.maps.event.removeListener(map, 'idle', idleHandler);
+        }
+      };
+    }, [onMapIdle]);
 
     // Effect for updating map center
     useEffect(() => {
@@ -659,7 +670,7 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
   longitude,
   markers,
   routeResult,
-  onMapCenterChange,
+  onMapIdle,
   onMarkerPress,
   style,
 }) => {
@@ -793,8 +804,8 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
         onMessage={(event) => { // WebView 메시지 처리
           try {
             const data = JSON.parse(event.nativeEvent.data);
-            if (data.type === "map_idle" && onMapCenterChange) {
-              onMapCenterChange(data.latitude, data.longitude);
+            if (data.type === "map_idle" && onMapIdle) {
+              onMapIdle(data.latitude, data.longitude);
             }
             if (data.type === "marker_press" && onMarkerPress) {
               onMarkerPress(data.id);
