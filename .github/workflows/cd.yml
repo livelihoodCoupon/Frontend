@@ -1,4 +1,4 @@
-  name: Frontend CD (App)
+name: Frontend CD (App)
 
 on:
   push:
