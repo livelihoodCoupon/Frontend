@@ -17,6 +17,7 @@ import { styles as mobileStyles } from "./Home.styles";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HomeMobileLayoutProps {
+  // Props for HomeMobileLayout
   selectedPlaceId: string | null;
   setSelectedPlaceId: (id: string | null) => void;
   showInfoWindow: boolean;

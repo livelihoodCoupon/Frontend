@@ -15,6 +15,7 @@ import { PageResponse } from "../types/api";
 import { RouteResult } from "../types/route";
 
 interface HomeWebLayoutProps {
+  // Props for HomeWebLayout
   selectedPlaceId: string | null;
   setSelectedPlaceId: (id: string | null) => void;
   showInfoWindow: boolean;

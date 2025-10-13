@@ -92,12 +92,6 @@ export default function Home() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  const currentMapCenterRef = useRef(mapCenter); // Ref to hold the latest map center without causing re-renders
-
-  // Update ref whenever mapCenter state changes
-  useEffect(() => {
-    currentMapCenterRef.current = mapCenter;
-  }, [mapCenter]);
 
   // 지도 중심 설정 함수 (store에도 동기화)
   const setMapCenter = useCallback((center: { latitude: number; longitude: number }) => {
@@ -149,8 +143,7 @@ export default function Home() {
   const handleSearch = useCallback(async () => {
     Keyboard.dismiss();
     setShowSearchInAreaButton(false);
-    const center = currentMapCenterRef.current;
-    if (!center) {
+    if (!mapCenter) {
       alert("지도 중심 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
@@ -158,27 +151,26 @@ export default function Home() {
       alert("현재 위치 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
-    await performSearch(center.latitude, center.longitude, location.latitude, location.longitude);
+    await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude);
     setBottomSheetOpen(true); // 검색 후 하단 시트 열기
-  }, [location, performSearch]);
+  }, [mapCenter, location, performSearch]);
 
   const handleSearchInArea = useCallback(async () => {
-    const center = currentMapCenterRef.current;
-    if (!center) return;
+    if (!mapCenter) return;
     if (!location) {
       alert("현재 위치 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
     setShowSearchInAreaButton(false);
-    await performSearch(center.latitude, center.longitude, location.latitude, location.longitude, true);
-  }, [location, performSearch]);
+    await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude, true);
+  }, [mapCenter, location, performSearch]);
 
   const handleMapIdle = useCallback((lat: number, lng: number) => {
-    currentMapCenterRef.current = { latitude: lat, longitude: lng };
+    setMapCenter({ latitude: lat, longitude: lng });
     if (searchResults.length > 0) {
       setShowSearchInAreaButton(true);
     }
-  }, [searchResults.length]);
+  }, [searchResults.length, setMapCenter, setShowSearchInAreaButton]);
 
   const handleNextPage = useCallback(async () => {
     if (!mapCenter) return;
@@ -242,6 +234,7 @@ export default function Home() {
         lng: marker.lng,
         categoryGroupName: marker.categoryGroupName,
         roadAddress: marker.roadAddress,
+        roadAddressDong: marker.roadAddressDong,
         lotAddress: marker.lotAddress,
         phone: marker.phone,
         placeUrl: marker.placeUrl,

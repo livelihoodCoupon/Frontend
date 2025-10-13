@@ -46,7 +46,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
     const routeEndMarkerInstance = useRef<any>(null); // 도착지 마커 인스턴스
     const [isMapReady, setIsMapReady] = useState(false);
 
-    // Effect for initial map creation
+    // Effect for initial map creation and idle listener
     useEffect(() => {
       if (mapRef.current && isLoaded && !mapInstance.current) {
         const mapContainer = mapRef.current;
@@ -91,8 +91,15 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
     // Effect for updating map center
     useEffect(() => {
       if (mapInstance.current && latitude !== undefined && longitude !== undefined) {
+        const map = mapInstance.current;
+        const currentCenter = map.getCenter();
         const newCenter = new window.kakao.maps.LatLng(latitude, longitude);
-        mapInstance.current.setCenter(newCenter);
+
+        // Only move the map if the center has actually changed
+        if (currentCenter.getLat().toFixed(6) !== newCenter.getLat().toFixed(6) || 
+            currentCenter.getLng().toFixed(6) !== newCenter.getLng().toFixed(6)) {
+          map.setCenter(newCenter);
+        }
       }
     }, [latitude, longitude]);
 
@@ -430,6 +437,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
               placeId: selectedMarker.placeId,
               placeName: selectedMarker.placeName,
               roadAddress: selectedMarker.roadAddress || '',
+              roadAddressDong: selectedMarker.roadAddressDong || '',
               lotAddress: selectedMarker.lotAddress || '',
               lat: selectedMarker.lat,
               lng: selectedMarker.lng,
@@ -824,6 +832,7 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
                   placeId: data.placeId,
                   placeName: data.placeName,
                   roadAddress: data.roadAddress || '',
+                  roadAddressDong: data.roadAddressDong || '', // Add missing property
                   lotAddress: data.lotAddress || '',
                   lat: data.latitude || 0,
                   lng: data.longitude || 0,

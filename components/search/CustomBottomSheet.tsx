@@ -59,7 +59,8 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
     props.isRouteLoading,
     props.routeError,
     props.startRoute,
-    props.clearRoute
+    props.clearRoute,
+    props.onToggle
   );
 
   useEffect(() => {

@@ -169,34 +169,57 @@ export const useSearch = () => {
         ? overrideForceLocationSearch
         : state.searchOptions.forceLocationSearch;
 
-      console.log("Calling searchPlaces with:", {
-        query: state.searchQuery,
-        lat: latitude,
-        lng: longitude,
-        radius: state.searchOptions.radius,
-        userLat: userLatitude,
-        userLng: userLongitude,
-        page: 1,
-        sort: state.searchOptions.sort,
-        forceLocationSearch: effectiveForceLocationSearch,
-      });
-      let finalSearchData = await searchPlaces(state.searchQuery, latitude, longitude, state.searchOptions.radius, state.searchOptions.sort, 1, userLatitude, userLongitude, effectiveForceLocationSearch);
+      const search = async (radius: number) => {
+        return await searchPlaces(
+          state.searchQuery,
+          latitude,
+          longitude,
+          radius, // Use provided radius
+          state.searchOptions.sort,
+          1,
+          userLatitude,
+          userLongitude,
+          effectiveForceLocationSearch
+        );
+      };
 
-      // 초기 검색 (radius: 1) 결과가 없고, radius가 1인 경우에만 radius 1000으로 재검색
-      if (finalSearchData.content.length === 0 && state.searchOptions.radius === 1) {
-        console.log("Initial search with radius 1 yielded no results. Retrying with radius 1000.");
-        finalSearchData = await searchPlaces(state.searchQuery, latitude, longitude, 1000, state.searchOptions.sort, 1, userLatitude, userLongitude, effectiveForceLocationSearch);
+      let finalSearchData = null;
+
+      // 1. Try 1km
+      finalSearchData = await search(1);
+      if (finalSearchData.content.length > 0) {
+        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
+        return;
       }
 
+      // 2. Try 10km
+      finalSearchData = await search(10);
+      if (finalSearchData.content.length > 0) {
+        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
+        return;
+      }
+
+      // 2.5. Try 50km
+      finalSearchData = await search(50);
+      if (finalSearchData.content.length > 0) {
+        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
+        return;
+      }
+
+      // 3. Try 100km
+      finalSearchData = await search(100);
+      if (finalSearchData.content.length > 0) {
+        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
+        return;
+      }
+
+      // 4. No results up to 100km, try 1000km automatically
+      finalSearchData = await search(1000);
       if (finalSearchData.content.length === 0) {
         alert("검색 결과가 없습니다.");
       }
-      dispatch({ type: 'SEARCH_SUCCESS', payload: {
-        ...finalSearchData,
-        requestLat: latitude,
-        requestLng: longitude,
-        forceLocationSearch: effectiveForceLocationSearch
-      } });
+      dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
+
     } catch (err: any) {
       dispatch({ type: 'SEARCH_FAILURE', payload: err.message || "검색 중 오류가 발생했습니다." });
     }

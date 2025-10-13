@@ -12,6 +12,7 @@ export type MarkerData = {
   categoryGroupName?: string; // 카테고리 그룹명 (SearchResult의 category_group_name과 매핑)
   markerType?: string; // 마커 타입 (예: 'default', 'selected', 'categoryA')
   roadAddress?: string; // 도로명 주소
+  roadAddressDong?: string; // 도로명 주소(동)
   lotAddress?: string; // 지번 주소
   phone?: string; // 전화번호
   placeUrl?: string; // 장소 URL

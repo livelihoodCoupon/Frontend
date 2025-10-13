@@ -5,7 +5,7 @@ import { useCurrentLocation } from './useCurrentLocation';
 import { useRoute } from './useRoute';
 import { AutocompleteResponse } from '../types/search';
 
-export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading: any, externalRouteError: any, externalStartRoute: any, externalClearRoute: any) => {
+export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading: any, externalRouteError: any, externalStartRoute: any, externalClearRoute: any, onToggleSidebar: () => void) => {
   const [activeTab, setActiveTab] = useState<'search' | 'route'>('search');
   const [startLocation, setStartLocation] = useState('내 위치');
   const [endLocation, setEndLocation] = useState('');
@@ -18,6 +18,8 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
   const [selectedTransportMode, setSelectedTransportMode] = useState<'driving' | 'transit' | 'walking' | 'cycling'>('driving');
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<AutocompleteResponse[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [startLocationObject, setStartLocationObject] = useState<SearchResult | null>(null);
+  const [endLocationObject, setEndLocationObject] = useState<SearchResult | null>(null);
 
   const startSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const endSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -147,6 +149,32 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
     };
   }, []);
 
+  useEffect(() => {
+    const handleSetRouteLocation = (type: 'departure' | 'arrival', placeInfo: SearchResult) => {
+      onToggleSidebar();
+      setActiveTab('route');
+      if (type === 'departure') {
+        setStartLocation(placeInfo.placeName);
+        setStartLocationObject(placeInfo);
+      } else {
+        setEndLocation(placeInfo.placeName);
+        setEndLocationObject(placeInfo);
+        if (!startLocation || startLocation.trim() === '') {
+          setStartLocation('내 위치');
+          setStartLocationObject(null);
+        }
+      }
+      setShowStartResults(false);
+      setShowEndResults(false);
+    };
+
+    (window as any).setRouteLocationFromInfoWindow = handleSetRouteLocation;
+
+    return () => {
+      delete (window as any).setRouteLocationFromInfoWindow;
+    };
+  }, [onToggleSidebar, setActiveTab, setStartLocation, setEndLocation, startLocation]);
+
   return {
     activeTab,
     setActiveTab,
@@ -177,7 +205,14 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
     routeResult,
     routeError,
     clearRoute,
-    searchLocation,
-    location
+    searchLocation: {
+      lat: searchLocation.latitude,
+      lng: searchLocation.longitude,
+    },
+    location,
+    startLocationObject,
+    setStartLocationObject,
+    endLocationObject,
+    setEndLocationObject,
   };
 };

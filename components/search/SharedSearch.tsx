@@ -67,6 +67,10 @@ interface SharedSearchProps {
   clearRoute: () => void;
   searchLocation: { lat: number; lng: number };
   location: { latitude: number; longitude: number } | null;
+  startLocationObject: SearchResult | null;
+  setStartLocationObject: (loc: SearchResult | null) => void;
+  endLocationObject: SearchResult | null;
+  setEndLocationObject: (loc: SearchResult | null) => void;
 }
 
 const SharedSearch: React.FC<SharedSearchProps> = ({
@@ -115,7 +119,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   routeError,
   clearRoute,
   searchLocation,
-  location
+  location,
+  startLocationObject,
+  setStartLocationObject,
+  endLocationObject,
+  setEndLocationObject,
 }) => {
   const routeScrollViewRef = useRef<ScrollView>(null);
 
@@ -317,6 +325,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   onChangeText={(text) => {
                     handleTextEdit();
                     setStartLocation(text);
+                    setStartLocationObject(null); // Clear object when typing
                     debouncedSearchStartLocation(text);
                   }}
                   onFocus={handleTextEdit}
@@ -359,6 +368,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   onChangeText={(text) => {
                     handleTextEdit();
                     setEndLocation(text);
+                    setEndLocationObject(null); // Clear object when typing
                     debouncedSearchEndLocation(text);
                   }}
                   onFocus={handleTextEdit}
@@ -404,20 +414,14 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 }
 
                 let startLocationData: SearchResult | string;
-                if (typeof startLocation === 'string' && startLocation.trim() === '내 위치') {
+                if (startLocationObject) {
+                  startLocationData = startLocationObject;
+                } else if (typeof startLocation === 'string' && startLocation.trim() === '내 위치') {
                   startLocationData = '내 위치';
                 } else if (typeof startLocation === 'string') {
-                  let foundStartLocation = startLocationResults.find(item =>
-                    item.placeName === startLocation ||
-                    item.placeName.includes(startLocation) ||
-                    startLocation.includes(item.placeName)
-                  );
+                  let foundStartLocation = startLocationResults.find(item => item.placeName === startLocation);
                   if (!foundStartLocation) {
-                    foundStartLocation = endLocationResults.find(item =>
-                      item.placeName === startLocation ||
-                      item.placeName.includes(startLocation) ||
-                      startLocation.includes(item.placeName)
-                    );
+                    foundStartLocation = endLocationResults.find(item => item.placeName === startLocation);
                   }
                   if (!foundStartLocation) {
                     alert('출발지 정보를 찾을 수 없습니다. 다시 검색해주세요.');
@@ -425,11 +429,13 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   }
                   startLocationData = foundStartLocation;
                 } else {
-                  startLocationData = startLocation;
+                  throw new Error('Invalid start location');
                 }
 
                 let endLocationData: SearchResult | null = null;
-                if (endLocation.trim() === '내 위치') {
+                if (endLocationObject) {
+                  endLocationData = endLocationObject;
+                } else if (endLocation.trim() === '내 위치') {
                   if (!location) {
                     alert('현재 위치 정보를 가져올 수 없습니다.');
                     return;
@@ -440,6 +446,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                     lat: location.latitude,
                     lng: location.longitude,
                     roadAddress: '내 위치',
+                    roadAddressDong: '',
                     lotAddress: '',
                     phone: '',
                     categoryGroupName: '',
@@ -447,27 +454,22 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                     distance: 0
                   };
                 } else {
-                  endLocationData = endLocationResults.find(item => item.placeName === endLocation) || null;
-                  if (!endLocationData) {
-                    endLocationData = endLocationResults.find(item => item.placeName.includes(endLocation) || endLocation.includes(item.placeName)) || null;
+                  let foundEndLocation = endLocationResults.find(item => item.placeName === endLocation);
+                  if (!foundEndLocation) {
+                    foundEndLocation = startLocationResults.find(item => item.placeName === endLocation);
                   }
-                  if (!endLocationData) {
-                    endLocationData = startLocationResults.find(item => item.placeName === endLocation) || null;
-                  }
-                  if (!endLocationData) {
-                    endLocationData = startLocationResults.find(item => item.placeName.includes(endLocation) || endLocation.includes(item.placeName)) || null;
-                  }
-                  if (!endLocationData) {
+                  if (!foundEndLocation) {
                     alert('도착지 정보를 찾을 수 없습니다. 다시 검색해주세요.');
                     return;
                   }
+                  endLocationData = foundEndLocation;
                 }
 
                 await startRoute({
                   startLocation: startLocationData,
                   endLocation: endLocationData!,
                   transportMode: selectedTransportMode,
-                  userLocation: searchLocation || undefined,
+                  userLocation: location || undefined,
                 });
 
               } catch (error: any) {

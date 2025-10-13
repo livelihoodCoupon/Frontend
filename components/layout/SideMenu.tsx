@@ -48,7 +48,8 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
     props.isRouteLoading,
     props.routeError,
     props.startRoute,
-    props.clearRoute
+    props.clearRoute,
+    props.onOpenSidebar || props.onToggle
   );
 
   return (
