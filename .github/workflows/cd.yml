@@ -71,5 +71,6 @@ jobs:
 
             echo "Starting frontend with npm start..."
             nohup npm start > frontend.log 2>&1 &
+            disown
 
             echo "✅ Frontend started successfully!"
