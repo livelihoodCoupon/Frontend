@@ -48,6 +48,13 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
     const routeEndMarkerInstance = useRef<any>(null); // 도착지 마커 인스턴스
     const [isMapReady, setIsMapReady] = useState(false);
 
+    const onMapIdleRef = useRef(onMapIdle);
+
+    // Effect to keep onMapIdleRef updated
+    useEffect(() => {
+      onMapIdleRef.current = onMapIdle;
+    }, [onMapIdle]);
+
     // Effect for initial map creation and idle listener
     useEffect(() => {
       if (mapRef.current && isLoaded && !mapInstance.current) {
@@ -71,14 +78,16 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
       }
     }, [isLoaded, latitude, longitude]);
 
-    // Effect for idle listener
+    // Effect for idle listener (now using onMapIdleRef)
     useEffect(() => {
       const map = mapInstance.current;
-      if (!map || !onMapIdle) return;
+      if (!map) return;
 
       const idleHandler = () => {
         const latlng = map.getCenter();
-        onMapIdle(latlng.getLat(), latlng.getLng());
+        if (onMapIdleRef.current) {
+          onMapIdleRef.current(latlng.getLat(), latlng.getLng());
+        }
       };
 
       window.kakao.maps.event.addListener(map, 'idle', idleHandler);
@@ -88,7 +97,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
           window.kakao.maps.event.removeListener(map, 'idle', idleHandler);
         }
       };
-    }, [onMapIdle]);
+    }, [mapInstance.current]);
 
     // Effect for updating map center
     useEffect(() => {
