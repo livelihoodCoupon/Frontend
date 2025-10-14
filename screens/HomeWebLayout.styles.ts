@@ -70,4 +70,29 @@ export const webStyles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  recentlyViewedButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: '#3690FF', // Base blue color
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#3690FF', // Match background color
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  recentlyViewedButtonText: {
+    fontSize: 14,
+    color: '#F8FAFE', // Text on blue color
+    fontWeight: '500',
+  },
 });

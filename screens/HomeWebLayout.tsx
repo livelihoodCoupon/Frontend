@@ -8,12 +8,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import KakaoMap from "../components/KakaoMap";
-import Header from "../components/layout/Header";
 import SideMenu from "../components/layout/SideMenu";
 import { SearchResult, SearchOptions } from "../types/search";
 import { PageResponse } from "../types/api";
 import { RouteResult } from "../types/route";
+import { useState } from "react";
 import { webStyles } from "./HomeWebLayout.styles";
+import RecentlyViewedPlaces from "../components/RecentlyViewedPlaces";
 
 interface HomeWebLayoutProps {
   // Props for HomeWebLayout
@@ -86,6 +87,8 @@ interface HomeWebLayoutProps {
   setStartLocationObject: (loc: SearchResult | null) => void;
   endLocationObject: SearchResult | null;
   setEndLocationObject: (loc: SearchResult | null) => void;
+  setTemporarySelectedMarker: (marker: MarkerData | null) => void;
+  onRecentlyViewedPlaceClick: (place: MarkerData) => void; // Add this prop
 }
 
 const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
@@ -158,10 +161,12 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   setStartLocationObject,
   endLocationObject,
   setEndLocationObject,
+  setTemporarySelectedMarker,
+  onRecentlyViewedPlaceClick,
 }) => {
+  const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
   return (
     <View style={webStyles.container}>
-      <Header />
       {errorMsg && (
         <View style={webStyles.errorContainer}>
           <Text style={webStyles.errorText}>{errorMsg}</Text>
@@ -240,7 +245,10 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
                 selectedPlaceId={selectedPlaceId || undefined}
                 selectedMarkerLat={selectedMarkerPosition?.lat}
                 selectedMarkerLng={selectedMarkerPosition?.lng}
-                onCloseInfoWindow={() => setShowInfoWindow(false)}
+                onCloseInfoWindow={() => {
+                  setShowInfoWindow(false);
+                  setTemporarySelectedMarker(null);
+                }}
                 onSetRouteLocation={onSetRouteLocation}
               />
               {showSearchInAreaButton && (
@@ -250,6 +258,17 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
                 >
                   <Text style={webStyles.searchInAreaButtonText}>현재 지도에서 검색</Text>
                 </TouchableOpacity>
+              )}
+              {/* Recently Viewed Places Button */}
+              <TouchableOpacity
+                style={webStyles.recentlyViewedButton}
+                onPress={() => setShowRecentlyViewed(!showRecentlyViewed)}
+              >
+                <Text style={webStyles.recentlyViewedButtonText}>최근 본 장소</Text>
+              </TouchableOpacity>
+              {/* Recently Viewed Places Component */}
+              {showRecentlyViewed && (
+                <RecentlyViewedPlaces onPlaceClick={onRecentlyViewedPlaceClick} />
               )}
             </>
           ) : (

@@ -12,6 +12,7 @@ import { useSharedSearch } from "../hooks/useSharedSearch"; // Import useSharedS
 import HomeWebLayout from "./HomeWebLayout";
 import HomeMobileLayout from "./HomeMobileLayout";
 import { SearchResult } from "../types/search";
+import { MarkerData } from "../types/kakaoMap";
 
 /**
  * Home 컴포넌트
@@ -129,6 +130,7 @@ export default function Home() {
 
   // UI 상태 관리
   const [showSearchInAreaButton, setShowSearchInAreaButton] = useState(false);
+  const [temporarySelectedMarker, setTemporarySelectedMarker] = useState<MarkerData | null>(null);
 
   // 지도 중심 좌표 상태
   const [mapCenter, setMapCenterState] = useState<{
@@ -252,6 +254,14 @@ export default function Home() {
     setShowInfoWindow(true);
   }, [setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
 
+  const handleRecentlyViewedPlaceClick = useCallback((place: MarkerData) => {
+    setMapCenter({ latitude: place.lat, longitude: place.lng });
+    setSelectedPlaceId(place.placeId);
+    setSelectedMarkerPosition({ lat: place.lat, lng: place.lng });
+    setTemporarySelectedMarker(place); // Set the temporary marker
+    setShowInfoWindow(true);
+  }, [setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setTemporarySelectedMarker, setShowInfoWindow]);
+
   // 길찾기 연동 함수
   const handleSetRouteLocation = useCallback((type: 'departure' | 'arrival', placeInfo: SearchResult) => {
     // InfoWindow에서 선택된 장소 정보를 길찾기 탭으로 전달
@@ -269,7 +279,7 @@ export default function Home() {
 
   // activeTab에 따라 markers와 routeResult를 조건부로 설정
   const mapMarkers = useMemo(() => {
-    return activeTab === 'search' ? [
+    const baseMarkers = activeTab === 'search' ? [
       ...(location ? [{
         placeId: "user-location",
         placeName: "내 위치",
@@ -291,7 +301,12 @@ export default function Home() {
         markerType: marker.placeId === selectedPlaceId ? 'selected' : 'default'
       }))
     ] : [];
-  }, [activeTab, location, allMarkers, selectedPlaceId]);
+
+    if (temporarySelectedMarker && !baseMarkers.some(m => m.placeId === temporarySelectedMarker.placeId)) {
+      return [...baseMarkers, { ...temporarySelectedMarker, markerType: 'selected' }];
+    }
+    return baseMarkers;
+  }, [activeTab, location, allMarkers, selectedPlaceId, temporarySelectedMarker]);
 
   const mapRouteResult = useMemo(() => {
     return activeTab === 'route' ? routeResult : null;
@@ -369,6 +384,8 @@ export default function Home() {
         setStartLocationObject={setStartLocationObject}
         endLocationObject={endLocationObject}
         setEndLocationObject={setEndLocationObject}
+        onRecentlyViewedPlaceClick={handleRecentlyViewedPlaceClick}
+        setTemporarySelectedMarker={setTemporarySelectedMarker}
       />
     );
   } else {

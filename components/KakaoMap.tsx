@@ -12,6 +12,7 @@ import { View, StyleSheet, Platform, ViewStyle, Text, Modal, TouchableOpacity, A
 import { WebView } from "react-native-webview";
 import { KAKAO_MAP_JS_KEY } from "@env";
 import { useKakaoMapScript } from "../hooks/useKakaoMapScript";
+import { useRecentlyViewedPlaces } from "../hooks/useRecentlyViewedPlaces";
 
 import { MarkerData, KakaoMapProps } from "../types/kakaoMap";
 import { SearchResult } from "../types/search";
@@ -47,6 +48,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
     const routeStartMarkerInstance = useRef<any>(null); // 출발지 마커 인스턴스
     const routeEndMarkerInstance = useRef<any>(null); // 도착지 마커 인스턴스
     const [isMapReady, setIsMapReady] = useState(false);
+    const { addPlace } = useRecentlyViewedPlaces();
 
     const onMapIdleRef = useRef(onMapIdle);
 
@@ -285,6 +287,10 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
           console.log('No selected marker found for placeId:', selectedPlaceId);
           return;
         }
+
+        // Add the selected place to recently viewed list
+        console.log("Calling addPlace with selectedMarker:", selectedMarker.placeName, "(" + selectedMarker.placeId + ")");
+        addPlace(selectedMarker);
 
         // InfoWindow HTML 콘텐츠 생성
         const infoWindowContent = `
