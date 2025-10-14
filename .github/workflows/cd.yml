@@ -64,8 +64,8 @@ jobs:
           script: |
             cd ~/frontend
 
-            #echo "Creating .env file..."
-            #cat > .env <<EOL
+            echo "Creating .env file..."
+            cat > .env <<EOL
             KAKAO_MAP_JS_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
             KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
             API_BASE_URL=${{ secrets.API_BASE_URL }}
