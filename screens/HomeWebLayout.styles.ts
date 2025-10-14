@@ -75,24 +75,24 @@ export const webStyles = StyleSheet.create({
     top: 20,
     right: 20,
     backgroundColor: '#3690FF', // Base blue color
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
+    paddingVertical: 10, // Slightly larger padding
+    paddingHorizontal: 18, // Slightly larger padding
+    borderRadius: 20, // More rounded
     borderWidth: 1,
     borderColor: '#3690FF', // Match background color
     zIndex: 100,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4, // More prominent shadow
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.4, // Darker shadow
+    shadowRadius: 5.46, // Larger shadow radius
+    elevation: 9, // Higher elevation for Android shadow
   },
   recentlyViewedButtonText: {
-    fontSize: 14,
+    fontSize: 15, // Slightly larger font size
     color: '#F8FAFE', // Text on blue color
-    fontWeight: '500',
+    fontWeight: 'bold', // Bolder text
   },
 });

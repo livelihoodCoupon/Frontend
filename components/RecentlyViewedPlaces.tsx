@@ -9,7 +9,7 @@ interface RecentlyViewedPlacesProps {
 
 const RecentlyViewedContainer = styled.div`
   position: absolute;
-  top: 60px; /* Adjust based on header height */
+  top: 70px; /* Adjusted to move it further down, considering the button's new position */
   right: 20px;
   background-color: white;
   border: 1px solid #ddd;
