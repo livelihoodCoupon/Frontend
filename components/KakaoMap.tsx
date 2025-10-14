@@ -44,6 +44,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
     const infowindowInstance = useRef<any>(null); // 단일 정보창 인스턴스
     const userLocationMarkerInstance = useRef<any>(null);
     const infoWindowOverlayInstance = useRef<any>(null); // InfoWindow CustomOverlay instance
+    const currentHoverOverlayRef = useRef<any>(null); // Ref to store the currently active hover overlay
     const routePolylineInstance = useRef<any>(null); // 경로 라인 인스턴스
     const routeStartMarkerInstance = useRef<any>(null); // 출발지 마커 인스턴스
     const routeEndMarkerInstance = useRef<any>(null); // 도착지 마커 인스턴스
@@ -98,6 +99,40 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
         if (window.kakao && window.kakao.maps && window.kakao.maps.event) {
           window.kakao.maps.event.removeListener(map, 'idle', idleHandler);
         }
+      };
+    }, [mapInstance.current]);
+
+    // Effect for handling mousedown/mouseup on the map to dismiss hover overlay
+    useEffect(() => {
+      const map = mapInstance.current;
+      if (!map) return;
+
+      let isDragging = false;
+
+      const handleMouseDown = () => {
+        isDragging = false; // Reset drag state
+      };
+
+      const handleMouseMove = () => {
+        isDragging = true; // Set drag state if mouse moves while down
+      };
+
+      const handleMouseUp = () => {
+        if (isDragging && currentHoverOverlayRef.current) {
+          currentHoverOverlayRef.current.setMap(null);
+          currentHoverOverlayRef.current = null;
+        }
+        isDragging = false; // Reset drag state
+      };
+
+      window.kakao.maps.event.addListener(map, 'mousedown', handleMouseDown);
+      window.kakao.maps.event.addListener(map, 'mousemove', handleMouseMove);
+      window.kakao.maps.event.addListener(map, 'mouseup', handleMouseUp);
+
+      return () => {
+        window.kakao.maps.event.removeListener(map, 'mousedown', handleMouseDown);
+        window.kakao.maps.event.removeListener(map, 'mousemove', handleMouseMove);
+        window.kakao.maps.event.removeListener(map, 'mouseup', handleMouseUp);
       };
     }, [mapInstance.current]);
 
@@ -229,12 +264,19 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
 
             // 마우스 오버 시 커스텀 오버레이 표시
             window.kakao.maps.event.addListener(marker, "mouseover", function () {
+              if (currentHoverOverlayRef.current) {
+                currentHoverOverlayRef.current.setMap(null); // Close previous hover overlay
+              }
               customOverlay.setMap(mapInstance.current);
+              currentHoverOverlayRef.current = customOverlay; // Store the new hover overlay
             });
 
             // 마우스 아웃 시 커스텀 오버레이 닫기
             window.kakao.maps.event.addListener(marker, "mouseout", function () {
-              customOverlay.setMap(null);
+              if (currentHoverOverlayRef.current === customOverlay) {
+                customOverlay.setMap(null);
+                currentHoverOverlayRef.current = null; // Clear the reference
+              }
             });
 
             // 클릭 이벤트 처리
@@ -277,6 +319,11 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
         // 기존 InfoWindow 제거
         if (infoWindowOverlayInstance.current) {
           infoWindowOverlayInstance.current.setMap(null);
+        }
+        // Close any active hover overlay when main infowindow opens
+        if (currentHoverOverlayRef.current) {
+          currentHoverOverlayRef.current.setMap(null);
+          currentHoverOverlayRef.current = null;
         }
 
         // 선택된 마커 데이터 찾기
