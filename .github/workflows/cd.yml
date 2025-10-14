@@ -66,21 +66,19 @@ jobs:
 
             #echo "Creating .env file..."
             #cat > .env <<EOL
-            #KAKAO_MAP_JS_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
-            #KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
-            #API_BASE_URL=${{ secrets.API_BASE_URL }}
-            #EXPO_PUBLIC_USE_HARDCODED_LOCATION=${{ secrets.EXPO_PUBLIC_USE_HARDCODED_LOCATION }}
-            #EXPO_PUBLIC_HARDCODED_LATITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LATITUDE }}
-            #EXPO_PUBLIC_HARDCODED_LONGITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LONGITUDE }}
-            #EOL
+            KAKAO_MAP_JS_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
+            KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+            API_BASE_URL=${{ secrets.API_BASE_URL }}
+            EXPO_PUBLIC_USE_HARDCODED_LOCATION=${{ secrets.EXPO_PUBLIC_USE_HARDCODED_LOCATION }}
+            EXPO_PUBLIC_HARDCODED_LATITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LATITUDE }}
+            EXPO_PUBLIC_HARDCODED_LONGITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LONGITUDE }}
+            EOL
 
             #echo "Stopping existing process (if any)..."
             #pkill -f "npm start" || true
-
             #echo "Starting frontend with npm start..."
             #nohup npm start > frontend.log 2>&1 &
             #disown
-
             #echo "✅ Frontend started successfully!"
 
 
