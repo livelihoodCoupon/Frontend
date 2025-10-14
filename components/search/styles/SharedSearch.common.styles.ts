@@ -260,12 +260,28 @@ export const commonStyles = StyleSheet.create({
     elevation: 5,
   },
   suggestionsList: {
-    maxHeight: 200,
+    maxHeight: 205, // Adjusted to fit 5 items + title without scrolling (approx 25px per item + 26px for title)
   },
   suggestionItem: {
-    padding: 10,
+    paddingVertical: 5, // Further reduced vertical padding
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  suggestionsTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    paddingVertical: 6, // Further adjusted vertical padding
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  removeRecentSearchButton: {
+    padding: 5,
   },
   closeButton: {
     position: 'absolute',

@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { TextInput, TouchableOpacity, Text, View, Platform } from 'react-native';
+import { TextInput, TouchableOpacity, Text, View, Platform, NativeSyntheticEvent, TextInputFocusEventData } from 'react-native';
 import { mobileStyles } from './styles/SearchBar.mobile.styles';
 import { webStyles } from './styles/SearchBar.web.styles';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
@@ -9,6 +9,8 @@ interface SearchBarProps {
   setSearchQuery: (query: string) => void;
   onSearch: () => void;
   onClearSearch: () => void; // New prop for clearing search
+  onFocus?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void; // New prop for focus event
+  onBlur?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void; // New prop for blur event
 }
 
 const SearchBar = forwardRef<TextInput, SearchBarProps>((props, ref) => {
@@ -24,6 +26,8 @@ const SearchBar = forwardRef<TextInput, SearchBarProps>((props, ref) => {
         onChangeText={props.setSearchQuery}
         onSubmitEditing={props.onSearch}
         returnKeyType="search"
+        onFocus={props.onFocus} // Pass onFocus prop
+        onBlur={props.onBlur} // Pass onBlur prop
       />
       {props.searchQuery.length > 0 && ( // Conditionally render clear button
         <TouchableOpacity style={styles.clearButton} onPress={props.onClearSearch}>

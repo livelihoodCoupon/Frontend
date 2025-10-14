@@ -132,14 +132,53 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   }) => {
   const [activeSearchTab, setActiveSearchTab] = useState<'searchResults' | 'nearbyParking'>('searchResults');
   const [hasPerformedSearch, setHasPerformedSearch] = useState(false); // New state to track if a search has been performed
+  const [recentSearches, setRecentSearches] = useState<string[]>([]); // New state for recent searches
+  const [isSearchBarFocused, setIsSearchBarFocused] = useState(false); // New state for search bar focus
   const routeScrollViewRef = useRef<ScrollView>(null);
   const searchBarRef = useRef<TextInput>(null); // Ref for the SearchBar's TextInput
   const suggestionsContainerRef = useRef<View>(null); // Ref for the suggestions container
+
+  // Functions to manage recent searches
+  const loadRecentSearches = () => {
+    if (Platform.OS === 'web') {
+      const storedSearches = localStorage.getItem('recentSearches');
+      if (storedSearches) {
+        setRecentSearches(JSON.parse(storedSearches));
+      }
+    }
+  };
+
+  const addRecentSearch = (search: string) => {
+    if (Platform.OS === 'web') {
+      setRecentSearches((prevSearches) => {
+        const newSearches = [search, ...prevSearches.filter((s) => s !== search)].slice(0, 5); // Keep last 5 unique searches
+        localStorage.setItem('recentSearches', JSON.stringify(newSearches));
+        return newSearches;
+      });
+    }
+  };
+
+  const removeRecentSearch = (searchToRemove: string) => {
+    if (Platform.OS === 'web') {
+      setRecentSearches((prevSearches) => {
+        const newSearches = prevSearches.filter((search) => search !== searchToRemove);
+        localStorage.setItem('recentSearches', JSON.stringify(newSearches));
+        return newSearches;
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadRecentSearches();
+  }, []); // Load on mount
 
   const handleLocalSearch = () => {
     onSearch();
     setShowAutocomplete(false); // Unconditionally hide autocomplete on final search
     setHasPerformedSearch(true); // Mark that a search has been performed
+    if (searchQuery.trim().length > 0) {
+      addRecentSearch(searchQuery.trim()); // Add to recent searches
+    }
   };
 
   useEffect(() => {
@@ -238,27 +277,69 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             }}
             onSearch={handleLocalSearch}
             onClearSearch={onClearSearch}
+            onFocus={() => setIsSearchBarFocused(true)}
+            onBlur={(e) => {
+              if (Platform.OS === 'web') {
+                // Check if the focus is moving to an element within the suggestions container
+                if (e.nativeEvent.relatedTarget && suggestionsContainerRef.current && suggestionsContainerRef.current.contains(e.nativeEvent.relatedTarget as Node)) {
+                  return; // Do not blur if focus moves to a suggestion item
+                }
+              }
+              // Add a small delay to allow click events on suggestions to register
+              setTimeout(() => setIsSearchBarFocused(false), 100);
+            }}
           />
-          {showAutocomplete && !hasPerformedSearch && autocompleteSuggestions.length > 0 && (
+          {(showAutocomplete && !hasPerformedSearch && autocompleteSuggestions.length > 0) || (searchQuery.length === 0 && isSearchBarFocused && recentSearches.length > 0) ? (
             <View ref={suggestionsContainerRef} style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
-              <FlatList
-                data={autocompleteSuggestions}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={commonStyles.suggestionItem}
-                    onPress={() => {
-                      setSearchQuery(item.word);
-                      setShowAutocomplete(false);
-                    }}
-                  >
-                    <Text>{item.word}</Text>
-                  </TouchableOpacity>
-                )}
-                style={commonStyles.suggestionsList}
-              />
+              {searchQuery.length === 0 && isSearchBarFocused ? (
+                // Display Recent Searches
+                <View>
+                  <Text style={commonStyles.suggestionsTitle}>최근 검색</Text>
+                  <FlatList
+                    data={recentSearches}
+                    keyExtractor={(item, index) => `recent-${item}-${index}`}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={commonStyles.suggestionItem}
+                        onPress={() => {
+                          setSearchQuery(item);
+                          handleLocalSearch(); // Perform search with recent item
+                          setShowAutocomplete(false);
+                        }}
+                      >
+                        <Text>{item}</Text>
+                        <TouchableOpacity
+                          onPress={() => removeRecentSearch(item)}
+                          style={commonStyles.removeRecentSearchButton}
+                        >
+                          <Ionicons name="close-circle-outline" size={18} color="#B9B9B9" />
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                    )}
+                    style={commonStyles.suggestionsList}
+                  />
+                </View>
+              ) : (
+                // Display Autocomplete Suggestions
+                <FlatList
+                  data={autocompleteSuggestions}
+                  keyExtractor={(item, index) => index.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={commonStyles.suggestionItem}
+                      onPress={() => {
+                        setSearchQuery(item.word);
+                        setShowAutocomplete(false);
+                      }}
+                    >
+                      <Text>{item.word}</Text>
+                    </TouchableOpacity>
+                  )}
+                  style={commonStyles.suggestionsList}
+                />
+              )}
             </View>
-          )}
+          ) : null}
           <SearchOptionsComponent searchOptions={searchOptions} setSearchOptions={setSearchOptions} />
           <View style={commonStyles.subTabContainer}>
             <TouchableOpacity
