@@ -58,7 +58,7 @@ export default function Home() {
     loading: searchLoading,
     error: searchError,
     performSearch,
-    clearSearchResults,
+    clearSearchResults: clearSearchResultsFromHook,
     searchOptions,
     setSearchOptions,
     allMarkers,
@@ -66,6 +66,7 @@ export default function Home() {
     loadingAllMarkers,
     markerCountReachedLimit,
     fetchNextPage,
+    searchCenter,
     pagination,
     fetchAllMarkers,
   } = useSearch();
@@ -86,6 +87,9 @@ export default function Home() {
   const [showPlaceDetail, setShowPlaceDetail] = useState(false); // 상세정보 표시 상태
   const sideMenuAnimation = useRef(new Animated.Value(0)).current; // 사이드메뉴 애니메이션
 
+  // UI 상태 관리
+  const [showSearchInAreaButton, setShowSearchInAreaButton] = useState(false);
+
   // 지도 중심 좌표 상태
   const [mapCenter, setMapCenterState] = useState<{
     latitude: number;
@@ -98,7 +102,18 @@ export default function Home() {
     setMapCenterToStore(center); // store에도 저장
   }, [setMapCenterToStore]);
 
-  // 현재 위치가 로드되면 지도 중심을 설정 (기본 위치)
+  const clearSearchResults = useCallback(() => {
+    clearSearchResultsFromHook(); // useSearch 훅의 clearSearchResults 호출
+  }, [clearSearchResultsFromHook]);
+
+  // 검색 결과에 따라 지도 중심을 업데이트
+  useEffect(() => {
+    if (searchCenter) {
+      setMapCenter({ latitude: searchCenter.lat, longitude: searchCenter.lng });
+    }
+  }, [searchCenter, setMapCenter]);
+
+  // 현재 위치가 로드되면 지도 중심을 설정 (초기 로딩 시에만)
   useEffect(() => {
     if (location && !mapCenter) {
       setMapCenter({ latitude: location.latitude, longitude: location.longitude });
@@ -130,6 +145,7 @@ export default function Home() {
    */
   const handleSearch = useCallback(async () => {
     Keyboard.dismiss();
+    setShowSearchInAreaButton(false);
     if (!mapCenter) {
       alert("지도 중심 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
@@ -142,15 +158,13 @@ export default function Home() {
     setBottomSheetOpen(true); // 검색 후 하단 시트 열기
   }, [mapCenter, location, performSearch]);
 
-  /**
-   * 현재 위치를 기준으로 검색을 수행하는 핸들러
-   */
-  const handleSearchNearMe = useCallback(async () => {
-    Keyboard.dismiss();
+  const handleSearchInArea = useCallback(async () => {
+    if (!mapCenter) return;
     if (!location) {
       alert("현재 위치 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
+<<<<<<< HEAD
     // 현재 위치를 기준으로 검색을 수행
     await performSearch(location.latitude, location.longitude, location.latitude, location.longitude);
     
@@ -173,6 +187,18 @@ export default function Home() {
     
     setBottomSheetOpen(true); // 검색 후 하단 시트 열기
   }, [location, performSearch, bottomSheetOpen, bottomSheetHeight]);
+=======
+    setShowSearchInAreaButton(false);
+    await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude, true);
+  }, [mapCenter, location, performSearch]);
+
+  const handleMapIdle = useCallback((lat: number, lng: number) => {
+    setMapCenter({ latitude: lat, longitude: lng });
+    if (searchResults.length > 0) {
+      setShowSearchInAreaButton(true);
+    }
+  }, [searchResults.length, setMapCenter, setShowSearchInAreaButton]);
+>>>>>>> upstream/main
 
   const handleNextPage = useCallback(async () => {
     if (!mapCenter) return;
@@ -214,8 +240,13 @@ export default function Home() {
       setSelectedPlaceId(item.placeId);
       setShowInfoWindow(false);
     }
+<<<<<<< HEAD
     // 바텀시트는 유지하고 선택된 결과만 업데이트
   }, [bottomSheetOpen, bottomSheetHeight, setSelectedPlaceId, setShowInfoWindow]);
+=======
+    setBottomSheetOpen(false); // 결과 선택 후 하단 시트 닫기
+  }, [setSelectedPlaceId, setShowInfoWindow, setMapCenter]);
+>>>>>>> upstream/main
 
   /**
    * 마커 클릭 핸들러
@@ -289,6 +320,7 @@ export default function Home() {
         lng: marker.lng,
         categoryGroupName: marker.categoryGroupName,
         roadAddress: marker.roadAddress,
+        roadAddressDong: marker.roadAddressDong,
         lotAddress: marker.lotAddress,
         phone: marker.phone,
         placeUrl: marker.placeUrl,
@@ -309,6 +341,7 @@ export default function Home() {
         location={location}
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
+        onMapIdle={handleMapIdle}
         markers={markers}
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -320,7 +353,6 @@ export default function Home() {
         isLoading={isLoading}
         errorMsg={errorMsg}
         onSearch={handleSearch}
-        onSearchNearMe={handleSearchNearMe} // Add this prop
         onSelectResult={handleSelectResult}
         onMarkerPress={handleMarkerPress}
         searchOptions={searchOptions}
@@ -337,6 +369,8 @@ export default function Home() {
         routeError={routeError}
         startRoute={startRoute}
         clearRoute={clearRoute}
+        showSearchInAreaButton={showSearchInAreaButton}
+        handleSearchInArea={handleSearchInArea}
       />
     );
   } else {
@@ -350,6 +384,7 @@ export default function Home() {
         location={location}
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
+        onMapIdle={handleMapIdle}
         markers={markers}
         bottomSheetOpen={bottomSheetOpen}
         setBottomSheetOpen={setBottomSheetOpen}
@@ -364,7 +399,6 @@ export default function Home() {
         isLoading={isLoading}
         errorMsg={errorMsg}
         onSearch={handleSearch}
-        onSearchNearMe={handleSearchNearMe} // Add this prop
         onSelectResult={handleSelectResult}
         onMarkerPress={handleMarkerPress}
         searchOptions={searchOptions}
@@ -381,6 +415,8 @@ export default function Home() {
         routeError={routeError}
         startRoute={startRoute}
         clearRoute={clearRoute}
+        showSearchInAreaButton={showSearchInAreaButton}
+        handleSearchInArea={handleSearchInArea}
       />
     );
   }
