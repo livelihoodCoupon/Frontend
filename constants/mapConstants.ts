@@ -3,22 +3,10 @@ export type MarkerType = 'userLocation' | 'selected' | 'default' | 'routeStart' 
 
 // 마커 이미지 URL 관리 (SVG 기반)
 export const MARKER_IMAGES = {
-  // 현재 위치 마커 (동그란 그림자)
+  // 현재 위치 마커 (파란색 아이콘, 배경 없음)
   USER_LOCATION: "data:image/svg+xml;base64," + btoa(`
-    <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="shadow-user" x="-50%" y="-50%" width="400%" height="400%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
-          <feOffset dx="0" dy="3" result="offset"/>
-          <feFlood flood-color="rgba(0,0,0,0.4)"/>
-          <feComposite in2="offset" operator="in"/>
-          <feMerge>
-            <feMergeNode/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <circle cx="20" cy="20" r="10" fill="#007bff" stroke="#fff" stroke-width="3" filter="url(#shadow-user)"/>
+    <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#3690FF"/>
     </svg>
   `),
   
@@ -94,8 +82,8 @@ export const MARKER_CONFIG = {
   // 현재 위치 마커 설정
   userLocation: {
     image: MARKER_IMAGES.USER_LOCATION,
-    size: { width: 40, height: 40 },
-    offset: { x: 20, y: 40 }, // 마커 하단 중앙에 위치
+    size: { width: 32, height: 32 },
+    offset: { x: 14, y: 14 }, // 마커 중앙에 위치
     zIndex: 101,
     clickable: false, // 클릭 불가
   },

@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   categoriesContent: {
-    paddingRight: 16,
+    paddingRight: 0,
   },
   categoryButtonWrapper: {
     marginRight: 8,

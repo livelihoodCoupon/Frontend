@@ -14,7 +14,7 @@ import KakaoMap from "../components/KakaoMap";
 import RouteBottomSheet from "../components/search/RouteBottomSheet";
 import RouteSearchPanel from "../components/search/RouteSearchPanel";
 import FloatingSearchBar from "../components/search/FloatingSearchBar";
-import CurrentLocationButton from "../components/search/CurrentLocationButton";
+// CurrentLocationButton import 제거
 import RouteResultComponent from "../components/route/RouteResult";
 import { SearchResult, SearchOptions } from "../types/search";
 import { PageResponse } from "../types/api";
@@ -32,7 +32,7 @@ interface HomeMobileLayoutProps {
   selectedMarkerPosition: { lat: number; lng: number } | null;
   location: { latitude: number; longitude: number } | null;
   mapCenter: { latitude: number; longitude: number } | null;
-  setMapCenter: (center: { latitude: number; longitude: number }) => void;
+  setMapCenter: (center: { latitude: number; longitude: number } | null) => void;
   onMapIdle: (lat: number, lng: number) => void;
   markers: any[]; // Adjust type as needed
   bottomSheetOpen: boolean;
@@ -242,29 +242,8 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 
   
 
-  // 내 위치로 지도 중심 이동
-  const handleCurrentLocationPress = () => {
-    if (location) {
-      setMapCenter(location);
-      
-      // 길찾기 모드일 때는 출발지에 "내 위치" 설정
-      if (isRouteMode) {
-        setStartLocation('내 위치');
-      }
-    }
-  };
-
   // 지도 레벨 초기화 상태
   const [resetMapLevel, setResetMapLevel] = useState(false);
-
-  // 내 위치로 지도 중심 이동 + 레벨 초기화
-  const handleCurrentLocationDoublePress = () => {
-    if (location) {
-      setMapCenter(location);
-      // 지도 레벨 초기화
-      setResetMapLevel(true);
-    }
-  };
 
   // 길찾기 모드 관련 함수들
   const handleRoutePress = () => {
@@ -652,9 +631,9 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 
       {/* 길찾기 결과 요약 카드 */}
       {isRouteMode && routeResult && !showRouteDetail && (
-        <View style={[mobileStyles.routeSummaryCard, { zIndex: 1002 }]}>
+        <View style={[mobileStyles.routeResultContainer, { zIndex: 1002 }]}>
           <TouchableOpacity 
-            style={mobileStyles.routeSummaryContent}
+            style={[mobileStyles.routeSummaryCard, mobileStyles.routeSummaryContent]}
             onPress={() => {
               setShowRouteDetail(true);
               setIsRouteMode(false); // 길찾기 모드창 닫기
@@ -679,13 +658,10 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                 <Text style={mobileStyles.routeSummaryLabel}>소요시간</Text>
               </View>
             </View>
-            
-            <Text style={mobileStyles.routeSummaryButton}>상세 경로 안내 받기</Text>
           </TouchableOpacity>
         </View>
       )}
 
-<<<<<<< HEAD
       {errorMsg && (
         <View style={mobileStyles.errorContainer}>
           <Text style={mobileStyles.errorText}>{errorMsg}</Text>
@@ -750,15 +726,6 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
           onToggle={() => {
             setBottomSheetOpen(!bottomSheetOpen);
           }}
-=======
-      <CustomBottomSheet
-        isOpen={bottomSheetOpen}
-        onToggle={() => setBottomSheetOpen(!bottomSheetOpen)}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onSearch={onSearch}
-        searchResults={searchResults}
->>>>>>> upstream/main
         allMarkers={allMarkers}
         onSelectResult={(result) => {
           setSelectedSearchResult(result);
@@ -789,25 +756,15 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
       />
       )}
 
-      {/* 내 위치 버튼 */}
-      <CurrentLocationButton
-        onPress={handleCurrentLocationPress}
-        onDoublePress={handleCurrentLocationDoublePress}
-        bottomSheetOpen={bottomSheetOpen || showRouteDetail}
-        bottomSheetHeight={showRouteDetail ? USABLE_SCREEN_HEIGHT * 0.65 : bottomSheetHeight}
-        showPlaceDetail={showPlaceDetail}
-        showRouteDetail={showRouteDetail}
-      />
+      {/* 좌측하단 현재 위치 버튼 제거 */}
 
       {bottomSheetOpen && (
         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: insets.bottom, backgroundColor: 'white', zIndex: 9 }} />
       )}
 
-      {mapCenter ? (
-        <>
-          <KakaoMap
-            latitude={mapCenter.latitude}
-            longitude={mapCenter.longitude}
+      <KakaoMap
+        latitude={mapCenter?.latitude ?? 37.5665}
+        longitude={mapCenter?.longitude ?? 126.9780}
             style={[mobileStyles.mapFullScreen, { zIndex: 1001 }] as any}
             markers={markers}
             routeResult={routeResult}
@@ -821,28 +778,61 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
             onSetRouteLocation={onSetRouteLocation}
             resetMapLevel={resetMapLevel}
             onResetMapLevelComplete={() => setResetMapLevel(false)}
+            onGetCurrentMapCenter={() => {
+              console.log('🔥 KakaoMap에서 현재 지도 중심 가져오기 요청됨');
+              
+              // WebView에서 현재 지도 중심 가져오기
+              const script = `
+                console.log('🔥 WebView에서 현재 지도 중심 가져오기 시작');
+                const center = map.getCenter();
+                console.log('🔥 WebView 현재 지도 중심:', center.getLat(), center.getLng());
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'get_current_map_center',
+                  latitude: center.getLat(),
+                  longitude: center.getLng()
+                }));
+                console.log('🔥 WebView 메시지 전송 완료');
+                true;
+              `;
+              
+              // WebView 스크립트 주입 (실제 구현 필요)
+              console.log('🔥 WebView 스크립트 주입 준비:', script);
+            }}
           />
-          {showSearchInAreaButton && (
-            <TouchableOpacity
-              style={mobileStyles.searchInAreaButton}
-              onPress={handleSearchInArea}
-            >
-              <Text style={mobileStyles.searchInAreaButtonText}>현재 지도에서 검색</Text>
-            </TouchableOpacity>
-          )}
-          {location && (
+      {showSearchInAreaButton && (
+        <TouchableOpacity
+          style={mobileStyles.searchInAreaButton}
+          onPress={handleSearchInArea}
+        >
+          <Text style={mobileStyles.searchInAreaButtonText}>현재 지도에서 검색</Text>
+        </TouchableOpacity>
+      )}
+      {location && (
             <TouchableOpacity 
               style={mobileStyles.currentLocationButton}
-              onPress={() => setMapCenter({ latitude: location.latitude, longitude: location.longitude })}>
-              <Ionicons name="locate" size={24} color="#000" />
-            </TouchableOpacity>
-          )}
-        </>
-      ) : (
-        <View style={mobileStyles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
-          <Text>지도를 불러오는 중입니다...</Text>
-        </View>
+              onPress={() => {
+                if (location && mapCenter) {
+                  const latDiff = mapCenter.latitude - location.latitude;
+                  const lngDiff = mapCenter.longitude - location.longitude;
+                  const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111000;
+                  
+                  if (distance > 100) {
+                    setMapCenter(location);
+                  } else {
+                    setResetMapLevel(true);
+                  }
+                } else {
+                  setMapCenter(location);
+                }
+              }}
+              onLongPress={() => {
+                if (location) {
+                  setMapCenter(location);
+                  setResetMapLevel(true);
+                }
+              }}>
+              <Ionicons name="locate" size={20} color="#3690FF" />
+        </TouchableOpacity>
       )}
     </SafeAreaView>
   );

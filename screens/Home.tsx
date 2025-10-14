@@ -66,7 +66,6 @@ export default function Home() {
     loadingAllMarkers,
     markerCountReachedLimit,
     fetchNextPage,
-    searchCenter,
     pagination,
     fetchAllMarkers,
   } = useSearch();
@@ -97,9 +96,14 @@ export default function Home() {
   } | null>(null);
 
   // 지도 중심 설정 함수 (store에도 동기화)
-  const setMapCenter = useCallback((center: { latitude: number; longitude: number }) => {
-    setMapCenterState(center);
-    setMapCenterToStore(center); // store에도 저장
+  const setMapCenter = useCallback((center: { latitude: number; longitude: number } | null) => {
+    if (center) {
+      setMapCenterState(center);
+      setMapCenterToStore(center);
+    } else {
+      setMapCenterState(null);
+      setMapCenterToStore(null);
+    }
   }, [setMapCenterToStore]);
 
   const clearSearchResults = useCallback(() => {
@@ -108,10 +112,8 @@ export default function Home() {
 
   // 검색 결과에 따라 지도 중심을 업데이트
   useEffect(() => {
-    if (searchCenter) {
-      setMapCenter({ latitude: searchCenter.lat, longitude: searchCenter.lng });
-    }
-  }, [searchCenter, setMapCenter]);
+    // Search center logic removed for now
+  }, [setMapCenter]);
 
   // 현재 위치가 로드되면 지도 중심을 설정 (초기 로딩 시에만)
   useEffect(() => {
@@ -164,7 +166,6 @@ export default function Home() {
       alert("현재 위치 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
-<<<<<<< HEAD
     // 현재 위치를 기준으로 검색을 수행
     await performSearch(location.latitude, location.longitude, location.latitude, location.longitude);
     
@@ -187,18 +188,6 @@ export default function Home() {
     
     setBottomSheetOpen(true); // 검색 후 하단 시트 열기
   }, [location, performSearch, bottomSheetOpen, bottomSheetHeight]);
-=======
-    setShowSearchInAreaButton(false);
-    await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude, true);
-  }, [mapCenter, location, performSearch]);
-
-  const handleMapIdle = useCallback((lat: number, lng: number) => {
-    setMapCenter({ latitude: lat, longitude: lng });
-    if (searchResults.length > 0) {
-      setShowSearchInAreaButton(true);
-    }
-  }, [searchResults.length, setMapCenter, setShowSearchInAreaButton]);
->>>>>>> upstream/main
 
   const handleNextPage = useCallback(async () => {
     if (!mapCenter) return;
@@ -240,13 +229,8 @@ export default function Home() {
       setSelectedPlaceId(item.placeId);
       setShowInfoWindow(false);
     }
-<<<<<<< HEAD
     // 바텀시트는 유지하고 선택된 결과만 업데이트
   }, [bottomSheetOpen, bottomSheetHeight, setSelectedPlaceId, setShowInfoWindow]);
-=======
-    setBottomSheetOpen(false); // 결과 선택 후 하단 시트 닫기
-  }, [setSelectedPlaceId, setShowInfoWindow, setMapCenter]);
->>>>>>> upstream/main
 
   /**
    * 마커 클릭 핸들러
@@ -294,22 +278,10 @@ export default function Home() {
   const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
 
   const markers = useMemo(() => {
-    // 사용자 위치 마커는 항상 표시 (location이 있을 때)
-    const userLocationMarker = location ? [{
-      placeId: "user-location",
-      placeName: "내 위치",
-      lat: location.latitude,
-      lng: location.longitude,
-      markerType: "userLocation",
-    }] : [];
+    // 모바일에서 현재 위치 마커 제거 (WebView에서만 표시)
+    // WebView에서만 현재 위치 마커 표시 (React Native 마커는 제거)
+    const userLocationMarker = [];
     
-    console.log('마커 생성:', {
-      hasLocation: !!location,
-      location: location,
-      userLocationMarker: userLocationMarker,
-      allMarkersCount: allMarkers.length,
-      totalMarkers: userLocationMarker.length + allMarkers.length
-    });
     
     return [
       ...userLocationMarker,
@@ -341,7 +313,9 @@ export default function Home() {
         location={location}
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
-        onMapIdle={handleMapIdle}
+        onMapIdle={(latitude: number, longitude: number) => {
+          setMapCenter({ latitude, longitude });
+        }}
         markers={markers}
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -384,7 +358,9 @@ export default function Home() {
         location={location}
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
-        onMapIdle={handleMapIdle}
+        onMapIdle={(latitude: number, longitude: number) => {
+          setMapCenter({ latitude, longitude });
+        }}
         markers={markers}
         bottomSheetOpen={bottomSheetOpen}
         setBottomSheetOpen={setBottomSheetOpen}

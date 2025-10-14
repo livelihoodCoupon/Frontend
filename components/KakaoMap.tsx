@@ -15,7 +15,21 @@ import { useKakaoMapScript } from "../hooks/useKakaoMapScript";
 
 import { MarkerData, KakaoMapProps } from "../types/kakaoMap";
 import { SearchResult } from "../types/search";
-import { styles } from "./KakaoMap.styles";
+import { commonStyles as commonStyles } from "./KakaoMap.common.styles";
+
+const styles = StyleSheet.create({
+  ...commonStyles,
+  webMapContainer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  webview: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+});
 import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../constants/mapConstants";
 
   const WebKakaoMap = ({
@@ -23,7 +37,7 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
     longitude,
     markers,
     routeResult,
-    onMapCenterChange,
+    onMapIdle,
     onMarkerPress,
     showInfoWindow,
     selectedPlaceId,
@@ -33,6 +47,7 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
     onSetRouteLocation,
     resetMapLevel,
     onResetMapLevelComplete,
+    onGetCurrentMapCenter,
   }: KakaoMapProps) => {
     console.log('WebKakaoMap 렌더링:', { routeResult: !!routeResult, routeResultCoordinates: routeResult?.coordinates?.length });
     
@@ -62,8 +77,6 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
 
         const debouncedOnMapCenterChange = debounce(() => {
           const latlng = map.getCenter();
-          onMapCenterChange &&
-            onMapCenterChange(latlng.getLat(), latlng.getLng());
         }, 300); // 300ms debounce
 
         window.kakao.maps.event.addListener(map, "center_changed", debouncedOnMapCenterChange);
@@ -83,14 +96,48 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
     useEffect(() => {
       if (mapInstance.current && latitude !== undefined && longitude !== undefined) {
         const newCenter = new window.kakao.maps.LatLng(latitude, longitude);
+        
+        console.log('=== 지도 중심 이동 시작 ===');
+        console.log('새로운 중심:', latitude, longitude);
+        console.log('지도 인스턴스:', !!mapInstance.current);
+        
+        // 확실한 지도 이동을 위해 setCenter와 panTo 조합 사용
         mapInstance.current.setCenter(newCenter);
+        
+        // 추가로 panTo도 호출하여 확실한 이동
+        setTimeout(() => {
+          mapInstance.current.panTo(newCenter);
+        }, 50);
+        
+        // 이동 후 중심 확인
+        setTimeout(() => {
+          const actualCenter = mapInstance.current.getCenter();
+          console.log('실제 지도 중심:', actualCenter.getLat(), actualCenter.getLng());
+          console.log('=== 지도 중심 이동 완료 ===');
+        }, 100);
       }
     }, [latitude, longitude]);
 
     // 지도 레벨 초기화 함수
     const resetMapLevelFunction = useCallback(() => {
       if (mapInstance.current) {
-        mapInstance.current.setLevel(MAP_CONFIG.CURRENT_LOCATION_LEVEL);
+        // 부드러운 레벨 조정을 위해 단계적으로 변경
+        const currentLevel = mapInstance.current.getLevel();
+        const targetLevel = MAP_CONFIG.CURRENT_LOCATION_LEVEL;
+        
+        if (currentLevel !== targetLevel) {
+          // 레벨 차이가 클 때는 단계적으로 조정
+          const step = currentLevel > targetLevel ? -1 : 1;
+          const adjustLevel = () => {
+            const newLevel = mapInstance.current.getLevel() + step;
+            mapInstance.current.setLevel(newLevel);
+            
+            if ((step > 0 && newLevel < targetLevel) || (step < 0 && newLevel > targetLevel)) {
+              setTimeout(adjustLevel, 100);
+            }
+          };
+          adjustLevel();
+        }
         console.log('지도 레벨 초기화:', MAP_CONFIG.CURRENT_LOCATION_LEVEL);
       }
     }, []);
@@ -108,7 +155,7 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
     // resetMapLevel prop 처리
     useEffect(() => {
       if (resetMapLevel && mapInstance.current) {
-        console.log('WebKakaoMap - 지도 레벨 초기화 실행');
+        console.log('WebKakaoMap - 지도 레벨 초기화 실행, resetMapLevel:', resetMapLevel);
         mapInstance.current.setLevel(MAP_CONFIG.CURRENT_LOCATION_LEVEL);
         
         // 지도 레벨 초기화 후 마커 다시 렌더링
@@ -748,7 +795,7 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
   longitude,
   markers,
   routeResult,
-  onMapCenterChange,
+  onMapIdle,
   onMarkerPress,
   style,
   resetMapLevel,
@@ -777,9 +824,18 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
       htmlContent &&
       isMapInitialized &&
       latitude !== undefined &&
-      longitude !== undefined
+      longitude !== undefined &&
+      !isNaN(latitude) &&
+      !isNaN(longitude)
     ) {
-      const script = `updateMapCenter(${latitude}, ${longitude}); true;`;
+      const script = `
+        updateMapCenter(${latitude}, ${longitude});
+        true;
+      `;
+      
+      (webViewRef.current as any).latitude = latitude;
+      (webViewRef.current as any).longitude = longitude;
+      
       webViewRef.current.injectJavaScript(script);
     }
   }, [isMapInitialized, latitude, longitude, htmlContent]);
@@ -847,31 +903,56 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
 
   // resetMapLevel prop 처리 (모바일 WebView)
   useEffect(() => {
+    console.log('🔥🔥🔥 KakaoMap resetMapLevel useEffect 실행 🔥🔥🔥');
+    console.log('resetMapLevel:', resetMapLevel);
+    console.log('webViewRef.current:', !!webViewRef.current);
+    console.log('isMapInitialized:', isMapInitialized);
+    
     if (resetMapLevel && webViewRef.current && isMapInitialized) {
-      console.log('MobileKakaoMap - 지도 레벨 초기화 실행');
+      console.log('🔥 MobileKakaoMap - 지도 레벨 초기화 실행 시작');
+      console.log('🔥 resetMapLevel:', resetMapLevel);
+      console.log('🔥 MAP_CONFIG.CURRENT_LOCATION_LEVEL:', MAP_CONFIG.CURRENT_LOCATION_LEVEL);
+      
       const script = `
+        console.log('🔥🔥🔥 WebView 지도 레벨 초기화 스크립트 실행 🔥🔥🔥');
+        console.log('map 존재:', typeof map !== 'undefined' && !!map);
+        
         if (typeof map !== 'undefined' && map) {
+          console.log('🔥 현재 지도 레벨:', map.getLevel());
           map.setLevel(${MAP_CONFIG.CURRENT_LOCATION_LEVEL});
-          console.log('모바일 지도 레벨 초기화:', ${MAP_CONFIG.CURRENT_LOCATION_LEVEL});
+          console.log('🔥 모바일 지도 레벨 초기화 완료:', ${MAP_CONFIG.CURRENT_LOCATION_LEVEL});
+          console.log('🔥 초기화 후 지도 레벨:', map.getLevel());
           
           // 지도 레벨 초기화 후 마커 다시 렌더링
           setTimeout(() => {
-            console.log('모바일 지도 레벨 초기화 후 마커 다시 렌더링');
+            console.log('🔥 모바일 지도 레벨 초기화 후 마커 다시 렌더링 시작');
             if (typeof updateMarkers === 'function') {
               updateMarkers(${JSON.stringify(markers || [])});
-              console.log('모바일 마커 다시 렌더링 완료');
+              console.log('🔥 모바일 마커 다시 렌더링 완료');
+            } else {
+              console.log('❌ updateMarkers 함수가 없음');
             }
           }, 100);
         } else {
-          console.log('모바일 지도 인스턴스가 아직 준비되지 않음');
+          console.log('❌ 모바일 지도 인스턴스가 아직 준비되지 않음');
         }
         true;
       `;
+      
+      console.log('🔥 WebView 스크립트 주입 시작');
       webViewRef.current.injectJavaScript(script);
+      console.log('🔥 WebView 스크립트 주입 완료');
       
       if (onResetMapLevelComplete) {
+        console.log('🔥 onResetMapLevelComplete 호출');
         onResetMapLevelComplete();
       }
+      console.log('🔥🔥🔥 MobileKakaoMap - 지도 레벨 초기화 실행 완료 🔥🔥🔥');
+    } else {
+      console.log('❌ resetMapLevel 조건 미충족');
+      console.log('- resetMapLevel:', resetMapLevel);
+      console.log('- webViewRef.current:', !!webViewRef.current);
+      console.log('- isMapInitialized:', isMapInitialized);
     }
   }, [resetMapLevel, isMapInitialized, onResetMapLevelComplete, markers]);
 
@@ -914,8 +995,10 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
         onMessage={(event) => { // WebView 메시지 처리
           try {
             const data = JSON.parse(event.nativeEvent.data);
-            if (data.type === "map_idle" && onMapCenterChange) {
-              onMapCenterChange(data.latitude, data.longitude);
+            if (data.type === "map_idle") {
+              if (onMapIdle) {
+                onMapIdle(data.latitude, data.longitude);
+              }
             }
             if (data.type === "marker_press" && onMarkerPress) {
               onMarkerPress(data.id);
@@ -1013,11 +1096,6 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
 });
 
 const KakaoMap: React.FC<KakaoMapProps> = (props) => {
-  console.log('KakaoMap 컴포넌트 렌더링:', { 
-    platform: Platform.OS, 
-    hasRouteResult: !!props.routeResult,
-    routeResultCoordinates: props.routeResult?.coordinates?.length 
-  });
   
   if (Platform.OS === "web") {
     return <WebKakaoMap {...props} />;

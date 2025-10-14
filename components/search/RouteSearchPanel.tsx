@@ -193,7 +193,7 @@ const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
                 style={styles.resultItem}
                 onPress={() => onEndLocationSelect(result)}
               >
-                <Ionicons name="location" size={16} color="#dc3545" />
+                <Ionicons name="location" size={16} color="#007bff" />
                 <View style={styles.resultContent}>
                   <Text style={styles.resultName}>{result.placeName}</Text>
                   <Text style={styles.resultAddress}>{result.roadAddress}</Text>

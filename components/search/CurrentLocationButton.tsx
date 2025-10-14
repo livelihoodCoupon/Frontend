@@ -71,12 +71,14 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
 
   // 더블클릭 감지 함수
   const handlePress = () => {
+    console.log('CurrentLocationButton handlePress 호출됨');
     const now = Date.now();
     const timeDiff = now - lastPressTime;
     
     if (timeDiff < 300) { // 300ms 이내에 두 번 클릭
       setPressCount(prev => prev + 1);
       if (pressCount === 1) { // 두 번째 클릭
+        console.log('더블클릭 감지됨!');
         if (onDoublePress) {
           onDoublePress();
         }
@@ -84,8 +86,11 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
       }
     } else {
       // 첫 번째 클릭
+      console.log('첫 번째 클릭');
       setPressCount(1);
-      onPress();
+      if (onPress) {
+        onPress();
+      }
     }
     
     setLastPressTime(now);
@@ -98,12 +103,8 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
 
   return (
     <View style={[styles.container, { bottom: getCurrentBottom() }]}>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handlePress}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="locate" size={20} color={COLORS.primary} />
+      <TouchableOpacity style={styles.button} onPress={handlePress}>
+        <Ionicons name="locate" size={20} color="#3690FF" />
       </TouchableOpacity>
     </View>
   );

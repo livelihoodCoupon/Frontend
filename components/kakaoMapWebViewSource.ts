@@ -29,6 +29,18 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
         };
         try {
           map = new kakao.maps.Map(mapContainer, mapOption);
+          
+          // 지도 초기화 후 현재 위치 마커 즉시 생성 (기본 마커)
+          setTimeout(() => {
+            if (map) {
+              const userLocationMarker = new kakao.maps.Marker({
+                position: new kakao.maps.LatLng(lat, lng),
+                zIndex: 101
+              });
+              userLocationMarker.setMap(map);
+              console.log('초기 현재 위치 마커 생성 (기본 마커):', lat, lng);
+            }
+          }, 100);
 
           // markerImages 초기화 로직
           markerImages = {
@@ -44,8 +56,8 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
             ),
             userLocation: new kakao.maps.MarkerImage(
               'MARKER_IMAGE_USER_LOCATION_PLACEHOLDER',
-              new kakao.maps.Size(36, 36),
-              { offset: new kakao.maps.Point(18, 36) }
+              new kakao.maps.Size(28, 28),
+              { offset: new kakao.maps.Point(14, 14) }
             )
           };
 
@@ -70,11 +82,12 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
         });
       }
 
-      function updateMapCenter(lat, lng) {
-        if (map) {
-          map.setCenter(new kakao.maps.LatLng(lat, lng));
-        }
-      }
+function updateMapCenter(lat, lng) {
+  if (map) {
+    const moveLatLon = new kakao.maps.LatLng(lat, lng);
+    map.setCenter(moveLatLon);
+  }
+}
 
 
 
@@ -97,6 +110,9 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', message: 'Map or clusterer not initialized in updateMarkers.' }));
             return;
           }
+          
+          // 현재 마커 데이터를 전역 변수에 저장
+          window.currentMarkers = markersData;
 
           clusterer.clear();
           if (userLocationMarker) {
@@ -107,12 +123,30 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
           const placeMarkersData = markersData.filter(m => m.markerType !== 'userLocation');
 
           if (userLocationData) {
+              console.log('=== 현재 위치 마커 생성 시작 ===');
+              console.log('현재 위치 데이터:', userLocationData);
+              console.log('마커 이미지 URL:', markerImages.userLocation);
+              
+              // 기존 마커 제거
+              if (userLocationMarker) {
+                  userLocationMarker.setMap(null);
+                  console.log('기존 현재 위치 마커 제거');
+              }
+              
+              // 새 마커 생성 (현재 위치 마커 이미지 사용)
               userLocationMarker = new kakao.maps.Marker({
                   position: new kakao.maps.LatLng(userLocationData.lat, userLocationData.lng),
                   image: markerImages.userLocation,
                   zIndex: 101
               });
+              
+              // 마커를 지도에 추가
               userLocationMarker.setMap(map);
+              console.log('현재 위치 마커 지도에 추가 완료');
+              console.log('=== 현재 위치 마커 생성 완료 ===');
+          } else {
+              console.log('현재 위치 데이터 없음');
+              console.log('전체 마커 데이터:', markersData);
           }
 
           if (placeMarkersData && placeMarkersData.length > 0) {

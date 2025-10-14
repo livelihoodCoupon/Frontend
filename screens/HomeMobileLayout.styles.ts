@@ -36,12 +36,12 @@ export const mobileStyles = StyleSheet.create({
   },
   currentLocationButton: {
     position: 'absolute',
-    bottom: 120, // Adjust this value based on your layout
+    bottom: 80, // Adjust this value based on your layout
     right: 20,
     backgroundColor: '#fff',
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -63,5 +63,47 @@ export const mobileStyles = StyleSheet.create({
   searchInAreaButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  routeResultContainer: {
+    position: 'absolute',
+    bottom: 120,
+    left: 80,
+    right: 80,
+    zIndex: 1000,
+  },
+  routeSummaryCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  routeSummaryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  routeSummaryStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  routeSummaryStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  routeSummaryValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  routeSummaryLabel: {
+    fontSize: 12,
+    color: '#666',
   },
 });
