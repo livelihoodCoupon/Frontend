@@ -127,7 +127,9 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   setStartLocationObject,
   endLocationObject,
   setEndLocationObject,
-  }) => {  const routeScrollViewRef = useRef<ScrollView>(null);
+  }) => {
+  const [activeSearchTab, setActiveSearchTab] = useState<'searchResults' | 'nearbyParking'>('searchResults');
+  const routeScrollViewRef = useRef<ScrollView>(null);
 
   const handleLocalSearch = () => {
     onSearch();
@@ -222,22 +224,66 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             </View>
           )}
           <SearchOptionsComponent searchOptions={searchOptions} setSearchOptions={setSearchOptions} />
-          {pagination && searchResults.length > 0 && (
-            <View style={commonStyles.resultCountContainer}>
-              <Text style={commonStyles.resultCountText}>총 {pagination.totalElements}개 결과</Text>
-              {loadingAllMarkers && (
-                <Text style={commonStyles.markerStatusText}>
-                  (전체 마커 로딩중...)
-                </Text>
-              )}
-              {markerCountReachedLimit && (
-                <Text style={commonStyles.markerStatusText}>
-                  (지도에 {allMarkers.length}개만 표시)
-                </Text>
-              )}
-            </View>
-          )}
-          {renderContent()}
+          <View style={commonStyles.subTabContainer}>
+            <TouchableOpacity
+              style={[
+                commonStyles.subTabButton,
+                activeSearchTab === 'searchResults' && commonStyles.activeSubTabButton,
+              ]}
+              onPress={() => setActiveSearchTab('searchResults')}
+            >
+              <Text
+                style={[
+                  commonStyles.subTabButtonText,
+                  activeSearchTab === 'searchResults' && commonStyles.activeSubTabButtonText,
+                ]}
+              >
+                검색 결과
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                commonStyles.subTabButton,
+                activeSearchTab === 'nearbyParking' && commonStyles.activeSubTabButton,
+              ]}
+              onPress={() => setActiveSearchTab('nearbyParking')}
+            >
+              <Text
+                style={[
+                  commonStyles.subTabButtonText,
+                  activeSearchTab === 'nearbyParking' && commonStyles.activeSubTabButtonText,
+                ]}
+              >
+                주변 주차장
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={commonStyles.tabContent}>
+            {activeSearchTab === 'searchResults' ? (
+              <>
+                {pagination && searchResults.length > 0 && (
+                  <View style={commonStyles.resultCountContainer}>
+                    <Text style={commonStyles.resultCountText}>총 {pagination.totalElements}개 결과</Text>
+                    {loadingAllMarkers && (
+                      <Text style={commonStyles.markerStatusText}>
+                        (전체 마커 로딩중...)
+                      </Text>
+                    )}
+                    {markerCountReachedLimit && (
+                      <Text style={commonStyles.markerStatusText}>
+                        (지도에 {allMarkers.length}개만 표시)
+                      </Text>
+                    )}
+                  </View>
+                )}
+                {renderContent()}
+              </>
+            ) : (
+              <View style={commonStyles.parkingLotContent}>
+                <Text style={commonStyles.parkingLotText}>주변 주차장 정보가 여기에 표시됩니다.</Text>
+              </View>
+            )}
+          </View>
         </View>
       ) : (
         <ScrollView
@@ -592,8 +638,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
         </ScrollView>
       )}
     </View>
-  );
-};
+  );};
 
 
 export default SharedSearch;

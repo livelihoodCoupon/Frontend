@@ -289,4 +289,41 @@ export const commonStyles = StyleSheet.create({
     right: 5,
     zIndex: 1,
   },
+  subTabContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  subTabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeSubTabButton: {
+    borderBottomColor: '#3690FF',
+  },
+  subTabButtonText: {
+    fontSize: 16,
+    color: '#B9B9B9',
+  },
+  activeSubTabButtonText: {
+    color: '#3690FF',
+    fontWeight: 'bold',
+  },
+  tabContent: {
+    flex: 1,
+  },
+  parkingLotContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  parkingLotText: {
+    fontSize: 16,
+    color: '#B9B9B9',
+  },
 });
