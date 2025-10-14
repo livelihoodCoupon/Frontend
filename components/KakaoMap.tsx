@@ -39,6 +39,7 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
   selectedMarkerLng,
   onCloseInfoWindow,
   onSetRouteLocation,
+  isMenuOpen,
 }, ref) => {
   console.log('WebKakaoMap 렌더링:', { routeResult: !!routeResult, routeResultCoordinates: routeResult?.coordinates?.length });
   
@@ -699,7 +700,13 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
           );
           const bounds = new window.kakao.maps.LatLngBounds();
           path.forEach(point => bounds.extend(point));
-          mapInstance.current.setBounds(bounds);
+          
+          const SIDE_MENU_WIDTH = 330;
+          if (isMenuOpen) {
+            mapInstance.current.setBounds(bounds, 0, 0, 0, SIDE_MENU_WIDTH);
+          } else {
+            mapInstance.current.setBounds(bounds);
+          }
           console.log('웹 지도 범위 조정 완료');
           
           console.log('웹 경로 표시 완료');

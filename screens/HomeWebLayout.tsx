@@ -261,6 +261,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
                   setTemporarySelectedMarker(null);
                 }}
                 onSetRouteLocation={onSetRouteLocation}
+                isMenuOpen={isMenuOpen}
               />
               {showSearchInAreaButton && (
                 <TouchableOpacity

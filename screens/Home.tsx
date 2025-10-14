@@ -96,7 +96,7 @@ export default function Home() {
 
   const prevIsMenuOpen = usePrevious(isMenuOpen);
 
-  const prevRouteResult = usePrevious(routeResult);
+
 
   const onToggleSidebarCallback = useCallback(() => setIsMenuOpen(true), [setIsMenuOpen]);
 
@@ -196,17 +196,7 @@ export default function Home() {
     }
   }, [isMenuOpen, prevIsMenuOpen, location, selectedPlaceId, routeResult]);
 
-  // Effect to PAN LEFT when a new route is calculated
-  useEffect(() => {
-    // Pan when a new route is calculated and the menu is open
-    if (routeResult && !prevRouteResult && isMenuOpen && Platform.OS === 'web') {
-      const SIDE_MENU_WIDTH = 330;
-      // The setBounds in KakaoMap is also in a timeout, so we need to wait for it.
-      setTimeout(() => {
-        mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
-      }, 150); // A bit longer delay to be safe
-    }
-  }, [routeResult, prevRouteResult, isMenuOpen]);
+
 
 
 
