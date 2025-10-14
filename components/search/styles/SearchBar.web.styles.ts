@@ -14,6 +14,7 @@ export const webStyles = StyleSheet.create({
     paddingVertical: 10,
     marginRight: 8,
     backgroundColor: '#fff',
+    color: '#B9B9B9',
     fontSize: 16,
   },
   searchButton: {
