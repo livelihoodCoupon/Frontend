@@ -1021,7 +1021,7 @@ return (
 );
 });
 
-const KakaoMap: React.FC<KakaoMapProps> = forwardRef<MapHandles, KakaoMapProps>((props, ref) => {
+const KakaoMap = forwardRef<MapHandles, KakaoMapProps>((props, ref) => {
   console.log('KakaoMap 컴포넌트 렌더링:', { 
     platform: Platform.OS, 
     hasRouteResult: !!props.routeResult,

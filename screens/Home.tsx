@@ -16,8 +16,8 @@ import { MarkerData } from "../types/kakaoMap";
 import { MapHandles } from "../components/KakaoMap";
 
 // Helper hook to get the previous value of a prop or state
-const usePrevious = <T>(value: T): T | undefined => {
-  const ref = useRef<T>();
+const usePrevious = <T,>(value: T): T | undefined => {
+  const ref = useRef<T | undefined>(undefined);
   useEffect(() => {
     ref.current = value;
   });
@@ -93,11 +93,7 @@ export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const sideMenuAnimation = useRef(new Animated.Value(0)).current;
-
   const prevIsMenuOpen = usePrevious(isMenuOpen);
-
-
-
   const onToggleSidebarCallback = useCallback(() => setIsMenuOpen(true), [setIsMenuOpen]);
 
   const {
@@ -352,7 +348,7 @@ export default function Home() {
   if (Platform.OS === 'web') {
     return (
       <HomeWebLayout
-        mapRef={mapRef}
+        mapRef={mapRef as React.RefObject<MapHandles>}
         selectedPlaceId={selectedPlaceId}
         setSelectedPlaceId={setSelectedPlaceId}
         showInfoWindow={showInfoWindow}

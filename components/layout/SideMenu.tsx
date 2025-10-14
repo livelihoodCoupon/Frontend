@@ -80,11 +80,9 @@ interface SideMenuProps {
 const SideMenu: React.FC<SideMenuProps> = (props) => {
   const { isOpen, onToggle, style, activeTab, setActiveTab } = props;
 
-  const styles = Platform.OS === 'web' ? webStyles : mobileStyles;
-  const containerStyle = Platform.OS === 'web' ? styles.sideMenuWrapper : styles.sideMenuContainer;
-
-
   if (Platform.OS === 'web') {
+    const styles = webStyles;
+    const containerStyle = styles.sideMenuWrapper;
     return (
       <Animated.View style={[containerStyle, style]}>
         <View style={styles.backgroundBox} />
@@ -105,8 +103,10 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
     );
   }
 
+  const styles = mobileStyles;
+  const containerStyle = styles.sideMenuContainer;
   return (
-    <Animated.View style={[styles.sideMenuContainer, style]}>
+    <Animated.View style={[containerStyle, style]}>
       <TouchableOpacity onPress={onToggle} style={styles.toggleButton}>
         <Ionicons name={isOpen ? "chevron-back" : "chevron-forward"} size={24} color="#495057" />
       </TouchableOpacity>

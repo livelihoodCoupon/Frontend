@@ -176,42 +176,17 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   useEffect(() => {
     if (Platform.OS === 'web') {
       const handleClickOutside = (event: MouseEvent) => {
+        const suggestionsNode = suggestionsContainerRef.current as any;
+        const searchBarNode = searchBarRef.current as any;
+
         if (
-          suggestionsContainerRef.current &&
-          !suggestionsContainerRef.current.contains(event.target as Node) &&
-          searchBarRef.current &&
-          !searchBarRef.current.contains(event.target as Node)
+          suggestionsNode && !suggestionsNode.contains(event.target as Node) &&
+          searchBarNode && !searchBarNode.contains(event.target as Node)
         ) {
           setShowAutocomplete(false);
-          searchBarRef.current.blur(); // Programmatically blur the input
-        }
-      };
-
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [showAutocomplete, setShowAutocomplete]);
-
-  // Effect to trigger search after a recent search item is clicked and state is updated
-  useEffect(() => {
-    if (hasPerformedSearch && searchQuery.trim().length > 0) {
-      onSearch(searchQuery);
-      setHasPerformedSearch(false); // Reset the flag after triggering search
-    }
-  }, [searchQuery, hasPerformedSearch, onSearch]);
-
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          suggestionsContainerRef.current &&
-          !suggestionsContainerRef.current.contains(event.target as Node) &&
-          searchBarRef.current &&
-          !searchBarRef.current.contains(event.target as Node)
-        ) {
-          setShowAutocomplete(false);
+          if (searchBarNode.blur) {
+            searchBarNode.blur();
+          }
         }
       };
 
@@ -307,10 +282,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             }}
             onClearSearch={onClearSearch}
             onFocus={() => setIsSearchBarFocused(true)}
-            onBlur={(e) => {
+            onBlur={(e: any) => {
               if (Platform.OS === 'web') {
                 // Check if the focus is moving to an element within the suggestions container
-                if (e.nativeEvent.relatedTarget && suggestionsContainerRef.current && suggestionsContainerRef.current.contains(e.nativeEvent.relatedTarget as Node)) {
+                const suggestionsNode = suggestionsContainerRef.current as any;
+                if (e.relatedTarget && suggestionsNode && suggestionsNode.contains(e.relatedTarget as Node)) {
                   return; // Do not blur if focus moves to a suggestion item
                 }
               }

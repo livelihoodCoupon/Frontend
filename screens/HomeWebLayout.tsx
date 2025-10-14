@@ -171,7 +171,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   onRecentlyViewedPlaceClick,
 }) => {
   const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
-  const recentlyViewedButtonRef = useRef<TouchableOpacity>(null);
+  const recentlyViewedButtonRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
 
   const searchButtonTranslateX = isMenuOpen ? SIDE_MENU_WIDTH / 2 : 0;
 
