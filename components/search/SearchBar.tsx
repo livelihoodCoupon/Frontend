@@ -24,6 +24,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, onSe
       <TextInput
         style={styles.searchInput}
         placeholder="장소를 검색하세요..."
+        placeholderTextColor="#B9B9B9"
         value={searchQuery}
         onChangeText={setSearchQuery}
         onSubmitEditing={onSearch}

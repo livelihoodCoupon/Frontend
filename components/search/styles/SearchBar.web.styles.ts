@@ -8,7 +8,7 @@ export const webStyles = StyleSheet.create({
   searchInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#F0F0F0',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -17,14 +17,14 @@ export const webStyles = StyleSheet.create({
     fontSize: 16,
   },
   searchButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#F8FAFE',
     paddingHorizontal: 16,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   searchButtonText: {
-    color: '#fff',
+    color: '#3690FF',
     fontWeight: 'bold',
     fontSize: 16,
   },

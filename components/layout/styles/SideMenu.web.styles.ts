@@ -1,16 +1,27 @@
 import { StyleSheet } from "react-native";
 
 export const webStyles = StyleSheet.create({
-  sideMenuContainer: {
+  sideMenuWrapper: {
     width: 330,
     backgroundColor: '#f8f9fa',
-    padding: 16,
     height: '100%',
     position: 'absolute',
     top: 0,
     left: 0,
     zIndex: 10,
     boxShadow: '5px 0px 6px rgba(0,0,0,0.25)',
+  },
+  backgroundBox: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: 140,
+    backgroundColor: '#3690FF',
+  },
+  sideMenuContent: {
+    padding: 16,
+    height: '100%',
   },
   toggleButton: {
     position: 'absolute',

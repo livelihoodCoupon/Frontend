@@ -76,6 +76,25 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
   const { isOpen, onToggle, style, activeTab, setActiveTab } = props;
 
   const styles = Platform.OS === 'web' ? webStyles : mobileStyles;
+  const containerStyle = Platform.OS === 'web' ? styles.sideMenuWrapper : styles.sideMenuContainer;
+
+
+  if (Platform.OS === 'web') {
+    return (
+      <Animated.View style={[containerStyle, style]}>
+        <View style={styles.backgroundBox} />
+        <TouchableOpacity onPress={onToggle} style={styles.toggleButton}>
+          <Ionicons name={isOpen ? "chevron-back" : "chevron-forward"} size={24} color="#495057" />
+        </TouchableOpacity>
+        <View style={styles.sideMenuContent}>
+          <SharedSearch
+            isWebView={true}
+            {...props}
+          />
+        </View>
+      </Animated.View>
+    );
+  }
 
   return (
     <Animated.View style={[styles.sideMenuContainer, style]}>

@@ -29,9 +29,9 @@ export const commonStyles = StyleSheet.create({
   },
   tabHeader: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginHorizontal: 0,
     borderBottomWidth: 1,
-    borderBottomColor: '#dee2e6',
+    borderBottomColor: '#F0F0F0',
   },
   tabButton: {
     flex: 1,
@@ -40,20 +40,19 @@ export const commonStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
   },
   activeTabButton: {
-    borderBottomColor: '#007bff',
+    backgroundColor: '#F8FAFE',
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
   tabButtonText: {
     marginLeft: 6,
     fontSize: 16,
-    color: '#6c757d',
     fontWeight: '500',
   },
   activeTabButtonText: {
-    color: '#007bff',
+    color: '#3690FF',
     fontWeight: '600',
   },
   searchTabContent: {
@@ -70,7 +69,8 @@ export const commonStyles = StyleSheet.create({
   },
   transportModeWrapper: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 30,
   },
   transportModeContainer: {
     flexDirection: 'row',
@@ -79,22 +79,6 @@ export const commonStyles = StyleSheet.create({
     marginTop: -10,
     paddingHorizontal: 16,
     width: '100%',
-  },
-  transportModeButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 4,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    minWidth: 45,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  transportModeButtonSelected: {
-    backgroundColor: '#e3f2fd',
-    borderColor: '#007bff',
-    borderWidth: 2,
   },
   transportModeButtonDisabled: {
     backgroundColor: '#f5f5f5',
@@ -108,12 +92,12 @@ export const commonStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(248, 250, 254, 0.9)',
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: '#B9B9B9',
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   routeInputWrapper: {
     flex: 1,
