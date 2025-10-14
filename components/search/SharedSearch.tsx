@@ -131,13 +131,15 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   setEndLocationObject,
   }) => {
   const [activeSearchTab, setActiveSearchTab] = useState<'searchResults' | 'nearbyParking'>('searchResults');
+  const [hasPerformedSearch, setHasPerformedSearch] = useState(false); // New state to track if a search has been performed
   const routeScrollViewRef = useRef<ScrollView>(null);
   const searchBarRef = useRef<TextInput>(null); // Ref for the SearchBar's TextInput
   const suggestionsContainerRef = useRef<View>(null); // Ref for the suggestions container
 
   const handleLocalSearch = () => {
     onSearch();
-    setShowAutocomplete(false);
+    setShowAutocomplete(false); // Unconditionally hide autocomplete on final search
+    setHasPerformedSearch(true); // Mark that a search has been performed
   };
 
   useEffect(() => {
@@ -228,6 +230,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               setSearchQuery(text);
               if (text.length > 0) {
                 setShowAutocomplete(true); // Show autocomplete as user types
+                setHasPerformedSearch(false); // Reset search performed flag
               } else {
                 setShowAutocomplete(false); // Hide autocomplete if query is empty
               }
@@ -236,7 +239,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             onSearch={handleLocalSearch}
             onClearSearch={onClearSearch}
           />
-          {showAutocomplete && autocompleteSuggestions.length > 0 && (
+          {showAutocomplete && !hasPerformedSearch && autocompleteSuggestions.length > 0 && (
             <View ref={suggestionsContainerRef} style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
               <FlatList
                 data={autocompleteSuggestions}
