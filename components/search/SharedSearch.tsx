@@ -127,8 +127,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   setStartLocationObject,
   endLocationObject,
   setEndLocationObject,
-}) => {
-  const routeScrollViewRef = useRef<ScrollView>(null);
+  }) => {  const routeScrollViewRef = useRef<ScrollView>(null);
 
   const handleLocalSearch = () => {
     onSearch();

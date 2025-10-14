@@ -6,7 +6,6 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSharedSearch } from '../../hooks/useSharedSearch';
 import SharedSearch from '../search/SharedSearch';
 import { SearchResult, SearchOptions } from '../../types/search';
 import { PageResponse } from '../../types/api';
@@ -36,24 +35,45 @@ interface SideMenuProps {
   pagination: Omit<PageResponse<any>, 'content'> | null;
   onSetRouteLocation?: (type: 'departure' | 'arrival', placeInfo: SearchResult) => void;
   onOpenSidebar?: () => void;
-  routeResult?: any;
-  isRouteLoading?: boolean;
-  routeError?: string | null;
-  startRoute?: any;
-  clearRoute?: () => void;
+  routeResult: any;
+  isRouteLoading: boolean;
+  routeError: string | null;
+  startRoute: any;
+  clearRoute: () => void;
+  activeTab: 'search' | 'route';
+  setActiveTab: (tab: 'search' | 'route') => void; // Add setActiveTab here
+  // Props from useSharedSearch that are now passed directly
+  startLocation: string;
+  setStartLocation: (location: string) => void;
+  endLocation: string;
+  setEndLocation: (location: string) => void;
+  startLocationResults: SearchResult[];
+  endLocationResults: SearchResult[];
+  isSearchingStart: boolean;
+  isSearchingEnd: boolean;
+  showStartResults: boolean;
+  setShowStartResults: (show: boolean) => void;
+  showEndResults: boolean;
+  setShowEndResults: (show: boolean) => void;
+  selectedTransportMode: 'driving' | 'transit' | 'walking' | 'cycling';
+  setSelectedTransportMode: (mode: 'driving' | 'transit' | 'walking' | 'cycling') => void;
+  autocompleteSuggestions: any[]; // Adjust type as needed
+  showAutocomplete: boolean;
+  setShowAutocomplete: (show: boolean) => void;
+  debouncedAutocomplete: (query: string) => void;
+  debouncedSearchStartLocation: (query: string) => void;
+  debouncedSearchEndLocation: (query: string) => void;
+  handleTextEdit: () => void;
+  searchLocation: { lat: number; lng: number };
+  location: { latitude: number; longitude: number } | null;
+  startLocationObject: SearchResult | null;
+  setStartLocationObject: (loc: SearchResult | null) => void;
+  endLocationObject: SearchResult | null;
+  setEndLocationObject: (loc: SearchResult | null) => void;
 }
 
 const SideMenu: React.FC<SideMenuProps> = (props) => {
-  const { isOpen, onToggle, style } = props;
-
-  const sharedSearchProps = useSharedSearch(
-    props.routeResult,
-    props.isRouteLoading,
-    props.routeError,
-    props.startRoute,
-    props.clearRoute,
-    props.onOpenSidebar || props.onToggle
-  );
+  const { isOpen, onToggle, style, activeTab, setActiveTab } = props;
 
   const styles = Platform.OS === 'web' ? webStyles : mobileStyles;
 
@@ -65,7 +85,6 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
       <SharedSearch
         isWebView={true}
         {...props}
-        {...sharedSearchProps}
       />
     </Animated.View>
   );

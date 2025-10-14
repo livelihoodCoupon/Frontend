@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSharedSearch } from '../../hooks/useSharedSearch';
 import SharedSearch from './SharedSearch';
 import { SearchResult, SearchOptions } from '../../types/search';
 import { PageResponse } from '../../types/api';
@@ -18,6 +17,7 @@ import { commonStyles } from './styles/CustomBottomSheet.common.styles';
 import { webStyles } from './styles/CustomBottomSheet.web.styles';
 import { mobileStyles } from './styles/CustomBottomSheet.mobile.styles';
 
+// Dummy comment to force re-evaluation
 
 interface CustomBottomSheetProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ interface CustomBottomSheetProps {
   searchResults: SearchResult[];
   allMarkers: SearchResult[];
   isLoading: boolean;
-  errorMsg?: string | null;
+  errorMsg: string | null;
   onSelectResult: (item: SearchResult) => void;
   searchOptions: SearchOptions;
   setSearchOptions: (options: Partial<SearchOptions>) => void;
@@ -38,15 +38,45 @@ interface CustomBottomSheetProps {
   onNextPage: () => void;
   pagination: Omit<PageResponse<any>, 'content'> | null;
   onSetRouteLocation?: (type: 'departure' | 'arrival', placeInfo: SearchResult) => void;
-  routeResult?: RouteResult | null;
-  isRouteLoading?: boolean;
-  routeError?: string | null;
-  startRoute?: any;
-  clearRoute?: () => void;
+  routeResult: RouteResult | null;
+  isRouteLoading: boolean;
+  routeError: string | null;
+  startRoute: any;
+  clearRoute: () => void;
+  activeTab: 'search' | 'route';
+  setActiveTab: (tab: 'search' | 'route') => void;
+  // Props from useSharedSearch that are now passed directly
+  startLocation: string;
+  setStartLocation: (location: string) => void;
+  endLocation: string;
+  setEndLocation: (location: string) => void;
+  startLocationResults: SearchResult[];
+  endLocationResults: SearchResult[];
+  isSearchingStart: boolean;
+  isSearchingEnd: boolean;
+  showStartResults: boolean;
+  setShowStartResults: (show: boolean) => void;
+  showEndResults: boolean;
+  setShowEndResults: (show: boolean) => void;
+  selectedTransportMode: 'driving' | 'transit' | 'walking' | 'cycling';
+  setSelectedTransportMode: (mode: 'driving' | 'transit' | 'walking' | 'cycling') => void;
+  autocompleteSuggestions: any[]; // Adjust type as needed
+  showAutocomplete: boolean;
+  setShowAutocomplete: (show: boolean) => void;
+  debouncedAutocomplete: (query: string) => void;
+  debouncedSearchStartLocation: (query: string) => void;
+  debouncedSearchEndLocation: (query: string) => void;
+  handleTextEdit: () => void;
+  searchLocation: { lat: number; lng: number };
+  location: { latitude: number; longitude: number } | null;
+  startLocationObject: SearchResult | null;
+  setStartLocationObject: (loc: SearchResult | null) => void;
+  endLocationObject: SearchResult | null;
+  setEndLocationObject: (loc: SearchResult | null) => void;
 }
 
 const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
-  const { isOpen, onToggle } = props;
+  const { isOpen, onToggle, activeTab, setActiveTab } = props;
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
   const USABLE_SCREEN_HEIGHT = SCREEN_HEIGHT - insets.bottom;
@@ -56,15 +86,6 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
 
   const bottomSheetAnimation = useRef(new Animated.Value(BOTTOM_SHEET_HEIGHT - CLOSED_HEIGHT)).current;
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-
-  const sharedSearchProps = useSharedSearch(
-    props.routeResult,
-    props.isRouteLoading,
-    props.routeError,
-    props.startRoute,
-    props.clearRoute,
-    props.onToggle
-  );
 
   useEffect(() => {
     Animated.timing(bottomSheetAnimation, {
@@ -96,7 +117,13 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
     };
   }, []);
 
-  const hasSearchResults = sharedSearchProps.showStartResults || sharedSearchProps.showEndResults;
+  // This logic needs to be re-evaluated as sharedSearchProps is no longer available
+  // const hasSearchResults = sharedSearchProps.showStartResults || sharedSearchProps.showEndResults;
+  // const baseHeight = hasSearchResults ? EXPANDED_BOTTOM_SHEET_HEIGHT : BOTTOM_SHEET_HEIGHT;
+  // const dynamicHeight = baseHeight + keyboardHeight;
+
+  // For now, let's use a simpler height calculation or rely on props if available
+  const hasSearchResults = props.showStartResults || props.showEndResults; // Use props directly
   const baseHeight = hasSearchResults ? EXPANDED_BOTTOM_SHEET_HEIGHT : BOTTOM_SHEET_HEIGHT;
   const dynamicHeight = baseHeight + keyboardHeight;
 
@@ -135,7 +162,6 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
         <SharedSearch
           isWebView={false}
           {...props}
-          {...sharedSearchProps}
         />
       )}
     </Animated.View>

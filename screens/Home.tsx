@@ -8,6 +8,7 @@ import { usePlaceStore } from "../store/placeStore";
 import { useCurrentLocation } from "../hooks/useCurrentLocation";
 import { useSearch } from "../hooks/useSearch";
 import { useRoute } from "../hooks/useRoute";
+import { useSharedSearch } from "../hooks/useSharedSearch"; // Import useSharedSearch
 import HomeWebLayout from "./HomeWebLayout";
 import HomeMobileLayout from "./HomeMobileLayout";
 import { SearchResult } from "../types/search";
@@ -83,6 +84,48 @@ export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(true); // 사이드메뉴 열림/닫힘 상태
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false); // 모바일 하단 시트 상태
   const sideMenuAnimation = useRef(new Animated.Value(0)).current; // 사이드메뉴 애니메이션
+
+  const onToggleSidebarCallback = useCallback(() => setIsMenuOpen(true), [setIsMenuOpen]);
+
+  // useSharedSearch 훅에서 activeTab 가져오기
+  const {
+    activeTab,
+    setActiveTab,
+    startLocation,
+    setStartLocation,
+    endLocation,
+    setEndLocation,
+    startLocationResults,
+    endLocationResults,
+    isSearchingStart,
+    isSearchingEnd,
+    showStartResults,
+    setShowStartResults,
+    showEndResults,
+    setShowEndResults,
+    selectedTransportMode,
+    setSelectedTransportMode,
+    autocompleteSuggestions,
+    showAutocomplete,
+    setShowAutocomplete,
+    debouncedAutocomplete,
+    debouncedSearchStartLocation,
+    debouncedSearchEndLocation,
+    handleTextEdit,
+    searchLocation: sharedSearchLocation,
+    location: sharedSearchLocationFromHook,
+    startLocationObject,
+    setStartLocationObject,
+    endLocationObject,
+    setEndLocationObject,
+  } = useSharedSearch(
+    routeResult,
+    isRouteLoading,
+    routeError,
+    startRoute,
+    clearRoute,
+    onToggleSidebarCallback // onToggleSidebar
+  );
 
   // UI 상태 관리
   const [showSearchInAreaButton, setShowSearchInAreaButton] = useState(false);
@@ -212,14 +255,19 @@ export default function Home() {
     // InfoWindow에서 선택된 장소 정보를 길찾기 탭으로 전달
     // 이 함수는 KakaoMap에서 호출될 예정
     console.log('Route location set:', type, placeInfo);
+    // useSharedSearch 훅에서 정의된 전역 함수를 호출하여 탭을 변경하고 길찾기 정보를 설정
+    if (window && (window as any).setRouteLocationFromInfoWindow) {
+      (window as any).setRouteLocationFromInfoWindow(type, placeInfo);
+    }
   }, []);
 
   // 로딩 및 에러 상태 계산
   const isLoading = locationLoading || searchLoading;
   const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
 
-  const markers = useMemo(() => {
-    return [
+  // activeTab에 따라 markers와 routeResult를 조건부로 설정
+  const mapMarkers = useMemo(() => {
+    return activeTab === 'search' ? [
       ...(location ? [{
         placeId: "user-location",
         placeName: "내 위치",
@@ -240,8 +288,12 @@ export default function Home() {
         placeUrl: marker.placeUrl,
         markerType: marker.placeId === selectedPlaceId ? 'selected' : 'default'
       }))
-    ];
-  }, [location, allMarkers, selectedPlaceId]);
+    ] : [];
+  }, [activeTab, location, allMarkers, selectedPlaceId]);
+
+  const mapRouteResult = useMemo(() => {
+    return activeTab === 'route' ? routeResult : null;
+  }, [activeTab, routeResult]);
 
   // 플랫폼에 따라 적절한 레이아웃 렌더링
   if (Platform.OS === 'web') {
@@ -256,7 +308,7 @@ export default function Home() {
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
         onMapIdle={handleMapIdle}
-        markers={markers}
+        markers={mapMarkers} // Use mapMarkers
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
         sideMenuAnimation={sideMenuAnimation}
@@ -278,13 +330,42 @@ export default function Home() {
         pagination={pagination}
         onSetRouteLocation={handleSetRouteLocation}
         onOpenSidebar={() => setIsMenuOpen(true)}
-        routeResult={routeResult}
+        routeResult={mapRouteResult} // Use mapRouteResult
         isRouteLoading={isRouteLoading}
         routeError={routeError}
         startRoute={startRoute}
         clearRoute={clearRoute}
         showSearchInAreaButton={showSearchInAreaButton}
         handleSearchInArea={handleSearchInArea}
+        activeTab={activeTab} // Pass activeTab
+        setActiveTab={setActiveTab} // Pass setActiveTab
+        startLocation={startLocation}
+        setStartLocation={setStartLocation}
+        endLocation={endLocation}
+        setEndLocation={setEndLocation}
+        startLocationResults={startLocationResults}
+        endLocationResults={endLocationResults}
+        isSearchingStart={isSearchingStart}
+        isSearchingEnd={isSearchingEnd}
+        showStartResults={showStartResults}
+        setShowStartResults={setShowStartResults}
+        showEndResults={showEndResults}
+        setShowEndResults={setShowEndResults}
+        selectedTransportMode={selectedTransportMode}
+        setSelectedTransportMode={setSelectedTransportMode}
+        autocompleteSuggestions={autocompleteSuggestions}
+        showAutocomplete={showAutocomplete}
+        setShowAutocomplete={setShowAutocomplete}
+        debouncedAutocomplete={debouncedAutocomplete}
+        debouncedSearchStartLocation={debouncedSearchStartLocation}
+        debouncedSearchEndLocation={debouncedSearchEndLocation}
+        handleTextEdit={handleTextEdit}
+        searchLocation={sharedSearchLocation}
+        sharedSearchLocationFromHook={sharedSearchLocationFromHook}
+        startLocationObject={startLocationObject}
+        setStartLocationObject={setStartLocationObject}
+        endLocationObject={endLocationObject}
+        setEndLocationObject={setEndLocationObject}
       />
     );
   } else {
@@ -299,7 +380,7 @@ export default function Home() {
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
         onMapIdle={handleMapIdle}
-        markers={markers}
+        markers={mapMarkers} // Use mapMarkers
         bottomSheetOpen={bottomSheetOpen}
         setBottomSheetOpen={setBottomSheetOpen}
         searchQuery={searchQuery}
@@ -320,13 +401,42 @@ export default function Home() {
         pagination={pagination}
         onSetRouteLocation={handleSetRouteLocation}
         onOpenSidebar={() => setIsMenuOpen(true)}
-        routeResult={routeResult}
+        routeResult={mapRouteResult} // Use mapRouteResult
         isRouteLoading={isRouteLoading}
         routeError={routeError}
         startRoute={startRoute}
         clearRoute={clearRoute}
         showSearchInAreaButton={showSearchInAreaButton}
         handleSearchInArea={handleSearchInArea}
+        activeTab={activeTab} // Pass activeTab
+        setActiveTab={setActiveTab} // Pass setActiveTab
+        startLocation={startLocation}
+        setStartLocation={setStartLocation}
+        endLocation={endLocation}
+        setEndLocation={setEndLocation}
+        startLocationResults={startLocationResults}
+        endLocationResults={endLocationResults}
+        isSearchingStart={isSearchingStart}
+        isSearchingEnd={isSearchingEnd}
+        showStartResults={showStartResults}
+        setShowStartResults={setShowStartResults}
+        showEndResults={showEndResults}
+        setShowEndResults={setShowEndResults}
+        selectedTransportMode={selectedTransportMode}
+        setSelectedTransportMode={setSelectedTransportMode}
+        autocompleteSuggestions={autocompleteSuggestions}
+        showAutocomplete={showAutocomplete}
+        setShowAutocomplete={setShowAutocomplete}
+        debouncedAutocomplete={debouncedAutocomplete}
+        debouncedSearchStartLocation={debouncedSearchStartLocation}
+        debouncedSearchEndLocation={debouncedSearchEndLocation}
+        handleTextEdit={handleTextEdit}
+        searchLocation={sharedSearchLocation}
+        sharedSearchLocationFromHook={sharedSearchLocationFromHook}
+        startLocationObject={startLocationObject}
+        setStartLocationObject={setStartLocationObject}
+        endLocationObject={endLocationObject}
+        setEndLocationObject={setEndLocationObject}
       />
     );
   }
