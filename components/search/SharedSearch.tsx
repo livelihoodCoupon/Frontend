@@ -25,7 +25,7 @@ interface SharedSearchProps {
   isWebView: boolean;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  onSearch: () => void;
+  onSearch: (query?: string) => void;
   onClearSearch: () => void; // New prop
   searchResults: SearchResult[];
   allMarkers: SearchResult[];
@@ -172,14 +172,37 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
     loadRecentSearches();
   }, []); // Load on mount
 
-  const handleLocalSearch = () => {
-    onSearch();
-    setShowAutocomplete(false); // Unconditionally hide autocomplete on final search
-    setHasPerformedSearch(true); // Mark that a search has been performed
-    if (searchQuery.trim().length > 0) {
-      addRecentSearch(searchQuery.trim()); // Add to recent searches
+  useEffect(() => {
+    loadRecentSearches();
+  }, []); // Load on mount
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          suggestionsContainerRef.current &&
+          !suggestionsContainerRef.current.contains(event.target as Node) &&
+          searchBarRef.current &&
+          !searchBarRef.current.contains(event.target as Node)
+        ) {
+          setShowAutocomplete(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
-  };
+  }, [showAutocomplete, setShowAutocomplete]);
+
+  // Effect to trigger search after a recent search item is clicked and state is updated
+  useEffect(() => {
+    if (hasPerformedSearch && searchQuery.trim().length > 0) {
+      onSearch(searchQuery);
+      setHasPerformedSearch(false); // Reset the flag after triggering search
+    }
+  }, [searchQuery, hasPerformedSearch, onSearch]);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -275,7 +298,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               }
               debouncedAutocomplete(text);
             }}
-            onSearch={handleLocalSearch}
+            onSearch={() => handleLocalSearch()} // Wrap in anonymous function
             onClearSearch={onClearSearch}
             onFocus={() => setIsSearchBarFocused(true)}
             onBlur={(e) => {
@@ -299,16 +322,16 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                     data={recentSearches}
                     keyExtractor={(item, index) => `recent-${item}-${index}`}
                     renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={commonStyles.suggestionItem}
-                        onPress={() => {
-                          setSearchQuery(item);
-                          handleLocalSearch(); // Perform search with recent item
-                          setShowAutocomplete(false);
-                        }}
-                      >
-                        <Text>{item}</Text>
-                        <TouchableOpacity
+                                                                                              <TouchableOpacity
+                                                                                                style={commonStyles.suggestionItem}
+                                                                                                onPress={() => {
+                                                                                                  setSearchQuery(item);
+                                                                                                  addRecentSearch(item); // Add to recent searches immediately
+                                                                                                  setHasPerformedSearch(true); // Mark that a search has been performed
+                                                                                                  setShowAutocomplete(false);
+                                                                                                }}
+                                                                                              >
+                                                                                                <Text>{item}</Text>                        <TouchableOpacity
                           onPress={() => removeRecentSearch(item)}
                           style={commonStyles.removeRecentSearchButton}
                         >
