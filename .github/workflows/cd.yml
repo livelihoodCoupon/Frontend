@@ -2,9 +2,9 @@ name: Frontend CD (App)
 
 on:
   push:
-    branches: [ "feature/3_deploy" ]
-#  pull_request:
-#    branches: [ "feature/3_deploy" ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   deploy:
