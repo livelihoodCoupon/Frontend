@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export const webStyles = StyleSheet.create({
   sideMenuContainer: {
-    width: 350,
+    width: 330,
     backgroundColor: '#f8f9fa',
     padding: 16,
     height: '100%',

@@ -15,7 +15,6 @@ const SearchOptionsComponent: React.FC<Props> = ({ searchOptions, setSearchOptio
   return (
     <View style={[commonStyles.container, platformStyles.container]}>
       <View style={[commonStyles.optionGroup, platformStyles.optionGroup]}>
-        <Text style={[commonStyles.label, platformStyles.label]}>정렬</Text>
         <View style={[commonStyles.buttonGroup, platformStyles.buttonGroup]}>
           {[
             { label: '거리순', value: 'distance' },

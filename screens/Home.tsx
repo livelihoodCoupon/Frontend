@@ -128,7 +128,7 @@ export default function Home() {
 
   // 사이드메뉴 애니메이션 처리
   useEffect(() => {
-    const SIDEMENU_WIDTH = 350; // 사이드메뉴 너비 상수
+    const SIDEMENU_WIDTH = 330; // 사이드메뉴 너비 상수
     Animated.timing(sideMenuAnimation, {
       toValue: isMenuOpen ? 0 : -SIDEMENU_WIDTH,
       duration: 300,
