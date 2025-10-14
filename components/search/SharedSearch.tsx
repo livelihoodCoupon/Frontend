@@ -322,18 +322,20 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                     data={recentSearches}
                     keyExtractor={(item, index) => `recent-${item}-${index}`}
                     renderItem={({ item }) => (
-                                                                                              <TouchableOpacity
-                                                                                                style={commonStyles.suggestionItem}
-                                                                                                onPress={() => {
-                                                                                                  setSearchQuery(item);
-                                                                                                  addRecentSearch(item); // Add to recent searches immediately
-                                                                                                  setHasPerformedSearch(true); // Mark that a search has been performed
-                                                                                                  setShowAutocomplete(false);
-                                                                                                }}
-                                                                                              >
-                                                                                                <Text>{item}</Text>                        <TouchableOpacity
-                          onPress={() => removeRecentSearch(item)}
-                          style={commonStyles.removeRecentSearchButton}
+
+                        <TouchableOpacity
+                            style={commonStyles.suggestionItem}
+                            onPress={() => {
+                                setSearchQuery(item);
+                                addRecentSearch(item); // Add to recent searches immediately
+                                setHasPerformedSearch(true); // Mark that a search has been performed
+                                setShowAutocomplete(false);
+                            }}
+                        >
+                        <Text>{item}</Text>
+                        <TouchableOpacity
+                            onPress={() => removeRecentSearch(item)}
+                            style={commonStyles.removeRecentSearchButton}
                         >
                           <Ionicons name="close-circle-outline" size={18} color="#B9B9B9" />
                         </TouchableOpacity>
