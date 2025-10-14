@@ -24,6 +24,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
 export interface MapHandles {
   panBy: (dx: number, dy: number) => void;
   panTo: (lat: number, lng: number, offsetX: number, offsetY: number) => void;
+  getCoordsFromOffset: (lat: number, lng: number, offsetX: number, offsetY: number) => Promise<{ lat: number; lng: number }>;
 }
 
 const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
@@ -75,6 +76,21 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
         const newCoords = projection.coordsFromPoint(point);
         map.setCenter(newCoords);
       }
+    },
+    getCoordsFromOffset: (lat, lng, offsetX, offsetY) => {
+      return new Promise((resolve) => {
+        if (mapInstance.current) {
+          const map = mapInstance.current;
+          const projection = map.getProjection();
+          const point = projection.pointFromCoords(new window.kakao.maps.LatLng(lat, lng));
+          point.x += offsetX;
+          point.y += offsetY;
+          const newCoords = projection.coordsFromPoint(point);
+          resolve({ lat: newCoords.getLat(), lng: newCoords.getLng() });
+        } else {
+          resolve({ lat, lng }); // Fallback
+        }
+      });
     },
   }));
 

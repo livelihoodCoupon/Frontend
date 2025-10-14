@@ -157,7 +157,12 @@ export default function Home() {
 
   useEffect(() => {
     if (searchCenter) {
-      setMapCenter({ latitude: searchCenter.lat, longitude: searchCenter.lng });
+      const SIDE_MENU_WIDTH = 330;
+      if (isMenuOpen && Platform.OS === 'web') {
+        mapRef.current?.panTo(searchCenter.lat, searchCenter.lng, SIDE_MENU_WIDTH / 2, 0);
+      } else {
+        setMapCenter({ latitude: searchCenter.lat, longitude: searchCenter.lng });
+      }
     }
   }, [searchCenter, setMapCenter]);
 
@@ -184,33 +189,28 @@ export default function Home() {
     }).start();
   }, [isMenuOpen]);
 
-  // Effect to PAN LEFT when the side menu is opened
+  // Effect to handle map panning when the side menu opens or closes
   useEffect(() => {
-    const focusPointExists = location || selectedPlaceId || routeResult;
-    // Only pan when the menu is *opened* (was closed, now open)
-    if (isMenuOpen && !prevIsMenuOpen && focusPointExists && Platform.OS === 'web') {
-        const SIDE_MENU_WIDTH = 330;
-        setTimeout(() => {
-            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
-        }, 100); // Delay to ensure map has centered
+    const focusPointExists = showInfoWindow || !!routeResult || !!location;
+    if (!focusPointExists || Platform.OS !== 'web') {
+      return;
     }
-  }, [isMenuOpen, prevIsMenuOpen, location, selectedPlaceId, routeResult]);
 
+    const SIDE_MENU_WIDTH = 330;
 
-
-
-
-  // Effect to PAN RIGHT when focus is lost or menu closes
-  const wasPanned = usePrevious(isMenuOpen && (showInfoWindow || !!routeResult || !!location));
-  useEffect(() => {
-      const isPanned = isMenuOpen && (showInfoWindow || !!routeResult || !!location) && Platform.OS === 'web';
-      if (wasPanned && !isPanned) {
-          const SIDE_MENU_WIDTH = 330;
-          setTimeout(() => {
-              mapRef.current?.panBy(SIDE_MENU_WIDTH / 2, 0);
-          }, 50);
-      }
-  }, [isMenuOpen, showInfoWindow, routeResult, location]);
+    // Menu was just opened
+    if (isMenuOpen && !prevIsMenuOpen) {
+      setTimeout(() => {
+        mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
+      }, 100);
+    } 
+    // Menu was just closed
+    else if (!isMenuOpen && prevIsMenuOpen) {
+      setTimeout(() => {
+        mapRef.current?.panBy(SIDE_MENU_WIDTH / 2, 0);
+      }, 50);
+    }
+  }, [isMenuOpen, prevIsMenuOpen, showInfoWindow, routeResult, location]);
 
 
   const handleSearch = useCallback(async () => {
@@ -224,16 +224,38 @@ export default function Home() {
       alert("현재 위치 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
-    await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude);
+
+    let searchLat = mapCenter.latitude;
+    let searchLng = mapCenter.longitude;
+    const SIDE_MENU_WIDTH = 330;
+
+    if (isMenuOpen && Platform.OS === 'web' && mapRef.current) {
+      const newCoords = await mapRef.current.getCoordsFromOffset(mapCenter.latitude, mapCenter.longitude, SIDE_MENU_WIDTH / 2, 0);
+      searchLat = newCoords.lat;
+      searchLng = newCoords.lng;
+    }
+
+    await performSearch(searchLat, searchLng, location.latitude, location.longitude);
 
     setBottomSheetOpen(true);
-  }, [mapCenter, location, performSearch]);
+  }, [mapCenter, location, performSearch, isMenuOpen]);
 
   const handleSearchInArea = useCallback(async () => {
     if (!mapCenter || !location) return;
     setShowSearchInAreaButton(false);
-    await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude, true);
-  }, [mapCenter, location, performSearch]);
+
+    let searchLat = mapCenter.latitude;
+    let searchLng = mapCenter.longitude;
+    const SIDE_MENU_WIDTH = 330;
+
+    if (isMenuOpen && Platform.OS === 'web' && mapRef.current) {
+      const newCoords = await mapRef.current.getCoordsFromOffset(mapCenter.latitude, mapCenter.longitude, SIDE_MENU_WIDTH / 2, 0);
+      searchLat = newCoords.lat;
+      searchLng = newCoords.lng;
+    }
+
+    await performSearch(searchLat, searchLng, location.latitude, location.longitude, true);
+  }, [mapCenter, location, performSearch, isMenuOpen]);
 
   const handleMapIdle = useCallback((lat: number, lng: number) => {
     setMapCenter({ latitude: lat, longitude: lng });
