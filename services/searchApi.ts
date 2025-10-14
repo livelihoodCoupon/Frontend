@@ -1,6 +1,6 @@
 import apiClient from './apiClient';
 import axios from 'axios';
-import { SearchResult } from '../types/search';
+import { AutocompleteResponse, SearchResult } from '../types/search';
 import { ApiResponse, PageResponse } from '../types/api';
 import { ApiError } from '../utils/errors';
 
@@ -26,9 +26,14 @@ export const searchPlaces = async (
   userLng: number, // 사용자 실제 경도
 ): Promise<PageResponse<SearchResult>> => {
   try {
-        const response = await apiClient.get<ApiResponse<PageResponse<SearchResult>>>('/api/searches', {
+    console.log('Searching places with params:', { query, lat, lng, radius, sort, page, userLat, userLng });
+    
+    // Axios가 자동으로 URL 인코딩을 처리하도록 원본 문자열 전달
+    console.log('원본 쿼리:', query);
+    
+    const response = await apiClient.get<ApiResponse<PageResponse<SearchResult>>>('/api/searches', {
       params: {
-        query,
+        query: query, // Axios가 자동으로 URL 인코딩 처리
         lat,
         lng,
         radius,
@@ -38,6 +43,8 @@ export const searchPlaces = async (
         userLng: userLng,
       },
     });
+    
+    console.log('API Response:', response.status, response.data);
 
     const payload = response.data;
 
@@ -52,10 +59,25 @@ export const searchPlaces = async (
     return payload.data;
 
   } catch (error) {
+    console.error('Search API error:', error);
     if (axios.isAxiosError(error)) {
-      throw new ApiError(error.response?.data?.error?.message || 'An unknown error occurred', error.response?.status || 500, error.response?.data?.error);
+      const statusCode = error.response?.status || 500;
+      
+      // 네트워크 오류인 경우
+      if (error.code === 'NETWORK_ERROR' || error.code === 'ECONNREFUSED') {
+        throw new ApiError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.', 0);
+      }
+      
+      // API URL이 설정되지 않은 경우
+      if (error.message.includes('baseURL') || error.message.includes('API_BASE_URL')) {
+        throw new ApiError('API 설정이 올바르지 않습니다. 개발자에게 문의해주세요.', 500);
+      }
+      
+      const errorMessage = error.response?.data?.error?.message || 
+        (statusCode === 500 ? '서버에서 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' : '검색 중 오류가 발생했습니다.');
+      throw new ApiError(errorMessage, statusCode, error.response?.data?.error);
     }
-    throw new ApiError('An unknown error occurred during search', 500);
+    throw new ApiError('검색 중 알 수 없는 오류가 발생했습니다.', 500);
   }
 };
 
@@ -69,9 +91,11 @@ export const getAutocompleteSuggestions = async (
   query: string,
 ): Promise<AutocompleteResponse[]> => {
   try {
+    console.log('Getting autocomplete suggestions for:', query);
+    
     const response = await apiClient.get<ApiResponse<AutocompleteResponse[]>>('/api/suggestions', {
       params: {
-        word: query,
+        word: query, // Axios가 자동으로 URL 인코딩 처리
       },
     });
 
@@ -89,6 +113,16 @@ export const getAutocompleteSuggestions = async (
 
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      // 404 에러인 경우 빈 배열 반환 (자동완성 서비스가 없을 때)
+      if (error.response?.status === 404) {
+        console.warn('Autocomplete API not available (404)');
+        return [];
+      }
+      // 400 에러인 경우도 빈 배열 반환 (자동완성 데이터가 없을 때)
+      if (error.response?.status === 400) {
+        console.warn('Autocomplete data not available (400)');
+        return [];
+      }
       throw new ApiError(error.response?.data?.error?.message || 'An unknown error occurred', error.response?.status || 500, error.response?.data?.error);
     }
     throw new ApiError('An unknown error occurred during autocomplete search', 500);

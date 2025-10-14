@@ -195,10 +195,11 @@ interface SideMenuProps {
                 try {
                     const suggestions = await getAutocompleteSuggestions(query);
                     setAutocompleteSuggestions(suggestions);
-                    setShowAutocomplete(true);
+                    setShowAutocomplete(suggestions.length > 0);
                 } catch (error) {
-                    console.error('Autocomplete error:', error);
+                    console.warn('Autocomplete service unavailable:', error);
                     setAutocompleteSuggestions([]);
+                    setShowAutocomplete(false);
                 }
             } else {
                 setAutocompleteSuggestions([]);
@@ -745,6 +746,7 @@ interface SideMenuProps {
                     lat: location.latitude,
                     lng: location.longitude,
                     roadAddress: '내 위치',
+                    roadAddressDong: '',
                     lotAddress: '',
                     phone: '',
                     categoryGroupName: '',

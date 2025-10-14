@@ -1,0 +1,128 @@
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  Animated,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../../constants/colors';
+
+interface CurrentLocationButtonProps {
+  onPress: () => void;
+  onDoublePress?: () => void; // 더블클릭 시 호출될 함수
+  bottomSheetOpen: boolean; // 바텀시트 열림/닫힘 상태
+  bottomSheetHeight?: number; // 바텀시트 실제 높이
+  showPlaceDetail?: boolean; // 상세정보 표시 여부
+  showRouteDetail?: boolean; // 상세 경로 안내 표시 여부
+}
+
+const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
+  onPress,
+  onDoublePress,
+  bottomSheetOpen,
+  bottomSheetHeight,
+  showPlaceDetail = false,
+  showRouteDetail = false,
+}) => {
+  const animatedBottom = useRef(new Animated.Value(100)).current; // 초기값 100
+  const [lastPressTime, setLastPressTime] = useState(0);
+  const [pressCount, setPressCount] = useState(0);
+
+  // 바텀시트 높이에 따른 애니메이션
+  useEffect(() => {
+    
+    // 상세정보 표시 시에는 더 낮은 위치에 배치
+    let heightMultiplier = 0.85;
+    if (showPlaceDetail) {
+      heightMultiplier = 0.6;
+    } else if (showRouteDetail) {
+      heightMultiplier = 0.8; // 상세 경로 안내는 더 높은 위치
+    }
+    
+    const targetBottom = bottomSheetOpen && bottomSheetHeight ? 
+      100 + bottomSheetHeight * heightMultiplier : 100;
+    
+    
+    Animated.spring(animatedBottom, {
+      toValue: targetBottom,
+      useNativeDriver: false,
+      tension: 100,
+      friction: 8,
+    }).start();
+  }, [bottomSheetHeight, bottomSheetOpen, showPlaceDetail, showRouteDetail]);
+
+  // 즉시 위치 계산 (애니메이션 없이)
+  const getCurrentBottom = () => {
+    // 상세정보 표시 시에는 더 낮은 위치에 배치
+    let heightMultiplier = 0.85;
+    if (showPlaceDetail) {
+      heightMultiplier = 0.6;
+    } else if (showRouteDetail) {
+      heightMultiplier = 0.8; // 상세 경로 안내는 더 높은 위치
+    }
+    
+    return bottomSheetOpen && bottomSheetHeight ? 
+      100 + bottomSheetHeight * heightMultiplier : 100;
+  };
+
+  const currentBottom = getCurrentBottom();
+
+  // 더블클릭 감지 함수
+  const handlePress = () => {
+    const now = Date.now();
+    const timeDiff = now - lastPressTime;
+    
+    if (timeDiff < 300) { // 300ms 이내에 두 번 클릭
+      setPressCount(prev => prev + 1);
+      if (pressCount === 1) { // 두 번째 클릭
+        if (onDoublePress) {
+          onDoublePress();
+        }
+        setPressCount(0);
+      }
+    } else {
+      // 첫 번째 클릭
+      setPressCount(1);
+      onPress();
+    }
+    
+    setLastPressTime(now);
+    
+    // 300ms 후 카운트 리셋
+    setTimeout(() => {
+      setPressCount(0);
+    }, 300);
+  };
+
+  return (
+    <View style={[styles.container, { bottom: getCurrentBottom() }]}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handlePress}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="locate" size={20} color={COLORS.primary} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 20,
+    zIndex: 1001,
+  },
+  button: {
+    width: 40,
+    height: 40, 
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+export default CurrentLocationButton;

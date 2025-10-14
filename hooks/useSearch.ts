@@ -137,6 +137,16 @@ export const useSearch = () => {
   };
 
   const performSearch = useCallback(async (latitude: number, longitude: number, userLatitude: number, userLongitude: number) => {
+    console.log('performSearch 호출:', { 
+      searchQuery: state.searchQuery, 
+      latitude, 
+      longitude, 
+      userLatitude, 
+      userLongitude,
+      radius: state.searchOptions.radius,
+      sort: state.searchOptions.sort
+    });
+    
     if (!state.searchQuery.trim()) {
       alert("검색어를 입력해주세요.");
       return;
@@ -144,11 +154,11 @@ export const useSearch = () => {
     dispatch({ type: 'START_SEARCH' });
     try {
       const firstPageData = await searchPlaces(state.searchQuery, latitude, longitude, state.searchOptions.radius, state.searchOptions.sort, 1, userLatitude, userLongitude);
-      if (firstPageData.content.length === 0) {
-        alert("검색 결과가 없습니다.");
-      }
+      console.log('검색 성공:', firstPageData);
+      // 검색 결과가 없어도 성공으로 처리 (오류가 아님)
       dispatch({ type: 'SEARCH_SUCCESS', payload: firstPageData });
     } catch (err: any) {
+      console.error('Search error:', err);
       dispatch({ type: 'SEARCH_FAILURE', payload: err.message || "검색 중 오류가 발생했습니다." });
     }
   }, [state.searchQuery, state.searchOptions]);

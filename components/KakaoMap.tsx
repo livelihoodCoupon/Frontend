@@ -7,7 +7,7 @@ const debounce = <T extends (...args: any[]) => any>(func: T, delay: number) => 
   };
 };
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { View, StyleSheet, Platform, ViewStyle, Text, Modal, TouchableOpacity, Alert } from "react-native";
 import { WebView } from "react-native-webview";
 import { KAKAO_MAP_JS_KEY } from "@env";
@@ -16,7 +16,7 @@ import { useKakaoMapScript } from "../hooks/useKakaoMapScript";
 import { MarkerData, KakaoMapProps } from "../types/kakaoMap";
 import { SearchResult } from "../types/search";
 import { styles } from "./KakaoMap.styles";
-import { MARKER_IMAGES } from "../constants/mapConstants";
+import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../constants/mapConstants";
 
   const WebKakaoMap = ({
     latitude,
@@ -31,6 +31,8 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
     selectedMarkerLng,
     onCloseInfoWindow,
     onSetRouteLocation,
+    resetMapLevel,
+    onResetMapLevelComplete,
   }: KakaoMapProps) => {
     console.log('WebKakaoMap 렌더링:', { routeResult: !!routeResult, routeResultCoordinates: routeResult?.coordinates?.length });
     
@@ -52,8 +54,8 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
         const mapContainer = mapRef.current;
         const mapOption = {
           center: new window.kakao.maps.LatLng(latitude, longitude),
-          level: 3,
-          maxLevel: 14,
+          level: MAP_CONFIG.INITIAL_LEVEL,
+          maxLevel: MAP_CONFIG.MAX_LEVEL,
         };
         const map = new window.kakao.maps.Map(mapContainer, mapOption);
         mapInstance.current = map;
@@ -85,6 +87,94 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
       }
     }, [latitude, longitude]);
 
+    // 지도 레벨 초기화 함수
+    const resetMapLevelFunction = useCallback(() => {
+      if (mapInstance.current) {
+        mapInstance.current.setLevel(MAP_CONFIG.CURRENT_LOCATION_LEVEL);
+        console.log('지도 레벨 초기화:', MAP_CONFIG.CURRENT_LOCATION_LEVEL);
+      }
+    }, []);
+
+    // 전역 함수로 등록 (다른 컴포넌트에서 호출 가능)
+    useEffect(() => {
+      (window as any).resetMapLevel = resetMapLevelFunction;
+      console.log('전역 함수 등록됨: resetMapLevel');
+      return () => {
+        delete (window as any).resetMapLevel;
+        console.log('전역 함수 제거됨: resetMapLevel');
+      };
+    }, [resetMapLevelFunction]);
+
+    // resetMapLevel prop 처리
+    useEffect(() => {
+      if (resetMapLevel && mapInstance.current) {
+        console.log('WebKakaoMap - 지도 레벨 초기화 실행');
+        mapInstance.current.setLevel(MAP_CONFIG.CURRENT_LOCATION_LEVEL);
+        
+        // 지도 레벨 초기화 후 마커 다시 렌더링
+        setTimeout(() => {
+          console.log('지도 레벨 초기화 후 마커 다시 렌더링');
+          // 마커 업데이트를 강제로 트리거
+          if (markers && markers.length > 0) {
+            console.log('마커 다시 렌더링 시작:', markers.length);
+            
+            // 기존 마커들 제거
+            if (clustererInstance.current) {
+              clustererInstance.current.clear();
+            }
+            
+            // 사용자 위치 마커 다시 생성
+            const userLocationMarkerData = markers.find(m => m.markerType === 'userLocation');
+            if (userLocationMarkerData) {
+              const markerPosition = new window.kakao.maps.LatLng(
+                userLocationMarkerData.lat,
+                userLocationMarkerData.lng
+              );
+              const config = getMarkerConfig('userLocation');
+              const marker = new window.kakao.maps.Marker({
+                position: markerPosition,
+                image: createMarkerImage('userLocation'),
+                zIndex: config.zIndex
+              });
+              marker.setMap(mapInstance.current);
+              userLocationMarkerInstance.current = marker;
+              console.log('사용자 위치 마커 다시 생성 완료');
+            }
+            
+            // 장소 마커들 다시 생성
+            const placeMarkersData = markers.filter(m => m.markerType !== 'userLocation');
+            if (placeMarkersData.length > 0) {
+              placeMarkersData.forEach(markerData => {
+                const markerPosition = new window.kakao.maps.LatLng(markerData.lat, markerData.lng);
+                const markerType = markerData.markerType === "selected" ? "selected" : "default";
+                const config = getMarkerConfig(markerType);
+                
+                const marker = new window.kakao.maps.Marker({
+                  position: markerPosition,
+                  image: createMarkerImage(markerType),
+                  zIndex: config.zIndex,
+                });
+                
+                clustererInstance.current.addMarker(marker);
+                
+                // 마커 클릭 이벤트 추가
+                window.kakao.maps.event.addListener(marker, 'click', () => {
+                  if (onMarkerPress) {
+                    onMarkerPress(markerData.placeId, markerData.lat, markerData.lng);
+                  }
+                });
+              });
+              console.log('장소 마커들 다시 생성 완료:', placeMarkersData.length);
+            }
+          }
+        }, 100);
+        
+        if (onResetMapLevelComplete) {
+          onResetMapLevelComplete();
+        }
+      }
+    }, [resetMapLevel, onResetMapLevelComplete, markers]);
+
     // Effect for updating markers
     useEffect(() => {
       if (isMapReady && mapInstance.current && clustererInstance.current) {
@@ -97,12 +187,12 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
           userLocationMarkerInstance.current.setMap(null);
         }
 
-        // 사용자 위치 마커에만 사용되는 마커 이미지 헬퍼 함수
-        const getUserLocationMarkerImage = () => {
-          const imageSrc = MARKER_IMAGES.USER_LOCATION;
-          const imageSize = new window.kakao.maps.Size(36, 36);
-          const imageOption = { offset: new window.kakao.maps.Point(18, 36) };
-          return new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+        // 마커 타입에 따른 이미지 생성 헬퍼 함수
+        const createMarkerImage = (markerType: string) => {
+          const config = getMarkerConfig(markerType as any);
+          const imageSize = new window.kakao.maps.Size(config.size.width, config.size.height);
+          const imageOption = { offset: new window.kakao.maps.Point(config.offset.x, config.offset.y) };
+          return new window.kakao.maps.MarkerImage(config.image, imageSize, imageOption);
         };
 
         // 점 마커 이미지용 작은 SVG를 데이터 URI로 생성
@@ -122,19 +212,34 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
         const userLocationMarkerData = markers?.find(m => m.markerType === 'userLocation');
         const placeMarkersData = markers?.filter(m => m.markerType !== 'userLocation');
 
+        console.log('사용자 위치 마커 처리:', {
+          hasUserLocationMarker: !!userLocationMarkerData,
+          userLocationMarkerData: userLocationMarkerData,
+          totalMarkers: markers?.length
+        });
+
         // Handle user location marker
         if (userLocationMarkerData) {
           const markerPosition = new window.kakao.maps.LatLng(
             userLocationMarkerData.lat,
             userLocationMarkerData.lng
           );
+          const config = getMarkerConfig('userLocation');
           const marker = new window.kakao.maps.Marker({
             position: markerPosition,
-            image: getUserLocationMarkerImage(),
-            zIndex: 101 // 최상단에 표시되도록 보장
+            image: createMarkerImage('userLocation'),
+            zIndex: config.zIndex
           });
           marker.setMap(mapInstance.current);
           userLocationMarkerInstance.current = marker; // 인스턴스 저장
+          console.log('사용자 위치 마커 생성 완료:', {
+            position: markerPosition,
+            config: config,
+            image: createMarkerImage('userLocation'),
+            map: mapInstance.current
+          });
+        } else {
+          console.log('사용자 위치 마커 데이터 없음');
         }
 
         // Handle place markers with clusterer
@@ -147,14 +252,13 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
               markerData.lng
             );
 
-            const markerImageSrc = createDotMarkerImage(markerData.markerType === "selected");
-            const imageSize = new window.kakao.maps.Size(markerData.markerType === "selected" ? 16 : 12, markerData.markerType === "selected" ? 16 : 12);
-            const imageOption = { offset: new window.kakao.maps.Point(imageSize.width / 2, imageSize.height / 2) }; // 점의 중앙에 오도록 오프셋 설정
-
+            const markerType = markerData.markerType === "selected" ? "selected" : "default";
+            const config = getMarkerConfig(markerType);
+            
             const marker = new window.kakao.maps.Marker({
               position: markerPosition,
-              image: new window.kakao.maps.MarkerImage(markerImageSrc, imageSize, imageOption),
-              zIndex: markerData.markerType === "selected" ? 100 : 1,
+              image: createMarkerImage(markerType),
+              zIndex: config.zIndex,
             });
 
             const customOverlayContent = `
@@ -603,33 +707,18 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
       }
     }, [isMapReady, routeResult]);
 
-    // 경로 마커 이미지 생성 함수
+    // 마커 타입에 따른 이미지 생성 헬퍼 함수
+    const createMarkerImage = (markerType: string) => {
+      const config = getMarkerConfig(markerType as any);
+      const imageSize = new window.kakao.maps.Size(config.size.width, config.size.height);
+      const imageOption = { offset: new window.kakao.maps.Point(config.offset.x, config.offset.y) };
+      return new window.kakao.maps.MarkerImage(config.image, imageSize, imageOption);
+    };
+
+    // 경로 마커 이미지 생성 함수 (새로운 설정 사용)
     const createRouteMarkerImage = (type: 'start' | 'end') => {
-      const size = new window.kakao.maps.Size(32, 32);
-      const offset = new window.kakao.maps.Point(16, 32);
-      
-      let imageSrc;
-      if (type === 'start') {
-        // 출발지 마커 (녹색 원)
-        const svg = `
-          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="14" fill="#28a745" stroke="#fff" stroke-width="2"/>
-            <text x="16" y="20" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">S</text>
-          </svg>
-        `;
-        imageSrc = `data:image/svg+xml;base64,${btoa(svg)}`;
-      } else {
-        // 도착지 마커 (빨간색 원)
-        const svg = `
-          <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="14" fill="#dc3545" stroke="#fff" stroke-width="2"/>
-            <text x="16" y="20" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">E</text>
-          </svg>
-        `;
-        imageSrc = `data:image/svg+xml;base64,${btoa(svg)}`;
-      }
-      
-      return new window.kakao.maps.MarkerImage(imageSrc, size, { offset });
+      const markerType = type === 'start' ? 'routeStart' : 'routeEnd';
+      return createMarkerImage(markerType);
     };
 
   if (scriptError) {
@@ -662,6 +751,8 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
   onMapCenterChange,
   onMarkerPress,
   style,
+  resetMapLevel,
+  onResetMapLevelComplete,
 }) => {
   const webViewRef = useRef<WebView>(null);
   const updateTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -754,6 +845,36 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
     };
   }, [routeResult, htmlContent, isMapInitialized]);
 
+  // resetMapLevel prop 처리 (모바일 WebView)
+  useEffect(() => {
+    if (resetMapLevel && webViewRef.current && isMapInitialized) {
+      console.log('MobileKakaoMap - 지도 레벨 초기화 실행');
+      const script = `
+        if (typeof map !== 'undefined' && map) {
+          map.setLevel(${MAP_CONFIG.CURRENT_LOCATION_LEVEL});
+          console.log('모바일 지도 레벨 초기화:', ${MAP_CONFIG.CURRENT_LOCATION_LEVEL});
+          
+          // 지도 레벨 초기화 후 마커 다시 렌더링
+          setTimeout(() => {
+            console.log('모바일 지도 레벨 초기화 후 마커 다시 렌더링');
+            if (typeof updateMarkers === 'function') {
+              updateMarkers(${JSON.stringify(markers || [])});
+              console.log('모바일 마커 다시 렌더링 완료');
+            }
+          }, 100);
+        } else {
+          console.log('모바일 지도 인스턴스가 아직 준비되지 않음');
+        }
+        true;
+      `;
+      webViewRef.current.injectJavaScript(script);
+      
+      if (onResetMapLevelComplete) {
+        onResetMapLevelComplete();
+      }
+    }
+  }, [resetMapLevel, isMapInitialized, onResetMapLevelComplete, markers]);
+
   if (!htmlContent) {
     return (
       <View style={styles.webview}>
@@ -819,7 +940,8 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
                   phone: data.phone || '',
                   categoryGroupName: data.category || '',
                   placeUrl: data.placeUrl || '',
-                  distance: data.distance || 0
+                  distance: data.distance || 0,
+                  roadAddressDong: ""
                 };
                 
                 // 출발/도착 드롭다운 메뉴 표시

@@ -39,7 +39,7 @@ const RouteResultComponent: React.FC<RouteResultProps> = ({ routeResult, onClose
     if (distance >= 1000) {
       return `${(distance / 1000).toFixed(1)}km`;
     }
-    return `${distance}m`;
+    return `${Math.round(distance)}m`;
   };
 
   // 시간 포맷팅 (초 → 분:초, 초 단위 반올림)
@@ -62,23 +62,14 @@ const RouteResultComponent: React.FC<RouteResultProps> = ({ routeResult, onClose
     <View style={styles.container}>
       <View style={styles.routeInfo}>        
         <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Ionicons name="walk-outline" size={20} color="#28a745" />
-            <Text style={styles.statValue}>{formatDistance(routeResult.totalDistance)}</Text>
-            <Text style={styles.statLabel}>거리</Text>
-          </View>
-          
-          <View style={styles.statItem}>
-            <Ionicons name="time-outline" size={20} color="#ffc107" />
-            <Text style={styles.statValue}>{formatDuration(routeResult.totalDuration)}</Text>
-            <Text style={styles.statLabel}>소요시간</Text>
-          </View>
+          <Text style={styles.simpleSummary}>
+            {formatDistance(routeResult.totalDistance)} • {formatDuration(routeResult.totalDuration)}
+          </Text>
         </View>
       </View>
 
       {routeResult.steps && routeResult.steps.length > 0 && (
         <View style={styles.directionsContainer}>
-          <Text style={styles.directionsTitle}>경로 안내</Text>
           {routeResult.steps.map((step, index) => (
             <View key={index} style={styles.directionItem}>
               <View style={styles.directionStep}>
@@ -100,21 +91,10 @@ const RouteResultComponent: React.FC<RouteResultProps> = ({ routeResult, onClose
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginHorizontal: 0, // 좌우 margin 제거하여 길찾기 버튼과 같은 너비로
-    marginTop: 16,
-    marginBottom: 16,
-    padding: 16,
-    // 더 자연스러운 그림자 효과
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 }, // 그림자 위치 조정
-    shadowOpacity: 0.08, // 그림자 투명도 줄임
-    shadowRadius: 12, // 그림자 블러 반경 증가
-    elevation: 8, // Android elevation 증가
-    // 경계선 추가로 더 자연스러운 느낌
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+    flex: 1,
+    backgroundColor: 'transparent',
+    padding: 0,
+    margin: 0,
   },
   header: {
     flexDirection: 'row',
@@ -156,36 +136,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 2,
-    marginBottom: -12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f3f4',
+    marginTop: 8,
+    marginBottom: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 6,
+    alignItems: 'center',
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
   },
   statValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#333',
-    marginTop: 4,
+    marginTop: 2,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
-    marginTop: 2,
+    marginTop: 1,
+  },
+  simpleSummary: {
+    fontSize: 14,
+    color: '#333',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   directionsContainer: {
     marginStart: 7, 
     paddingVertical: 10,
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f3f4',
+    marginTop: 0,
+    paddingTop: 0,
   },
   directionsTitle: {
     fontSize: 16,

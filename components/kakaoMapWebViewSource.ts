@@ -76,6 +76,8 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
         }
       }
 
+
+
       function createDotMarkerImage(isSelected) {
         const size = isSelected ? 24 : 16; // 선택됨 24px, 기본 16px
         const borderWidth = isSelected ? 2 : 1;
@@ -128,8 +130,8 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
                           infoWindowOverlay.setMap(null);
                       }
                       
-                      // InfoWindow 표시
-                      showInfoWindow(markerData);
+                      // InfoWindow 표시하지 않음 (상세정보 바텀시트로 대체)
+                      // showInfoWindow(markerData);
                       
                       window.ReactNativeWebView.postMessage(JSON.stringify({
                           type: 'marker_press',
@@ -415,6 +417,7 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
         
         return new kakao.maps.MarkerImage(imageSrc, size, { offset });
       }
+
 
     </script>  </body>
 </html>

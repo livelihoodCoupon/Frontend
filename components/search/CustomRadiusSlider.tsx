@@ -11,9 +11,9 @@ interface CustomRadiusSliderProps {
 
 const formatLabel = (value: number) => {
   if (value < 1000) {
-    return `${value}m`;
+    return `${Math.round(value)}m`;
   }
-  return `${value / 1000}km`;
+  return `${(value / 1000).toFixed(1)}km`;
 };
 
 const CustomRadiusSlider: React.FC<CustomRadiusSliderProps> = ({ value, onValueChange }) => {

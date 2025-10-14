@@ -3,6 +3,7 @@ import {
   Animated,
   Keyboard,
   Platform,
+  Dimensions,
 } from "react-native";
 import { usePlaceStore } from "../store/placeStore";
 import { useCurrentLocation } from "../hooks/useCurrentLocation";
@@ -81,6 +82,8 @@ export default function Home() {
   // UI 상태 관리
   const [isMenuOpen, setIsMenuOpen] = useState(true); // 사이드메뉴 열림/닫힘 상태
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false); // 모바일 하단 시트 상태
+  const [bottomSheetHeight, setBottomSheetHeight] = useState(0); // 바텀시트 높이
+  const [showPlaceDetail, setShowPlaceDetail] = useState(false); // 상세정보 표시 상태
   const sideMenuAnimation = useRef(new Animated.Value(0)).current; // 사이드메뉴 애니메이션
 
   // 지도 중심 좌표 상태
@@ -95,12 +98,12 @@ export default function Home() {
     setMapCenterToStore(center); // store에도 저장
   }, [setMapCenterToStore]);
 
-  // 현재 위치가 로드되면 지도 중심을 설정
+  // 현재 위치가 로드되면 지도 중심을 설정 (기본 위치)
   useEffect(() => {
     if (location && !mapCenter) {
       setMapCenter({ latitude: location.latitude, longitude: location.longitude });
     }
-  }, [location, mapCenter]);
+  }, [location, mapCenter, setMapCenter]);
 
   // 최초 검색 성공 후, 모든 마커를 가져오는 로직 (한 번만 실행)
   useEffect(() => {
@@ -150,9 +153,26 @@ export default function Home() {
     }
     // 현재 위치를 기준으로 검색을 수행
     await performSearch(location.latitude, location.longitude, location.latitude, location.longitude);
-    setMapCenter({ latitude: location.latitude, longitude: location.longitude }); // Update map center
+    
+    // 바텀시트가 열려있을 때 지도 중심 조정
+    if (bottomSheetOpen && bottomSheetHeight) {
+      const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+      const heightRatio = bottomSheetHeight / SCREEN_HEIGHT;
+      // 지도 줌 레벨을 고려한 동적 오프셋 (줌 레벨이 높을수록 작은 오프셋)
+      const baseOffset = -0.003; // 기본 오프셋
+      const zoomFactor = Math.max(0.5, Math.min(2.0, heightRatio * 3)); // 줌 레벨 대응 계수
+      const offsetLat = baseOffset * zoomFactor;
+      
+      setMapCenter({ 
+        latitude: location.latitude + offsetLat, 
+        longitude: location.longitude 
+      });
+    } else {
+      setMapCenter({ latitude: location.latitude, longitude: location.longitude });
+    }
+    
     setBottomSheetOpen(true); // 검색 후 하단 시트 열기
-  }, [location, performSearch]);
+  }, [location, performSearch, bottomSheetOpen, bottomSheetHeight]);
 
   const handleNextPage = useCallback(async () => {
     if (!mapCenter) return;
@@ -166,28 +186,70 @@ export default function Home() {
   /**
    * 검색 결과 선택 핸들러
    * 선택된 장소로 지도를 이동하고 마커만 표시합니다. (InfoWindow는 표시하지 않음)
+   * 바텀시트가 열려있을 때는 지도 중심을 위로 조정하여 마커가 보이도록 합니다.
    */
   const handleSelectResult = useCallback((item: SearchResult) => {
-    setMapCenter({ latitude: item.lat, longitude: item.lng });
+    // 바텀시트가 열려있을 때 지도 중심 조정
+    if (bottomSheetOpen && bottomSheetHeight) {
+      // 바텀시트 높이를 위도로 변환 (적절한 비율 사용)
+      // 화면 높이 대비 바텀시트 높이 비율을 계산하여 위도 오프셋 적용
+      const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+      const heightRatio = bottomSheetHeight / SCREEN_HEIGHT;
+      // 지도 줌 레벨을 고려한 동적 오프셋 (줌 레벨이 높을수록 작은 오프셋)
+      const baseOffset = -0.002; // 기본 오프셋 (장소 선택용)
+      const zoomFactor = Math.max(0.5, Math.min(2.0, heightRatio * 3)); // 줌 레벨 대응 계수
+      const offsetLat = baseOffset * zoomFactor;
+      
+      setMapCenter({ 
+        latitude: item.lat + offsetLat, 
+        longitude: item.lng 
+      });
+    } else {
+      // 바텀시트가 닫혀있으면 원래 위치
+      setMapCenter({ latitude: item.lat, longitude: item.lng });
+    }
+    
     if (item.placeId) {
       // 마커만 선택된 상태로 표시하고, InfoWindow는 표시하지 않음
       setSelectedPlaceId(item.placeId);
       setShowInfoWindow(false);
     }
-    setBottomSheetOpen(false); // 결과 선택 후 하단 시트 닫기
-  }, [setSelectedPlaceId, setShowInfoWindow]);
+    // 바텀시트는 유지하고 선택된 결과만 업데이트
+  }, [bottomSheetOpen, bottomSheetHeight, setSelectedPlaceId, setShowInfoWindow]);
 
   /**
    * 마커 클릭 핸들러
-   * 마커를 클릭했을 때 InfoWindow를 표시합니다.
+   * 마커를 클릭했을 때 상세정보 바텀시트를 표시합니다.
    */
   const handleMarkerPress = useCallback((placeId: string, lat?: number, lng?: number) => {
-    setSelectedPlaceId(placeId);
-    if (lat !== undefined && lng !== undefined) {
-      setSelectedMarkerPosition({ lat, lng });
+    // 선택된 장소 정보 찾기
+    const selectedPlace = allMarkers.find(marker => marker.placeId === placeId);
+    if (selectedPlace) {
+      // infowindow 닫기
+      setShowInfoWindow(false);
+      
+      // 상세정보 바텀시트 열기
+      setSelectedPlaceId(placeId);
+      setShowPlaceDetail(true);
+      setBottomSheetOpen(true);
+      
+      // 지도 중심 이동 (바텀시트가 열려있을 때는 위로 조정)
+      if (bottomSheetOpen && bottomSheetHeight) {
+        const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+        const heightRatio = bottomSheetHeight / SCREEN_HEIGHT;
+        const baseOffset = -0.002;
+        const zoomFactor = Math.max(0.5, Math.min(2.0, heightRatio * 3));
+        const offsetLat = baseOffset * zoomFactor;
+        
+        setMapCenter({ 
+          latitude: selectedPlace.lat + offsetLat, 
+          longitude: selectedPlace.lng 
+        });
+      } else {
+        setMapCenter({ latitude: selectedPlace.lat, longitude: selectedPlace.lng });
+      }
     }
-    setShowInfoWindow(true);
-  }, [setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
+  }, [allMarkers, setSelectedPlaceId, setShowPlaceDetail, setBottomSheetOpen, bottomSheetOpen, bottomSheetHeight, setMapCenter, setShowInfoWindow]);
 
   // 길찾기 연동 함수
   const handleSetRouteLocation = useCallback((type: 'departure' | 'arrival', placeInfo: SearchResult) => {
@@ -201,14 +263,25 @@ export default function Home() {
   const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
 
   const markers = useMemo(() => {
+    // 사용자 위치 마커는 항상 표시 (location이 있을 때)
+    const userLocationMarker = location ? [{
+      placeId: "user-location",
+      placeName: "내 위치",
+      lat: location.latitude,
+      lng: location.longitude,
+      markerType: "userLocation",
+    }] : [];
+    
+    console.log('마커 생성:', {
+      hasLocation: !!location,
+      location: location,
+      userLocationMarker: userLocationMarker,
+      allMarkersCount: allMarkers.length,
+      totalMarkers: userLocationMarker.length + allMarkers.length
+    });
+    
     return [
-      ...(location ? [{
-        placeId: "user-location",
-        placeName: "내 위치",
-        lat: location.latitude,
-        lng: location.longitude,
-        markerType: "userLocation",
-      }] : []),
+      ...userLocationMarker,
       ...allMarkers.map(marker => ({
         placeId: marker.placeId,
         placeName: marker.placeName,
@@ -280,6 +353,10 @@ export default function Home() {
         markers={markers}
         bottomSheetOpen={bottomSheetOpen}
         setBottomSheetOpen={setBottomSheetOpen}
+        bottomSheetHeight={bottomSheetHeight}
+        setBottomSheetHeight={setBottomSheetHeight}
+        showPlaceDetail={showPlaceDetail}
+        setShowPlaceDetail={setShowPlaceDetail}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         searchResults={searchResults}
