@@ -231,12 +231,12 @@ export default function Home() {
   const handleSelectResult = useCallback((item: SearchResult) => {
     setMapCenter({ latitude: item.lat, longitude: item.lng });
     if (item.placeId) {
-      // 마커만 선택된 상태로 표시하고, InfoWindow는 표시하지 않음
       setSelectedPlaceId(item.placeId);
-      setShowInfoWindow(false);
+      setSelectedMarkerPosition({ lat: item.lat, lng: item.lng }); // Set marker position for InfoWindow
+      setShowInfoWindow(true); // Show InfoWindow
     }
     setBottomSheetOpen(false); // 결과 선택 후 하단 시트 닫기
-  }, [setSelectedPlaceId, setShowInfoWindow, setMapCenter]);
+  }, [setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow, setMapCenter]);
 
   /**
    * 마커 클릭 핸들러
