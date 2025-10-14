@@ -105,4 +105,3 @@ jobs:
             pm2 startup systemd -u $USER --hp $HOME
 
             echo "✅ Frontend started successfully with pm2!"
-
