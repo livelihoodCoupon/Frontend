@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -132,11 +132,33 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   }) => {
   const [activeSearchTab, setActiveSearchTab] = useState<'searchResults' | 'nearbyParking'>('searchResults');
   const routeScrollViewRef = useRef<ScrollView>(null);
+  const searchBarRef = useRef<TextInput>(null); // Ref for the SearchBar's TextInput
+  const suggestionsContainerRef = useRef<View>(null); // Ref for the suggestions container
 
   const handleLocalSearch = () => {
     onSearch();
     setShowAutocomplete(false);
   };
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          suggestionsContainerRef.current &&
+          !suggestionsContainerRef.current.contains(event.target as Node) &&
+          searchBarRef.current &&
+          !searchBarRef.current.contains(event.target as Node)
+        ) {
+          setShowAutocomplete(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showAutocomplete, setShowAutocomplete]);
 
   const renderFooter = () => {
     if (!loadingNextPage || !pagination || pagination.isLast || pagination.currentPage >= pagination.totalPages) {
@@ -200,22 +222,22 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
       {activeTab === 'search' ? (
         <View style={commonStyles.searchTabContent}>
           <SearchBar
+            ref={searchBarRef}
             searchQuery={searchQuery}
             setSearchQuery={(text) => {
               setSearchQuery(text);
+              if (text.length > 0) {
+                setShowAutocomplete(true); // Show autocomplete as user types
+              } else {
+                setShowAutocomplete(false); // Hide autocomplete if query is empty
+              }
               debouncedAutocomplete(text);
             }}
             onSearch={handleLocalSearch}
             onClearSearch={onClearSearch}
           />
           {showAutocomplete && autocompleteSuggestions.length > 0 && (
-            <View style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
-              <TouchableOpacity
-                style={commonStyles.closeButton}
-                onPress={() => setShowAutocomplete(false)}
-              >
-                <Ionicons name="close" size={24} color="black" />
-              </TouchableOpacity>
+            <View ref={suggestionsContainerRef} style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
               <FlatList
                 data={autocompleteSuggestions}
                 keyExtractor={(item, index) => index.toString()}
