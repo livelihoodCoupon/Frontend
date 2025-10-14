@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import KakaoMap from "../components/KakaoMap";
+import KakaoMap, { MapHandles } from "../components/KakaoMap";
 import SideMenu from "../components/layout/SideMenu";
 import { SearchResult, SearchOptions } from "../types/search";
 import { PageResponse } from "../types/api";
@@ -16,10 +16,12 @@ import { RouteResult } from "../types/route";
 import { useState, useRef, useMemo } from "react";
 import { webStyles } from "./HomeWebLayout.styles";
 import RecentlyViewedPlaces from "../components/RecentlyViewedPlaces";
+import { MarkerData } from '../types/kakaoMap';
 
 const SIDE_MENU_WIDTH = 330; // Define the side menu width
 
 interface HomeWebLayoutProps {
+  mapRef: React.RefObject<MapHandles>;
   // Props for HomeWebLayout
   selectedPlaceId: string | null;
   setSelectedPlaceId: (id: string | null) => void;
@@ -95,6 +97,7 @@ interface HomeWebLayoutProps {
 }
 
 const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
+  mapRef,
   selectedPlaceId,
   setSelectedPlaceId,
   showInfoWindow,
@@ -242,6 +245,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
           {mapCenter ? (
             <>
               <KakaoMap
+                ref={mapRef}
                 latitude={mapCenter.latitude}
                 longitude={mapCenter.longitude}
                 markers={markers}

@@ -13,6 +13,16 @@ import HomeWebLayout from "./HomeWebLayout";
 import HomeMobileLayout from "./HomeMobileLayout";
 import { SearchResult } from "../types/search";
 import { MarkerData } from "../types/kakaoMap";
+import { MapHandles } from "../components/KakaoMap";
+
+// Helper hook to get the previous value of a prop or state
+const usePrevious = <T>(value: T): T | undefined => {
+  const ref = useRef<T>();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+};
 
 /**
  * Home 컴포넌트
@@ -20,6 +30,7 @@ import { MarkerData } from "../types/kakaoMap";
  * 웹과 모바일 플랫폼에 따라 다른 레이아웃을 렌더링합니다.
  */
 export default function Home() {
+  const mapRef = useRef<MapHandles>(null);
   // 전역 상태 관리
   const selectedPlaceId = usePlaceStore((s) => s.selectedPlaceId);
   const setSelectedPlaceId = usePlaceStore((s) => s.setSelectedPlaceId);
@@ -183,6 +194,22 @@ export default function Home() {
     }).start();
   }, [isMenuOpen]);
 
+  // Panning on menu toggle
+  const prevIsMenuOpen = usePrevious(isMenuOpen);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !showInfoWindow || prevIsMenuOpen === undefined || prevIsMenuOpen === isMenuOpen) return;
+
+    const SIDE_MENU_WIDTH = 330;
+    // Align with menu animation duration
+    setTimeout(() => {
+        if (isMenuOpen) { // Menu just opened
+            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
+        } else { // Menu just closed
+            mapRef.current?.panBy(SIDE_MENU_WIDTH / 2, 0);
+        }
+    }, 0);
+  }, [isMenuOpen, showInfoWindow]);
+
   /**
    * 검색 실행 핸들러
    * 키보드를 닫고 현재 지도 중심 좌표를 기준으로 검색을 수행합니다.
@@ -203,11 +230,7 @@ export default function Home() {
   }, [mapCenter, location, performSearch]);
 
   const handleSearchInArea = useCallback(async () => {
-    if (!mapCenter) return;
-    if (!location) {
-      alert("현재 위치 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
-      return;
-    }
+    if (!mapCenter || !location) return;
     setShowSearchInAreaButton(false);
     await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude, true);
   }, [mapCenter, location, performSearch]);
@@ -217,14 +240,10 @@ export default function Home() {
     if (searchResults.length > 0) {
       setShowSearchInAreaButton(true);
     }
-  }, [searchResults.length, setMapCenter, setShowSearchInAreaButton]);
+  }, [searchResults.length, setMapCenter]);
 
   const handleNextPage = useCallback(async () => {
-    if (!mapCenter) return;
-    if (!location) {
-      alert("현재 위치 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
-      return;
-    }
+    if (!mapCenter || !location) return;
     await fetchNextPage(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude);
   }, [mapCenter, location, fetchNextPage]);
 
@@ -236,11 +255,20 @@ export default function Home() {
     setMapCenter({ latitude: item.lat, longitude: item.lng });
     if (item.placeId) {
       setSelectedPlaceId(item.placeId);
-      setSelectedMarkerPosition({ lat: item.lat, lng: item.lng }); // Set marker position for InfoWindow
-      setShowInfoWindow(true); // Show InfoWindow
+      setSelectedMarkerPosition({ lat: item.lat, lng: item.lng });
+      setShowInfoWindow(true);
     }
-    setBottomSheetOpen(false); // 결과 선택 후 하단 시트 닫기
-  }, [setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow, setMapCenter]);
+    setBottomSheetOpen(false);
+
+    if (isMenuOpen && Platform.OS === 'web') {
+        const SIDE_MENU_WIDTH = 330;
+        // This timeout is to ensure setCenter from the parent has propagated and
+        // the map has re-centered before we pan.
+        setTimeout(() => {
+            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
+        }, 500);
+    }
+  }, [isMenuOpen, setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
 
   /**
    * 마커 클릭 핸들러
@@ -316,6 +344,7 @@ export default function Home() {
   if (Platform.OS === 'web') {
     return (
       <HomeWebLayout
+        mapRef={mapRef}
         selectedPlaceId={selectedPlaceId}
         setSelectedPlaceId={setSelectedPlaceId}
         showInfoWindow={showInfoWindow}
