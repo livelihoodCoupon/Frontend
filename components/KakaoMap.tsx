@@ -23,6 +23,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
 
 export interface MapHandles {
   panBy: (dx: number, dy: number) => void;
+  panTo: (lat: number, lng: number, offsetX: number, offsetY: number) => void;
 }
 
 const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
@@ -61,6 +62,17 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
     panBy: (dx, dy) => {
       if (mapInstance.current) {
         mapInstance.current.panBy(dx, dy);
+      }
+    },
+    panTo: (lat, lng, offsetX, offsetY) => {
+      if (mapInstance.current) {
+        const map = mapInstance.current;
+        const projection = map.getProjection();
+        const point = projection.pointFromCoords(new window.kakao.maps.LatLng(lat, lng));
+        point.x -= offsetX; // Use subtraction to match panBy's behavior (-x moves map left, so content appears right)
+        point.y -= offsetY;
+        const newCoords = projection.coordsFromPoint(point);
+        map.setCenter(newCoords);
       }
     },
   }));

@@ -94,6 +94,10 @@ export default function Home() {
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const sideMenuAnimation = useRef(new Animated.Value(0)).current;
 
+  const prevIsMenuOpen = usePrevious(isMenuOpen);
+
+  const prevRouteResult = usePrevious(routeResult);
+
   const onToggleSidebarCallback = useCallback(() => setIsMenuOpen(true), [setIsMenuOpen]);
 
   const {
@@ -180,16 +184,31 @@ export default function Home() {
     }).start();
   }, [isMenuOpen]);
 
-  // Effect to PAN LEFT when a focus point is set or menu is open
+  // Effect to PAN LEFT when the side menu is opened
   useEffect(() => {
     const focusPointExists = location || selectedPlaceId || routeResult;
-    if (isMenuOpen && focusPointExists && Platform.OS === 'web') {
+    // Only pan when the menu is *opened* (was closed, now open)
+    if (isMenuOpen && !prevIsMenuOpen && focusPointExists && Platform.OS === 'web') {
         const SIDE_MENU_WIDTH = 330;
         setTimeout(() => {
             mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
         }, 100); // Delay to ensure map has centered
     }
-  }, [location, selectedPlaceId, routeResult, isMenuOpen]);
+  }, [isMenuOpen, prevIsMenuOpen, location, selectedPlaceId, routeResult]);
+
+  // Effect to PAN LEFT when a new route is calculated
+  useEffect(() => {
+    // Pan when a new route is calculated and the menu is open
+    if (routeResult && !prevRouteResult && isMenuOpen && Platform.OS === 'web') {
+      const SIDE_MENU_WIDTH = 330;
+      // The setBounds in KakaoMap is also in a timeout, so we need to wait for it.
+      setTimeout(() => {
+        mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
+      }, 150); // A bit longer delay to be safe
+    }
+  }, [routeResult, prevRouteResult, isMenuOpen]);
+
+
 
   // Effect to PAN RIGHT when focus is lost or menu closes
   const wasPanned = usePrevious(isMenuOpen && (showInfoWindow || !!routeResult || !!location));
@@ -216,29 +235,15 @@ export default function Home() {
       return;
     }
     await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude);
-    
-    if (isMenuOpen && Platform.OS === 'web') {
-        const SIDE_MENU_WIDTH = 330;
-        setTimeout(() => {
-            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
-        }, 100);
-    }
 
     setBottomSheetOpen(true);
-  }, [mapCenter, location, performSearch, isMenuOpen]);
+  }, [mapCenter, location, performSearch]);
 
   const handleSearchInArea = useCallback(async () => {
     if (!mapCenter || !location) return;
     setShowSearchInAreaButton(false);
     await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude, true);
-
-    if (isMenuOpen && Platform.OS === 'web') {
-        const SIDE_MENU_WIDTH = 330;
-        setTimeout(() => {
-            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
-        }, 100);
-    }
-  }, [mapCenter, location, performSearch, isMenuOpen]);
+  }, [mapCenter, location, performSearch]);
 
   const handleMapIdle = useCallback((lat: number, lng: number) => {
     setMapCenter({ latitude: lat, longitude: lng });
@@ -253,14 +258,20 @@ export default function Home() {
   }, [mapCenter, location, fetchNextPage]);
 
   const handleSelectResult = useCallback((item: SearchResult) => {
-    setMapCenter({ latitude: item.lat, longitude: item.lng });
+    const SIDE_MENU_WIDTH = 330;
+    if (isMenuOpen && Platform.OS === 'web') {
+      mapRef.current?.panTo(item.lat, item.lng, SIDE_MENU_WIDTH / 2, 0);
+    } else {
+      setMapCenter({ latitude: item.lat, longitude: item.lng });
+    }
+
     if (item.placeId) {
       setSelectedPlaceId(item.placeId);
       setSelectedMarkerPosition({ lat: item.lat, lng: item.lng });
       setShowInfoWindow(true);
     }
     setBottomSheetOpen(false);
-  }, [setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
+  }, [isMenuOpen, setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
 
   const handleMarkerPress = useCallback((placeId: string, lat?: number, lng?: number) => {
     setSelectedPlaceId(placeId);
@@ -271,12 +282,17 @@ export default function Home() {
   }, [setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
 
   const handleRecentlyViewedPlaceClick = useCallback((place: MarkerData) => {
-    setMapCenter({ latitude: place.lat, longitude: place.lng });
+    const SIDE_MENU_WIDTH = 330;
+    if (isMenuOpen && Platform.OS === 'web') {
+      mapRef.current?.panTo(place.lat, place.lng, SIDE_MENU_WIDTH / 2, 0);
+    } else {
+      setMapCenter({ latitude: place.lat, longitude: place.lng });
+    }
     setSelectedPlaceId(place.placeId);
     setSelectedMarkerPosition({ lat: place.lat, lng: place.lng });
     setTemporarySelectedMarker(place);
     setShowInfoWindow(true);
-  }, [setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setTemporarySelectedMarker, setShowInfoWindow]);
+  }, [isMenuOpen, setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setTemporarySelectedMarker, setShowInfoWindow]);
 
   const handleSetRouteLocation = useCallback((type: 'departure' | 'arrival', placeInfo: SearchResult) => {
     if (window && (window as any).setRouteLocationFromInfoWindow) {
