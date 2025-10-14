@@ -85,16 +85,16 @@ jobs:
 
 
             # pm2 설치 (한 번만 설치해도 됨)
-            npm install -g pm2 || true
+            sudo npm install -g pm2 serve expo-cli || true
 
             # 기존 프로세스 종료
-            pm2 delete frontend || true
+            pm2 delete all || true
 
-            # serve 설치 (정적 파일 배포용)
-            npm install -g serve || true
+            # 리액트 시작
+            pm2 start "serve -s web-build -l 8081" --name frontend
 
-            # pm2로 serve 실행
-            pm2 start serve --name frontend -- -s web-build -l 8081
+            # expo 시작
+            pm2 start "expo start --non-interactive --tunnel" --name expo
 
             # pm2 프로세스 저장, EC2 재부팅 시 자동 시작
             pm2 save
