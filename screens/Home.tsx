@@ -41,9 +41,7 @@ export default function Home() {
   const setMapCenterToStore = usePlaceStore((s) => s.setMapCenter);
   
   // 현재 위치 및 검색 관련 훅
-  // 에뮬레이터 테스트를 위해 하드코딩된 위치 사용 여부를 설정합니다.
-  // 실제 배포 시에는 반드시 false로 설정해야 합니다.
-  const USE_HARDCODED_LOCATION = process.env.EXPO_PUBLIC_USE_HARDCODED_LOCATION === 'true'; // .env 파일에서 설정
+  const USE_HARDCODED_LOCATION = process.env.EXPO_PUBLIC_USE_HARDCODED_LOCATION === 'true';
 
   const {
     location: actualLocation,
@@ -51,18 +49,17 @@ export default function Home() {
     loading: actualLocationLoading,
   } = useCurrentLocation();
 
-  const location = USE_HARDCODED_LOCATION
-    ? {
-        latitude: parseFloat(process.env.EXPO_PUBLIC_HARDCODED_LATITUDE || '0'),
-        longitude: parseFloat(process.env.EXPO_PUBLIC_HARDCODED_LONGITUDE || '0'),
-      }
-    : actualLocation;
-  const locationError = USE_HARDCODED_LOCATION
-    ? null
-    : actualLocationError;
-  const locationLoading = USE_HARDCODED_LOCATION
-    ? false
-    : actualLocationLoading;
+  const location = useMemo(() => (
+    USE_HARDCODED_LOCATION
+      ? {
+          latitude: parseFloat(process.env.EXPO_PUBLIC_HARDCODED_LATITUDE || '0'),
+          longitude: parseFloat(process.env.EXPO_PUBLIC_HARDCODED_LONGITUDE || '0'),
+        }
+      : actualLocation
+  ), [USE_HARDCODED_LOCATION, actualLocation]);
+  const locationError = USE_HARDCODED_LOCATION ? null : actualLocationError;
+  const locationLoading = USE_HARDCODED_LOCATION ? false : actualLocationLoading;
+
   const {
     searchQuery,
     setSearchQuery,
@@ -93,13 +90,12 @@ export default function Home() {
   } = useRoute();
 
   // UI 상태 관리
-  const [isMenuOpen, setIsMenuOpen] = useState(true); // 사이드메뉴 열림/닫힘 상태
-  const [bottomSheetOpen, setBottomSheetOpen] = useState(false); // 모바일 하단 시트 상태
-  const sideMenuAnimation = useRef(new Animated.Value(0)).current; // 사이드메뉴 애니메이션
+  const [isMenuOpen, setIsMenuOpen] = useState(true);
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const sideMenuAnimation = useRef(new Animated.Value(0)).current;
 
   const onToggleSidebarCallback = useCallback(() => setIsMenuOpen(true), [setIsMenuOpen]);
 
-  // useSharedSearch 훅에서 activeTab 가져오기
   const {
     activeTab,
     setActiveTab,
@@ -136,57 +132,47 @@ export default function Home() {
     routeError,
     startRoute,
     clearRoute,
-    onToggleSidebarCallback // onToggleSidebar
+    onToggleSidebarCallback
   );
 
-  // UI 상태 관리
   const [showSearchInAreaButton, setShowSearchInAreaButton] = useState(false);
   const [temporarySelectedMarker, setTemporarySelectedMarker] = useState<MarkerData | null>(null);
 
-  // 지도 중심 좌표 상태
-  const [mapCenter, setMapCenterState] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
+  const [mapCenter, setMapCenterState] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  // 지도 중심 설정 함수 (store에도 동기화)
   const setMapCenter = useCallback((center: { latitude: number; longitude: number }) => {
     setMapCenterState(center);
-    setMapCenterToStore(center); // store에도 저장
+    setMapCenterToStore(center);
   }, [setMapCenterToStore]);
 
   const clearSearchResults = useCallback(() => {
-    setSearchQuery(""); // 검색어 초기화
-    clearSearchResultsFromHook(); // useSearch 훅의 clearSearchResults 호출
-    setShowAutocomplete(false); // 자동 완성 UI 숨기기
+    setSearchQuery("");
+    clearSearchResultsFromHook();
+    setShowAutocomplete(false);
   }, [clearSearchResultsFromHook, setSearchQuery, setShowAutocomplete]);
 
-  // 검색 결과에 따라 지도 중심을 업데이트
   useEffect(() => {
     if (searchCenter) {
       setMapCenter({ latitude: searchCenter.lat, longitude: searchCenter.lng });
     }
   }, [searchCenter, setMapCenter]);
 
-  // 현재 위치가 로드되면 지도 중심을 설정 (초기 로딩 시에만)
   useEffect(() => {
     if (location && !mapCenter) {
       setMapCenter({ latitude: location.latitude, longitude: location.longitude });
     }
   }, [location, mapCenter, setMapCenter]);
 
-  // 최초 검색 성공 후, 모든 마커를 가져오는 로직 (한 번만 실행)
   useEffect(() => {
     if (pagination && pagination.currentPage === 1 && !pagination.isLast && !loadingAllMarkers) {
       if (mapCenter && location) {
         fetchAllMarkers(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude);
       }
     }
-  }, [pagination?.currentPage]); // pagination 전체가 아닌 currentPage만 의존성으로 설정
+  }, [pagination?.currentPage]);
 
-  // 사이드메뉴 애니메이션 처리
   useEffect(() => {
-    const SIDEMENU_WIDTH = 330; // 사이드메뉴 너비 상수
+    const SIDEMENU_WIDTH = 330;
     Animated.timing(sideMenuAnimation, {
       toValue: isMenuOpen ? 0 : -SIDEMENU_WIDTH,
       duration: 300,
@@ -194,26 +180,30 @@ export default function Home() {
     }).start();
   }, [isMenuOpen]);
 
-  // Panning on menu toggle
-  const prevIsMenuOpen = usePrevious(isMenuOpen);
+  // Effect to PAN LEFT when a focus point is set or menu is open
   useEffect(() => {
-    if (Platform.OS !== 'web' || !showInfoWindow || prevIsMenuOpen === undefined || prevIsMenuOpen === isMenuOpen) return;
-
-    const SIDE_MENU_WIDTH = 330;
-    // Align with menu animation duration
-    setTimeout(() => {
-        if (isMenuOpen) { // Menu just opened
+    const focusPointExists = location || selectedPlaceId || routeResult;
+    if (isMenuOpen && focusPointExists && Platform.OS === 'web') {
+        const SIDE_MENU_WIDTH = 330;
+        setTimeout(() => {
             mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
-        } else { // Menu just closed
-            mapRef.current?.panBy(SIDE_MENU_WIDTH / 2, 0);
-        }
-    }, 0);
-  }, [isMenuOpen, showInfoWindow]);
+        }, 100); // Delay to ensure map has centered
+    }
+  }, [location, selectedPlaceId, routeResult, isMenuOpen]);
 
-  /**
-   * 검색 실행 핸들러
-   * 키보드를 닫고 현재 지도 중심 좌표를 기준으로 검색을 수행합니다.
-   */
+  // Effect to PAN RIGHT when focus is lost or menu closes
+  const wasPanned = usePrevious(isMenuOpen && (showInfoWindow || !!routeResult || !!location));
+  useEffect(() => {
+      const isPanned = isMenuOpen && (showInfoWindow || !!routeResult || !!location) && Platform.OS === 'web';
+      if (wasPanned && !isPanned) {
+          const SIDE_MENU_WIDTH = 330;
+          setTimeout(() => {
+              mapRef.current?.panBy(SIDE_MENU_WIDTH / 2, 0);
+          }, 50);
+      }
+  }, [isMenuOpen, showInfoWindow, routeResult, location]);
+
+
   const handleSearch = useCallback(async () => {
     Keyboard.dismiss();
     setShowSearchInAreaButton(false);
@@ -226,14 +216,29 @@ export default function Home() {
       return;
     }
     await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude);
-    setBottomSheetOpen(true); // 검색 후 하단 시트 열기
-  }, [mapCenter, location, performSearch]);
+    
+    if (isMenuOpen && Platform.OS === 'web') {
+        const SIDE_MENU_WIDTH = 330;
+        setTimeout(() => {
+            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
+        }, 100);
+    }
+
+    setBottomSheetOpen(true);
+  }, [mapCenter, location, performSearch, isMenuOpen]);
 
   const handleSearchInArea = useCallback(async () => {
     if (!mapCenter || !location) return;
     setShowSearchInAreaButton(false);
     await performSearch(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude, true);
-  }, [mapCenter, location, performSearch]);
+
+    if (isMenuOpen && Platform.OS === 'web') {
+        const SIDE_MENU_WIDTH = 330;
+        setTimeout(() => {
+            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
+        }, 100);
+    }
+  }, [mapCenter, location, performSearch, isMenuOpen]);
 
   const handleMapIdle = useCallback((lat: number, lng: number) => {
     setMapCenter({ latitude: lat, longitude: lng });
@@ -247,10 +252,6 @@ export default function Home() {
     await fetchNextPage(mapCenter.latitude, mapCenter.longitude, location.latitude, location.longitude);
   }, [mapCenter, location, fetchNextPage]);
 
-  /**
-   * 검색 결과 선택 핸들러
-   * 선택된 장소로 지도를 이동하고 마커만 표시합니다. (InfoWindow는 표시하지 않음)
-   */
   const handleSelectResult = useCallback((item: SearchResult) => {
     setMapCenter({ latitude: item.lat, longitude: item.lng });
     if (item.placeId) {
@@ -259,21 +260,8 @@ export default function Home() {
       setShowInfoWindow(true);
     }
     setBottomSheetOpen(false);
+  }, [setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
 
-    if (isMenuOpen && Platform.OS === 'web') {
-        const SIDE_MENU_WIDTH = 330;
-        // This timeout is to ensure setCenter from the parent has propagated and
-        // the map has re-centered before we pan.
-        setTimeout(() => {
-            mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
-        }, 500);
-    }
-  }, [isMenuOpen, setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setShowInfoWindow]);
-
-  /**
-   * 마커 클릭 핸들러
-   * 마커를 클릭했을 때 InfoWindow를 표시합니다.
-   */
   const handleMarkerPress = useCallback((placeId: string, lat?: number, lng?: number) => {
     setSelectedPlaceId(placeId);
     if (lat !== undefined && lng !== undefined) {
@@ -286,26 +274,19 @@ export default function Home() {
     setMapCenter({ latitude: place.lat, longitude: place.lng });
     setSelectedPlaceId(place.placeId);
     setSelectedMarkerPosition({ lat: place.lat, lng: place.lng });
-    setTemporarySelectedMarker(place); // Set the temporary marker
+    setTemporarySelectedMarker(place);
     setShowInfoWindow(true);
   }, [setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setTemporarySelectedMarker, setShowInfoWindow]);
 
-  // 길찾기 연동 함수
   const handleSetRouteLocation = useCallback((type: 'departure' | 'arrival', placeInfo: SearchResult) => {
-    // InfoWindow에서 선택된 장소 정보를 길찾기 탭으로 전달
-    // 이 함수는 KakaoMap에서 호출될 예정
-    console.log('Route location set:', type, placeInfo);
-    // useSharedSearch 훅에서 정의된 전역 함수를 호출하여 탭을 변경하고 길찾기 정보를 설정
     if (window && (window as any).setRouteLocationFromInfoWindow) {
       (window as any).setRouteLocationFromInfoWindow(type, placeInfo);
     }
   }, []);
 
-  // 로딩 및 에러 상태 계산
   const isLoading = locationLoading || searchLoading;
   const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
 
-  // activeTab에 따라 markers와 routeResult를 조건부로 설정
   const mapMarkers = useMemo(() => {
     const baseMarkers = activeTab === 'search' ? [
       ...(location ? [{
@@ -340,7 +321,6 @@ export default function Home() {
     return activeTab === 'route' ? routeResult : null;
   }, [activeTab, routeResult]);
 
-  // 플랫폼에 따라 적절한 레이아웃 렌더링
   if (Platform.OS === 'web') {
     return (
       <HomeWebLayout
@@ -354,7 +334,7 @@ export default function Home() {
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
         onMapIdle={handleMapIdle}
-        markers={mapMarkers} // Use mapMarkers
+        markers={mapMarkers}
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
         sideMenuAnimation={sideMenuAnimation}
@@ -377,15 +357,15 @@ export default function Home() {
         pagination={pagination}
         onSetRouteLocation={handleSetRouteLocation}
         onOpenSidebar={() => setIsMenuOpen(true)}
-        routeResult={mapRouteResult} // Use mapRouteResult
+        routeResult={mapRouteResult}
         isRouteLoading={isRouteLoading}
         routeError={routeError}
         startRoute={startRoute}
         clearRoute={clearRoute}
         showSearchInAreaButton={showSearchInAreaButton}
         handleSearchInArea={handleSearchInArea}
-        activeTab={activeTab} // Pass activeTab
-        setActiveTab={setActiveTab} // Pass setActiveTab
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         startLocation={startLocation}
         setStartLocation={setStartLocation}
         endLocation={endLocation}
@@ -429,7 +409,7 @@ export default function Home() {
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
         onMapIdle={handleMapIdle}
-        markers={mapMarkers} // Use mapMarkers
+        markers={mapMarkers}
         bottomSheetOpen={bottomSheetOpen}
         setBottomSheetOpen={setBottomSheetOpen}
         searchQuery={searchQuery}
@@ -451,15 +431,15 @@ export default function Home() {
         pagination={pagination}
         onSetRouteLocation={handleSetRouteLocation}
         onOpenSidebar={() => setIsMenuOpen(true)}
-        routeResult={mapRouteResult} // Use mapRouteResult
+        routeResult={mapRouteResult}
         isRouteLoading={isRouteLoading}
         routeError={routeError}
         startRoute={startRoute}
         clearRoute={clearRoute}
         showSearchInAreaButton={showSearchInAreaButton}
         handleSearchInArea={handleSearchInArea}
-        activeTab={activeTab} // Pass activeTab
-        setActiveTab={setActiveTab} // Pass setActiveTab
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         startLocation={startLocation}
         setStartLocation={setStartLocation}
         endLocation={endLocation}
