@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
+import { webStyles } from './styles/SearchBar.web.styles';
+import { mobileStyles } from './styles/SearchBar.mobile.styles';
 
 /**
  * SearchBar 컴포넌트의 Props 인터페이스
@@ -16,6 +18,7 @@ interface SearchBarProps {
  * 검색 입력 필드와 검색 버튼을 제공하는 재사용 가능한 컴포넌트
  */
 const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, onSearch, style }) => {
+  const styles = Platform.OS === 'web' ? webStyles : mobileStyles;
   return (
     <View style={[styles.searchContainer, style]}>
       <TextInput
@@ -31,35 +34,5 @@ const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, onSe
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  searchContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  searchInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginRight: 8,
-    backgroundColor: '#fff',
-    fontSize: 16,
-  },
-  searchButton: {
-    backgroundColor: '#007bff',
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-});
 
 export default SearchBar;

@@ -13,7 +13,7 @@ import CustomBottomSheet from "../components/search/CustomBottomSheet";
 import { SearchResult, SearchOptions } from "../types/search";
 import { PageResponse } from "../types/api";
 import { RouteResult } from "../types/route";
-import { styles as mobileStyles } from "./Home.styles";
+import { mobileStyles } from "./HomeMobileLayout.styles";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HomeMobileLayoutProps {

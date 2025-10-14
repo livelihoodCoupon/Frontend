@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
@@ -17,6 +16,10 @@ import SearchResultItem from './SearchResultItem';
 import RouteResultComponent from '../route/RouteResult';
 import { SearchResult, SearchOptions, AutocompleteResponse } from '../../types/search';
 import { PageResponse } from '../../types/api';
+import { commonStyles } from './styles/SharedSearch.common.styles';
+import { webStyles } from './styles/SharedSearch.web.styles';
+import { mobileStyles } from './styles/SharedSearch.mobile.styles';
+
 
 interface SharedSearchProps {
   isWebView: boolean;
@@ -144,7 +147,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
       return <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />;
     }
     if (errorMsg) {
-      return <Text style={styles.errorText}>{String(errorMsg)}</Text>;
+      return <Text style={commonStyles.errorText}>{String(errorMsg)}</Text>;
     }
     if (searchResults.length > 0) {
       return (
@@ -158,30 +161,33 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
         />
       );
     }
-    return <Text style={styles.noResultText}>검색 결과가 없거나, 검색을 시작하세요.</Text>;
+    return <Text style={commonStyles.noResultText}>검색 결과가 없거나, 검색을 시작하세요.</Text>;
   };
 
+  const contentContainerStyles = Platform.OS === 'web' ? webStyles.contentContainer : mobileStyles.contentContainer;
+  const suggestionsContainerStyles = Platform.OS === 'web' ? webStyles.suggestionsContainer : {};
+
   return (
-    <View style={[styles.contentContainer, isWebView && styles.contentContainerWeb]}>
-      <View style={styles.tabHeader}>
+    <View style={[contentContainerStyles, isWebView && contentContainerStyles]}>
+      <View style={commonStyles.tabHeader}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'search' && styles.activeTabButton]}
+          style={[commonStyles.tabButton, activeTab === 'search' && commonStyles.activeTabButton]}
           onPress={() => setActiveTab('search')}
         >
           <Ionicons name="search-outline" size={20} color={activeTab === 'search' ? '#007bff' : '#6c757d'} />
-          <Text style={[styles.tabButtonText, activeTab === 'search' && styles.activeTabButtonText]}>검색</Text>
+          <Text style={[commonStyles.tabButtonText, activeTab === 'search' && commonStyles.activeTabButtonText]}>검색</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'route' && styles.activeTabButton]}
+          style={[commonStyles.tabButton, activeTab === 'route' && commonStyles.activeTabButton]}
           onPress={() => setActiveTab('route')}
         >
           <Ionicons name="navigate-outline" size={20} color={activeTab === 'route' ? '#007bff' : '#6c757d'} />
-          <Text style={[styles.tabButtonText, activeTab === 'route' && styles.activeTabButtonText]}>길찾기</Text>
+          <Text style={[commonStyles.tabButtonText, activeTab === 'route' && commonStyles.activeTabButtonText]}>길찾기</Text>
         </TouchableOpacity>
       </View>
 
       {activeTab === 'search' ? (
-        <View style={styles.searchTabContent}>
+        <View style={commonStyles.searchTabContent}>
           <SearchBar
             searchQuery={searchQuery}
             setSearchQuery={(text) => {
@@ -191,9 +197,9 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             onSearch={handleLocalSearch}
           />
           {showAutocomplete && autocompleteSuggestions.length > 0 && (
-            <View style={styles.suggestionsContainer}>
+            <View style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
               <TouchableOpacity
-                style={styles.closeButton}
+                style={commonStyles.closeButton}
                 onPress={() => setShowAutocomplete(false)}
               >
                 <Ionicons name="close" size={24} color="black" />
@@ -203,7 +209,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.suggestionItem}
+                    style={commonStyles.suggestionItem}
                     onPress={() => {
                       setSearchQuery(item.word);
                       setShowAutocomplete(false);
@@ -212,21 +218,21 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                     <Text>{item.word}</Text>
                   </TouchableOpacity>
                 )}
-                style={styles.suggestionsList}
+                style={commonStyles.suggestionsList}
               />
             </View>
           )}
           <SearchOptionsComponent searchOptions={searchOptions} setSearchOptions={setSearchOptions} />
           {pagination && searchResults.length > 0 && (
-            <View style={styles.resultCountContainer}>
-              <Text style={styles.resultCountText}>총 {pagination.totalElements}개 결과</Text>
+            <View style={commonStyles.resultCountContainer}>
+              <Text style={commonStyles.resultCountText}>총 {pagination.totalElements}개 결과</Text>
               {loadingAllMarkers && (
-                <Text style={styles.markerStatusText}>
+                <Text style={commonStyles.markerStatusText}>
                   (전체 마커 로딩중...)
                 </Text>
               )}
               {markerCountReachedLimit && (
-                <Text style={styles.markerStatusText}>
+                <Text style={commonStyles.markerStatusText}>
                   (지도에 {allMarkers.length}개만 표시)
                 </Text>
               )}
@@ -237,17 +243,17 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
       ) : (
         <ScrollView
           ref={routeScrollViewRef}
-          style={styles.routeTabContent}
-          contentContainerStyle={styles.routeTabScrollContent}
+          style={commonStyles.routeTabContent}
+          contentContainerStyle={commonStyles.routeTabScrollContent}
           showsVerticalScrollIndicator={true}
           nestedScrollEnabled={true}
         >
-          <View style={styles.transportModeWrapper}>
-            <View style={styles.transportModeContainer}>
+          <View style={commonStyles.transportModeWrapper}>
+            <View style={commonStyles.transportModeContainer}>
               <TouchableOpacity
                 style={[
-                  styles.transportModeButton,
-                  selectedTransportMode === 'driving' && styles.transportModeButtonSelected
+                  commonStyles.transportModeButton,
+                  selectedTransportMode === 'driving' && commonStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   handleTextEdit();
@@ -263,9 +269,9 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
               <TouchableOpacity
                 style={[
-                  styles.transportModeButton,
-                  styles.transportModeButtonDisabled, // 대중교통 미구현
-                  selectedTransportMode === 'transit' && styles.transportModeButtonSelected
+                  commonStyles.transportModeButton,
+                  commonStyles.transportModeButtonDisabled, // 대중교통 미구현
+                  selectedTransportMode === 'transit' && commonStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   console.log('대중교통 모드는 아직 구현되지 않았습니다.');
@@ -281,8 +287,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
               <TouchableOpacity
                 style={[
-                  styles.transportModeButton,
-                  selectedTransportMode === 'walking' && styles.transportModeButtonSelected
+                  commonStyles.transportModeButton,
+                  selectedTransportMode === 'walking' && commonStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   handleTextEdit();
@@ -298,8 +304,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
               <TouchableOpacity
                 style={[
-                  styles.transportModeButton,
-                  selectedTransportMode === 'cycling' && styles.transportModeButtonSelected
+                  commonStyles.transportModeButton,
+                  selectedTransportMode === 'cycling' && commonStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   handleTextEdit();
@@ -315,11 +321,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             </View>
           </View>
 
-          <View style={styles.routeInputsContainer}>
-            <View style={styles.routeInputContainer}>
-              <View style={styles.routeInputWrapper}>
+          <View style={commonStyles.routeInputsContainer}>
+            <View style={commonStyles.routeInputContainer}>
+              <View style={commonStyles.routeInputWrapper}>
                 <TextInput
-                  style={styles.routeTextInput}
+                  style={commonStyles.routeTextInput}
                   placeholder="출발지를 입력하세요"
                   value={startLocation}
                   onChangeText={(text) => {
@@ -333,14 +339,14 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   underlineColorAndroid="transparent"
                 />
                 {isSearchingStart && (
-                  <ActivityIndicator size="small" color="#007bff" style={styles.searchIndicator} />
+                  <ActivityIndicator size="small" color="#007bff" style={commonStyles.searchIndicator} />
                 )}
               </View>
 
               <TouchableOpacity
                 style={[
-                  styles.currentLocationButton,
-                  !location && styles.currentLocationButtonDisabled
+                  commonStyles.currentLocationButton,
+                  !location && commonStyles.currentLocationButtonDisabled
                 ]}
                 onPress={() => {
                   if (location) {
@@ -359,10 +365,10 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               </TouchableOpacity>
             </View>
 
-            <View style={styles.routeInputContainer}>
-              <View style={styles.routeInputWrapper}>
+            <View style={commonStyles.routeInputContainer}>
+              <View style={commonStyles.routeInputWrapper}>
                 <TextInput
-                  style={styles.routeTextInput}
+                  style={commonStyles.routeTextInput}
                   placeholder="도착지를 입력하세요"
                   value={endLocation}
                   onChangeText={(text) => {
@@ -376,12 +382,12 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   underlineColorAndroid="transparent"
                 />
                 {isSearchingEnd && (
-                  <ActivityIndicator size="small" color="#007bff" style={styles.searchIndicator} />
+                  <ActivityIndicator size="small" color="#007bff" style={commonStyles.searchIndicator} />
                 )}
               </View>
 
               <TouchableOpacity
-                style={styles.swapButton}
+                style={commonStyles.swapButton}
                 onPress={() => {
                   const tempStart = startLocation;
                   const tempEnd = endLocation;
@@ -402,8 +408,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
           <TouchableOpacity
             style={[
-              styles.routeButton,
-              (!endLocation.trim() || isRouteLoading || !!routeResult) && styles.routeButtonDisabled
+              commonStyles.routeButton,
+              (!endLocation.trim() || isRouteLoading || !!routeResult) && commonStyles.routeButtonDisabled
             ]}
             disabled={!endLocation.trim() || isRouteLoading || !!routeResult}
             onPress={async () => {
@@ -478,101 +484,101 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             }}
           >
             <Ionicons name="navigate-outline" size={20} color="#fff" />
-            <Text style={styles.routeButtonText}>
+            <Text style={commonStyles.routeButtonText}>
               {isRouteLoading ? '길찾기 중...' : routeResult ? '길찾기 완료' : '길찾기 시작'}
             </Text>
           </TouchableOpacity>
 
           {showStartResults && (
-            <View style={styles.searchResultsList}>
-              <Text style={styles.searchResultsTitle}>출발지 검색 결과</Text>
+            <View style={commonStyles.searchResultsList}>
+              <Text style={commonStyles.searchResultsTitle}>출발지 검색 결과</Text>
               {startLocationResults.length > 0 ? (
                 <ScrollView
-                  style={styles.searchResultsScrollContainer}
+                  style={commonStyles.searchResultsScrollContainer}
                   showsVerticalScrollIndicator={false}
                 >
                   {startLocationResults.map((item) => (
                     <TouchableOpacity
                       key={item.placeId}
-                      style={styles.searchResultItem}
+                      style={commonStyles.searchResultItem}
                       onPress={() => {
                         handleTextEdit();
                         setStartLocation(item.placeName);
                         setShowStartResults(false);
                       }}
                     >
-                      <View style={styles.searchResultContent}>
-                        <Text style={styles.searchResultTitle}>{item.placeName}</Text>
-                        <Text style={styles.searchResultAddress}>{item.roadAddress}</Text>
+                      <View style={commonStyles.searchResultContent}>
+                        <Text style={commonStyles.searchResultTitle}>{item.placeName}</Text>
+                        <Text style={commonStyles.searchResultAddress}>{item.roadAddress}</Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.departButton}
+                        style={commonStyles.departButton}
                         onPress={() => {
                           handleTextEdit();
                           setStartLocation(item.placeName);
                           setShowStartResults(false);
                         }}
                       >
-                        <Text style={styles.departButtonText}>출발</Text>
+                        <Text style={commonStyles.departButtonText}>출발</Text>
                       </TouchableOpacity>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
               ) : (
-                <View style={styles.noResultsContainer}>
-                  <Text style={styles.noResultsText}>검색 결과가 없습니다</Text>
+                <View style={commonStyles.noResultsContainer}>
+                  <Text style={commonStyles.noResultsText}>검색 결과가 없습니다</Text>
                 </View>
               )}
             </View>
           )}
 
           {showEndResults && (
-            <View style={styles.searchResultsList}>
-              <Text style={styles.searchResultsTitle}>목적지 검색 결과</Text>
+            <View style={commonStyles.searchResultsList}>
+              <Text style={commonStyles.searchResultsTitle}>목적지 검색 결과</Text>
               {endLocationResults.length > 0 ? (
                 <ScrollView
-                  style={styles.searchResultsScrollContainer}
+                  style={commonStyles.searchResultsScrollContainer}
                   showsVerticalScrollIndicator={false}
                 >
                   {endLocationResults.map((item) => (
                     <TouchableOpacity
                       key={item.placeId}
-                      style={styles.searchResultItem}
+                      style={commonStyles.searchResultItem}
                       onPress={() => {
                         handleTextEdit();
                         setEndLocation(item.placeName);
                         setShowEndResults(false);
                       }}
                     >
-                      <View style={styles.searchResultContent}>
-                        <Text style={styles.searchResultTitle}>{item.placeName}</Text>
-                        <Text style={styles.searchResultAddress}>{item.roadAddress}</Text>
+                      <View style={commonStyles.searchResultContent}>
+                        <Text style={commonStyles.searchResultTitle}>{item.placeName}</Text>
+                        <Text style={commonStyles.searchResultAddress}>{item.roadAddress}</Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.departButton}
+                        style={commonStyles.departButton}
                         onPress={() => {
                           handleTextEdit();
                           setEndLocation(item.placeName);
                           setShowEndResults(false);
                         }}
                       >
-                        <Text style={styles.departButtonText}>도착</Text>
+                        <Text style={commonStyles.departButtonText}>도착</Text>
                       </TouchableOpacity>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
               ) : (
-                <View style={styles.noResultsContainer}>
-                  <Text style={styles.noResultsText}>검색 결과가 없습니다</Text>
+                <View style={commonStyles.noResultsContainer}>
+                  <Text style={commonStyles.noResultsText}>검색 결과가 없습니다</Text>
                 </View>
               )}
             </View>
           )}
 
           {routeError && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{routeError}</Text>
-              <TouchableOpacity onPress={clearRoute} style={styles.errorCloseButton}>
+            <View style={commonStyles.errorContainer}>
+              <Text style={commonStyles.errorText}>{routeError}</Text>
+              <TouchableOpacity onPress={clearRoute} style={commonStyles.errorCloseButton}>
                 <Ionicons name="close-outline" size={16} color="#666" />
               </TouchableOpacity>
             </View>
@@ -590,309 +596,5 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  contentContainer: {
-    flex: 1,
-    paddingTop: 40,
-    paddingHorizontal: 16, // Restore padding for mobile
-  },
-  contentContainerWeb: {
-    paddingTop: 0,
-    paddingHorizontal: 0, // Keep padding 0 for web
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 14,
-    flex: 1,
-  },
-  noResultText: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: '#6c757d',
-  },
-  resultCountContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 10,
-    marginRight: 5,
-  },
-  resultCountText: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  markerStatusText: {
-    fontSize: 12,
-    color: '#868e96',
-    marginTop: 2,
-  },
-  tabHeader: {
-    flexDirection: 'row',
-    marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#dee2e6',
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTabButton: {
-    borderBottomColor: '#007bff',
-  },
-  tabButtonText: {
-    marginLeft: 6,
-    fontSize: 16,
-    color: '#6c757d',
-    fontWeight: '500',
-  },
-  activeTabButtonText: {
-    color: '#007bff',
-    fontWeight: '600',
-  },
-  searchTabContent: {
-    flex: 1,
-    paddingVertical: 20,
-  },
-  routeTabContent: {
-    flex: 1,
-  },
-  routeTabScrollContent: {
-    paddingVertical: 20,
-    paddingBottom: 30,
-    flexGrow: 1,
-  },
-  transportModeWrapper: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  transportModeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: -10,
-    paddingHorizontal: 16,
-    width: '100%',
-  },
-  transportModeButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 4,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    minWidth: 45,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  transportModeButtonSelected: {
-    backgroundColor: '#e3f2fd',
-    borderColor: '#007bff',
-    borderWidth: 2,
-  },
-  transportModeButtonDisabled: {
-    backgroundColor: '#f5f5f5',
-    borderColor: '#e0e0e0',
-    opacity: 0.6,
-  },
-  routeInputsContainer: {
-    marginBottom: 16,
-  },
-  routeInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  routeInputWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  routeTextInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-    paddingVertical: 6,
-    minHeight: 6,
-  },
-  searchIndicator: {
-    position: 'absolute',
-    right: 8,
-    top: 8,
-  },
-  currentLocationButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  currentLocationButtonDisabled: {
-    opacity: 0.6,
-  },
-  swapButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  routeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#007bff',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    marginTop: 0,
-    marginBottom: 16,
-  },
-  routeButtonDisabled: {
-    backgroundColor: '#6c757d',
-    opacity: 0.6,
-  },
-  routeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  searchResultsList: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    borderRadius: 8,
-    marginBottom: 12,
-    marginTop: 8,
-    paddingVertical: 8,
-    maxHeight: 180,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  searchResultsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f4',
-  },
-  searchResultsScrollContainer: {
-    maxHeight: 160,
-  },
-  noResultsContainer: {
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    margin: 8,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    borderStyle: 'dashed',
-  },
-  noResultsText: {
-    fontSize: 14,
-    color: '#6c757d',
-    fontStyle: 'italic',
-    textAlign: 'center',
-  },
-  searchResultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f4',
-    backgroundColor: '#fff',
-  },
-  searchResultContent: {
-    flex: 1,
-  },
-  searchResultTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 2,
-  },
-  searchResultAddress: {
-    fontSize: 12,
-    color: '#666',
-  },
-  departButton: {
-    backgroundColor: '#007bff',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginLeft: 8,
-    minWidth: 50,
-    alignItems: 'center',
-  },
-  departButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    backgroundColor: '#f8d7da',
-    borderColor: '#f5c6cb',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  errorCloseButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  suggestionsContainer: {
-    position: 'absolute',
-    top: 65,
-    left: 0,
-    right: 0,
-    zIndex: 9999,
-    backgroundColor: 'white',
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  suggestionsContainerWeb: {
-    top: 65, // Adjusted from 60
-    left: 16,
-    right: 16,
-  },
-  suggestionsList: {
-    maxHeight: 200,
-  },
-  suggestionItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    zIndex: 1,
-  },
-});
 
 export default SharedSearch;

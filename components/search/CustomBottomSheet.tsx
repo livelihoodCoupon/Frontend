@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
-  StyleSheet,
   Dimensions,
   Animated,
   TouchableOpacity,
@@ -15,6 +14,10 @@ import SharedSearch from './SharedSearch';
 import { SearchResult, SearchOptions } from '../../types/search';
 import { PageResponse } from '../../types/api';
 import { RouteResult } from '../../types/route';
+import { commonStyles } from './styles/CustomBottomSheet.common.styles';
+import { webStyles } from './styles/CustomBottomSheet.web.styles';
+import { mobileStyles } from './styles/CustomBottomSheet.mobile.styles';
+
 
 interface CustomBottomSheetProps {
   isOpen: boolean;
@@ -116,7 +119,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
   return (
     <Animated.View
       style={[
-        styles.bottomSheetContainer,
+        Platform.OS === 'web' ? webStyles.bottomSheetContainer : mobileStyles.bottomSheetContainer,
         {
           height: dynamicHeight,
           bottom: insets.bottom,
@@ -125,7 +128,7 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
       ]}
       pointerEvents="auto"
     >
-      <TouchableOpacity onPress={onToggle} style={styles.toggleButton}>
+      <TouchableOpacity onPress={onToggle} style={commonStyles.toggleButton}>
         <Ionicons name={isOpen ? "chevron-down" : "chevron-up"} size={24} color="#495057" />
       </TouchableOpacity>
       {isOpen && (
@@ -139,37 +142,5 @@ const CustomBottomSheet: React.FC<CustomBottomSheetProps> = (props) => {
   );
 };
 
-const styles = StyleSheet.create({
-  bottomSheetContainer: {
-    width: '100%',
-    backgroundColor: 'white',
-    position: 'absolute',
-    left: 0,
-    zIndex: 10,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -5 },
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 15,
-      },
-      web: {
-        boxShadow: '0px -5px 6px rgba(0,0,0,0.25)',
-      },
-    }),
-  },
-  toggleButton: {
-    position: 'absolute',
-    top: 10,
-    alignSelf: 'center',
-    padding: 5,
-  },
-});
 
 export default React.memo(CustomBottomSheet);

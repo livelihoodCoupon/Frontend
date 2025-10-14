@@ -15,7 +15,9 @@ import { useKakaoMapScript } from "../hooks/useKakaoMapScript";
 
 import { MarkerData, KakaoMapProps } from "../types/kakaoMap";
 import { SearchResult } from "../types/search";
-import { styles } from "./KakaoMap.styles";
+import { commonStyles } from "./KakaoMap.common.styles";
+import { webStyles } from "./KakaoMap.web.styles";
+import { mobileStyles } from "./KakaoMap.mobile.styles";
 import { MARKER_IMAGES } from "../constants/mapConstants";
 
   const WebKakaoMap = ({
@@ -653,7 +655,7 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
 
   if (scriptError) {
     return (
-      <View style={styles.webMapContainer}>
+      <View style={webStyles.webMapContainer}>
         <Text>Error loading Kakao Map: {scriptError.toString()}</Text>
       </View>
     );
@@ -661,13 +663,13 @@ import { MARKER_IMAGES } from "../constants/mapConstants";
 
   if (!isLoaded) {
     return (
-      <View style={styles.webMapContainer}>
+      <View style={webStyles.webMapContainer}>
         <Text>Loading Kakao Map...</Text>
       </View>
     );
   }
 
-  return <div ref={mapRef} style={styles.webMapContainer} />;
+  return <div ref={mapRef} style={webStyles.webMapContainer} />;
 };
 
 import { kakaoMapWebViewHtml } from "./kakaoMapWebViewSource";
@@ -775,7 +777,7 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
 
   if (!htmlContent) {
     return (
-      <View style={styles.webview}>
+      <View style={mobileStyles.webview}>
         <Text>Loading map content...</Text>
       </View>
     );
@@ -787,7 +789,7 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
         ref={webViewRef} // WebView에 ref 할당
         originWhitelist={["*"]}
         source={{ html: htmlContent }}
-        style={[styles.webview, style]}
+        style={[mobileStyles.webview, style]}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         onLoadEnd={() => {
@@ -864,17 +866,17 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
         animationType="fade"
         onRequestClose={() => setShowRouteMenu(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.routeMenuContainer}>
-            <Text style={styles.routeMenuTitle}>
+        <View style={commonStyles.modalOverlay}>
+          <View style={commonStyles.routeMenuContainer}>
+            <Text style={commonStyles.routeMenuTitle}>
               {selectedPlaceInfo?.placeName}
             </Text>
-            <Text style={styles.routeMenuSubtitle}>
+            <Text style={commonStyles.routeMenuSubtitle}>
               길찾기 옵션을 선택하세요
             </Text>
             
             <TouchableOpacity
-              style={styles.routeMenuButton}
+              style={commonStyles.routeMenuButton}
               onPress={() => {
                 if (selectedPlaceInfo && (global as any).setRouteLocationFromInfoWindow) {
                   (global as any).setRouteLocationFromInfoWindow('departure', selectedPlaceInfo);
@@ -882,11 +884,11 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
                 }
               }}
             >
-              <Text style={styles.routeMenuButtonText}>출발지로 설정</Text>
+              <Text style={commonStyles.routeMenuButtonText}>출발지로 설정</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={styles.routeMenuButton}
+              style={commonStyles.routeMenuButton}
               onPress={() => {
                 if (selectedPlaceInfo && (global as any).setRouteLocationFromInfoWindow) {
                   (global as any).setRouteLocationFromInfoWindow('arrival', selectedPlaceInfo);
@@ -894,14 +896,14 @@ const MobileKakaoMap: React.FC<KakaoMapProps> = React.memo(({
                 }
               }}
             >
-              <Text style={styles.routeMenuButtonText}>도착지로 설정</Text>
+              <Text style={commonStyles.routeMenuButtonText}>도착지로 설정</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={styles.routeMenuCancelButton}
+              style={commonStyles.routeMenuCancelButton}
               onPress={() => setShowRouteMenu(false)}
             >
-              <Text style={styles.routeMenuCancelButtonText}>취소</Text>
+              <Text style={commonStyles.routeMenuCancelButtonText}>취소</Text>
             </TouchableOpacity>
           </View>
         </View>
