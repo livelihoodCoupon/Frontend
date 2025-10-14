@@ -13,7 +13,7 @@ import SideMenu from "../components/layout/SideMenu";
 import { SearchResult, SearchOptions } from "../types/search";
 import { PageResponse } from "../types/api";
 import { RouteResult } from "../types/route";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { webStyles } from "./HomeWebLayout.styles";
 import RecentlyViewedPlaces from "../components/RecentlyViewedPlaces";
 
@@ -166,6 +166,8 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   onRecentlyViewedPlaceClick,
 }) => {
   const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
+  const recentlyViewedButtonRef = useRef<TouchableOpacity>(null);
+
   return (
     <View style={webStyles.container}>
       {errorMsg && (
@@ -207,7 +209,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
           startLocation={startLocation}
           setStartLocation={setStartLocation}
           endLocation={endLocation}
-          setEndLocation={setEndLocation}
+          setEndLocation={endLocation}
           startLocationResults={startLocationResults}
           endLocationResults={endLocationResults}
           isSearchingStart={isSearchingStart}
@@ -263,7 +265,11 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
               {/* Recently Viewed Places Button */}
               <TouchableOpacity
                 style={webStyles.recentlyViewedButton}
-                onPress={() => setShowRecentlyViewed(!showRecentlyViewed)}
+                onPress={(e) => {
+                  e.stopPropagation(); // Stop event propagation
+                  setShowRecentlyViewed(!showRecentlyViewed);
+                }}
+                ref={recentlyViewedButtonRef} // Attach the ref here
               >
                 <View style={webStyles.recentlyViewedButtonText}><Ionicons name="time-outline" size={20} color="#F8FAFE" style={{ marginRight: 5 }} /><Text style={{
                     fontSize: 15, // Apply font size here
@@ -274,7 +280,11 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
               </TouchableOpacity>
               {/* Recently Viewed Places Component */}
               {showRecentlyViewed && (
-                <RecentlyViewedPlaces onPlaceClick={onRecentlyViewedPlaceClick} />
+                <RecentlyViewedPlaces
+                  onPlaceClick={onRecentlyViewedPlaceClick}
+                  onClickOutside={() => setShowRecentlyViewed(false)}
+                  toggleButtonRef={recentlyViewedButtonRef} // Pass the ref
+                />
               )}
             </>
           ) : (

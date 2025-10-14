@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 import { useRecentlyViewedPlaces, MAX_RECENTLY_VIEWED_PLACES } from "../hooks/useRecentlyViewedPlaces";
 import { MarkerData } from "../types/kakaoMap";
 
 interface RecentlyViewedPlacesProps {
   onPlaceClick: (place: MarkerData) => void;
+  onClickOutside: () => void; // New prop to handle clicks outside
+  toggleButtonRef: React.RefObject<HTMLElement>; // Ref to the button that toggles this component
 }
 
 const RecentlyViewedContainer = styled.div`
@@ -30,19 +32,38 @@ const CountInfo = styled.p`
   padding-right: 5px;
 `;
 
-const RecentlyViewedPlaces: React.FC<RecentlyViewedPlacesProps> = ({ onPlaceClick }) => {
+const RecentlyViewedPlaces: React.FC<RecentlyViewedPlacesProps> = ({ onPlaceClick, onClickOutside, toggleButtonRef }) => {
   const {
     recentlyViewedPlaces,
     currentPage,
     totalPages,
     goToNextPage,
     goToPreviousPage,
-    totalRecentlyViewedCount, // Get the total count
-    removePlace, // Get the removePlace function
+    totalRecentlyViewedCount,
+    removePlace,
   } = useRecentlyViewedPlaces();
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // If the click is on the toggle button, do nothing
+      if (toggleButtonRef.current && toggleButtonRef.current.contains(event.target as Node)) {
+        return;
+      }
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        onClickOutside();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClickOutside, toggleButtonRef]);
+
   return (
-    <RecentlyViewedContainer>
+    <RecentlyViewedContainer ref={containerRef}>
       {totalRecentlyViewedCount > 0 && (
         <CountInfo>({totalRecentlyViewedCount} / {MAX_RECENTLY_VIEWED_PLACES})</CountInfo>
       )}

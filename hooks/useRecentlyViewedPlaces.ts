@@ -69,7 +69,7 @@ export const useRecentlyViewedPlaces = () => {
       if (typeof window !== "undefined") {
         localStorage.setItem(RECENTLY_VIEWED_PLACES_KEY, JSON.stringify(limitedPlaces));
         setRefreshKey((prev) => prev + 1); // Increment refreshKey
-        window.dispatchEvent(new Event('recentlyViewedStorageChange')); // Dispatch custom event
+        // window.dispatchEvent(new Event('recentlyViewedStorageChange')); // Removed redundant dispatch
       }
       return limitedPlaces;
     });
@@ -101,7 +101,7 @@ export const useRecentlyViewedPlaces = () => {
       if (typeof window !== "undefined") {
         localStorage.setItem(RECENTLY_VIEWED_PLACES_KEY, JSON.stringify(updatedPlaces));
         setRefreshKey((prev) => prev + 1); // Increment refreshKey
-        window.dispatchEvent(new Event('recentlyViewedStorageChange')); // Dispatch custom event
+        // window.dispatchEvent(new Event('recentlyViewedStorageChange')); // Removed redundant dispatch
       }
       // If the current page becomes empty after removal, go to the previous page
       const newTotalPages = Math.ceil(updatedPlaces.length / ITEMS_PER_PAGE);
