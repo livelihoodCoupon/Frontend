@@ -322,7 +322,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   color={
                     selectedTransportMode === 'driving'
                       ? '#3690FF'
-                      : Platform.OS === 'web' ? '#F8FAFE' : '#666'
+                      : '#666'
                   }
                 />
               </TouchableOpacity>
@@ -361,7 +361,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   color={
                     selectedTransportMode === 'walking'
                       ? '#3690FF'
-                      : Platform.OS === 'web' ? '#F8FAFE' : '#666'
+                      : '#666'
                   }
                 />
               </TouchableOpacity>
@@ -382,7 +382,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   color={
                     selectedTransportMode === 'cycling'
                       ? '#3690FF'
-                      : Platform.OS === 'web' ? '#F8FAFE' : '#666'
+                      : '#666'
                   }
                 />
               </TouchableOpacity>

@@ -4,6 +4,8 @@ import {
   Animated,
   TouchableOpacity,
   Platform,
+  Image, // Add Image import
+  Text, // Add Text import
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SharedSearch from '../search/SharedSearch';
@@ -12,6 +14,8 @@ import { PageResponse } from '../../types/api';
 import { commonStyles } from './styles/SideMenu.common.styles';
 import { webStyles } from './styles/SideMenu.web.styles';
 import { mobileStyles } from './styles/SideMenu.mobile.styles';
+
+const appIcon = require('../../assets/app-icon.png'); // Import the app icon
 
 
 interface SideMenuProps {
@@ -88,6 +92,10 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
           <Ionicons name={isOpen ? "chevron-back" : "chevron-forward"} size={24} color="#495057" />
         </TouchableOpacity>
         <View style={styles.sideMenuContent}>
+          <View style={commonStyles.logoContainer}>
+            <Image source={appIcon} style={commonStyles.logo} />
+            <Text style={commonStyles.title}>소비쿠폰 사용처 찾기</Text>
+          </View>
           <SharedSearch
             isWebView={true}
             {...props}
@@ -102,6 +110,10 @@ const SideMenu: React.FC<SideMenuProps> = (props) => {
       <TouchableOpacity onPress={onToggle} style={styles.toggleButton}>
         <Ionicons name={isOpen ? "chevron-back" : "chevron-forward"} size={24} color="#495057" />
       </TouchableOpacity>
+      <View style={commonStyles.logoContainer}>
+        <Image source={appIcon} style={commonStyles.logo} />
+        <Text style={commonStyles.title}>소비쿠폰</Text>
+      </View>
       <SharedSearch
         isWebView={true}
         {...props}

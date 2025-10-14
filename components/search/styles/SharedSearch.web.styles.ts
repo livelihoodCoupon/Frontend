@@ -15,16 +15,16 @@ export const webStyles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 4,
-    backgroundColor: 'rgba(248, 250, 254, 0.2)', // 반투명 배경
+    backgroundColor: '#f8f9fa',
     borderWidth: 1,
-    borderColor: '#F8FAFE',
+    borderColor: '#dee2e6',
     minWidth: 45,
     alignItems: 'center',
     justifyContent: 'center',
   },
   transportModeButtonSelected: {
-    backgroundColor: '#F8FAFE',
-    borderColor: '#F8FAFE',
+    backgroundColor: '#e3f2fd',
+    borderColor: '#3690FF',
     borderWidth: 2,
   },
 });
