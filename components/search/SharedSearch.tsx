@@ -186,6 +186,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
           !searchBarRef.current.contains(event.target as Node)
         ) {
           setShowAutocomplete(false);
+          searchBarRef.current.blur(); // Programmatically blur the input
         }
       };
 
@@ -308,8 +309,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   return; // Do not blur if focus moves to a suggestion item
                 }
               }
-              // Add a small delay to allow click events on suggestions to register
-              setTimeout(() => setIsSearchBarFocused(false), 100);
+              setIsSearchBarFocused(false); // Set focus state immediately
             }}
           />
           {(showAutocomplete && !hasPerformedSearch && autocompleteSuggestions.length > 0) || (searchQuery.length === 0 && isSearchBarFocused && recentSearches.length > 0) ? (
