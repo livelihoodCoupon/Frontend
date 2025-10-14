@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/frontend
+            cd ~/frontend/web-build
 
             echo "Creating .env file..."
             cat > .env <<EOL
