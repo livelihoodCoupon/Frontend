@@ -174,10 +174,6 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   }, []); // Load on mount
 
   useEffect(() => {
-    loadRecentSearches();
-  }, []); // Load on mount
-
-  useEffect(() => {
     if (Platform.OS === 'web') {
       const handleClickOutside = (event: MouseEvent) => {
         if (
@@ -301,7 +297,14 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               debouncedAutocomplete(text);
               setSearchSubmitted(false);
             }}
-            onSearch={() => { onSearch(); setShowAutocomplete(false); setSearchSubmitted(true); }}
+            onSearch={() => {
+              onSearch();
+              setShowAutocomplete(false);
+              setSearchSubmitted(true);
+              if (searchQuery.trim().length > 0) {
+                addRecentSearch(searchQuery); // Add current search query to recent searches
+              }
+            }}
             onClearSearch={onClearSearch}
             onFocus={() => setIsSearchBarFocused(true)}
             onBlur={(e) => {
