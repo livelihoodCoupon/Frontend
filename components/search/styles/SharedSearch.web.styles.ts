@@ -8,8 +8,7 @@ export const webStyles = StyleSheet.create({
   },
   suggestionsContainer: {
     top: 65, // Adjusted from 60
-    left: 16,
-    right: 16,
+    // Removed left and right to expand width
   },
   transportModeButton: {
     paddingVertical: 6,
