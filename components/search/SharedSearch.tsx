@@ -134,6 +134,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   const [hasPerformedSearch, setHasPerformedSearch] = useState(false); // New state to track if a search has been performed
   const [recentSearches, setRecentSearches] = useState<string[]>([]); // New state for recent searches
   const [isSearchBarFocused, setIsSearchBarFocused] = useState(false); // New state for search bar focus
+  const [searchSubmitted, setSearchSubmitted] = useState(false); // New state to track if a search has been submitted
   const routeScrollViewRef = useRef<ScrollView>(null);
   const searchBarRef = useRef<TextInput>(null); // Ref for the SearchBar's TextInput
   const suggestionsContainerRef = useRef<View>(null); // Ref for the suggestions container
@@ -298,8 +299,9 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 setShowAutocomplete(false); // Hide autocomplete if query is empty
               }
               debouncedAutocomplete(text);
+              setSearchSubmitted(false);
             }}
-            onSearch={() => handleLocalSearch()} // Wrap in anonymous function
+            onSearch={() => { onSearch(); setShowAutocomplete(false); setSearchSubmitted(true); }}
             onClearSearch={onClearSearch}
             onFocus={() => setIsSearchBarFocused(true)}
             onBlur={(e) => {
@@ -312,7 +314,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               setIsSearchBarFocused(false); // Set focus state immediately
             }}
           />
-          {(showAutocomplete && !hasPerformedSearch && autocompleteSuggestions.length > 0) || (searchQuery.length === 0 && isSearchBarFocused && recentSearches.length > 0) ? (
+          {(showAutocomplete && !hasPerformedSearch && autocompleteSuggestions.length > 0 && !searchSubmitted) || (searchQuery.length === 0 && isSearchBarFocused && recentSearches.length > 0) ? (
             <View ref={suggestionsContainerRef} style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
               {searchQuery.length === 0 && isSearchBarFocused ? (
                 // Display Recent Searches
