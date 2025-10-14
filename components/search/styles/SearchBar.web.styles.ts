@@ -28,4 +28,10 @@ export const webStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  clearButton: {
+    position: 'absolute',
+    right: 70,
+    top: 2,
+    padding: 5,
+  },
 });

@@ -25,6 +25,7 @@ interface CustomBottomSheetProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onSearch: () => void;
+  onClearSearch: () => void; // New prop
   searchResults: SearchResult[];
   allMarkers: SearchResult[];
   isLoading: boolean;

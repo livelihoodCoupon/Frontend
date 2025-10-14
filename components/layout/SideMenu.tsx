@@ -26,6 +26,7 @@ interface SideMenuProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onSearch: () => void;
+  onClearSearch: () => void; // New prop
   searchOptions: SearchOptions;
   setSearchOptions: (options: Partial<SearchOptions>) => void;
   loadingNextPage: boolean;

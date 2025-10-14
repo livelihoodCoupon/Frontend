@@ -26,6 +26,7 @@ interface SharedSearchProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onSearch: () => void;
+  onClearSearch: () => void; // New prop
   searchResults: SearchResult[];
   allMarkers: SearchResult[];
   isLoading: boolean;
@@ -81,6 +82,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   searchQuery,
   setSearchQuery,
   onSearch,
+  onClearSearch,
   searchResults,
   allMarkers,
   isLoading,
@@ -204,6 +206,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               debouncedAutocomplete(text);
             }}
             onSearch={handleLocalSearch}
+            onClearSearch={onClearSearch}
           />
           {showAutocomplete && autocompleteSuggestions.length > 0 && (
             <View style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>

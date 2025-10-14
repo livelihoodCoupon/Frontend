@@ -29,4 +29,10 @@ export const mobileStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  clearButton: {
+    position: 'absolute',
+    right: 68,
+    top: 4,
+    padding: 5,
+  },
 });

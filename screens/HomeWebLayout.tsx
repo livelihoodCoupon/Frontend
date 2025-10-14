@@ -37,6 +37,7 @@ interface HomeWebLayoutProps {
   isLoading: boolean;
   errorMsg: string | null;
   onSearch: () => Promise<void>;
+  onClearSearch: () => void; // New prop
   onSelectResult: (item: SearchResult) => void;
   onMarkerPress: (placeId: string, lat?: number, lng?: number) => void;
   searchOptions: SearchOptions;
@@ -108,6 +109,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   isLoading,
   errorMsg,
   onSearch,
+  onClearSearch,
   onSelectResult,
   onMarkerPress,
   searchOptions,
@@ -178,6 +180,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearch={onSearch}
+          onClearSearch={onClearSearch}
           searchOptions={searchOptions}
           setSearchOptions={setSearchOptions}
           loadingNextPage={loadingNextPage}

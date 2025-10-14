@@ -143,8 +143,10 @@ export default function Home() {
   }, [setMapCenterToStore]);
 
   const clearSearchResults = useCallback(() => {
+    setSearchQuery(""); // 검색어 초기화
     clearSearchResultsFromHook(); // useSearch 훅의 clearSearchResults 호출
-  }, [clearSearchResultsFromHook]);
+    setShowAutocomplete(false); // 자동 완성 UI 숨기기
+  }, [clearSearchResultsFromHook, setSearchQuery, setShowAutocomplete]);
 
   // 검색 결과에 따라 지도 중심을 업데이트
   useEffect(() => {
@@ -319,6 +321,7 @@ export default function Home() {
         isLoading={isLoading}
         errorMsg={errorMsg}
         onSearch={handleSearch}
+        onClearSearch={clearSearchResults}
         onSelectResult={handleSelectResult}
         onMarkerPress={handleMarkerPress}
         searchOptions={searchOptions}
@@ -390,6 +393,7 @@ export default function Home() {
         isLoading={isLoading}
         errorMsg={errorMsg}
         onSearch={handleSearch}
+        onClearSearch={clearSearchResults}
         onSelectResult={handleSelectResult}
         onMarkerPress={handleMarkerPress}
         searchOptions={searchOptions}

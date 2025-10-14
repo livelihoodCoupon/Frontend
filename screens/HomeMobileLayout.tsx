@@ -37,6 +37,7 @@ interface HomeMobileLayoutProps {
   isLoading: boolean;
   errorMsg: string | null;
   onSearch: () => Promise<void>;
+  onClearSearch: () => void; // New prop
   onSelectResult: (item: SearchResult) => void;
   onMarkerPress: (placeId: string, lat?: number, lng?: number) => void;
   searchOptions: SearchOptions;
@@ -107,6 +108,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   isLoading,
   errorMsg,
   onSearch,
+  onClearSearch,
   onSelectResult,
   onMarkerPress,
   searchOptions,
@@ -173,6 +175,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearch={onSearch}
+        onClearSearch={onClearSearch}
         searchResults={searchResults}
         allMarkers={allMarkers}
         isLoading={isLoading}
