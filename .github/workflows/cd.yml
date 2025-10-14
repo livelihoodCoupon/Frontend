@@ -51,7 +51,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: web-build/**
+          source: ./
           target: ~/frontend/
           overwrite: true
 
@@ -65,37 +65,19 @@ jobs:
           script: |
             cd ~/frontend
 
-            #echo "Creating .env file..."
-            #cat > .env <<EOL
-            #KAKAO_MAP_JS_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
-            #KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
-            #API_BASE_URL=${{ secrets.API_BASE_URL }}
-            #EXPO_PUBLIC_USE_HARDCODED_LOCATION=${{ secrets.EXPO_PUBLIC_USE_HARDCODED_LOCATION }}
-            #EXPO_PUBLIC_HARDCODED_LATITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LATITUDE }}
-            #EXPO_PUBLIC_HARDCODED_LONGITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LONGITUDE }}
-            #EOL
-            #echo "Stopping existing process (if any)..."
-            #pkill -f "npm start" || true
-            #echo "Starting frontend with npm start..."
-            #nohup npm start > frontend.log 2>&1 &
-            #disown
-            #echo "✅ Frontend started successfully!"
-
+            npm install
 
             # pm2 설치 (한 번만 설치해도 됨)
-            #sudo npm install -g pm2 serve expo-cli || true
-            sudo npm install -g pm2 serve expo-cli
-            sudo pm2 startup systemd -u ubuntu --hp /home/ubuntu            
+            sudo npm install -g pm2 serve expo-cli        
 
             # 기존 프로세스 종료
-            #pm2 delete all || true
             pm2 delete frontend || true
             pm2 delete expo || true
 
-            # 리액트 시작
+            # React 빌드 서비스 (8081 포트)
             pm2 start "serve -s ./web-build -l 8081" --name frontend
 
-            # expo 시작
+            # Expo 개발 서버 실행
             pm2 start "expo start --non-interactive --tunnel" --name expo
 
             # pm2 프로세스 저장, EC2 재부팅 시 자동 시작
