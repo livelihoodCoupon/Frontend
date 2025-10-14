@@ -30,10 +30,18 @@ jobs:
       - name: Install dependencies and build
         run: |
           npm ci --legacy-peer-deps
-          npm install @expo/webpack-config@^18.0.0 react-dom react-native-web --legacy-peer-deps                  
+          npm install @expo/webpack-config@^18.0.0 react-dom react-native-web --legacy-peer-deps   
+          # 빌드 전 env 주입
+          export REACT_APP_KAKAO_MAP_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
+          export REACT_APP_KAKAO_REST_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+          export REACT_APP_API_BASE_URL=${{ secrets.API_BASE_URL }}
+          export REACT_APP_USE_HARDCODED_LOCATION=${{ secrets.EXPO_PUBLIC_USE_HARDCODED_LOCATION }}
+          export REACT_APP_HARDCODED_LAT=${{ secrets.EXPO_PUBLIC_HARDCODED_LATITUDE }}
+          export REACT_APP_HARDCODED_LNG=${{ secrets.EXPO_PUBLIC_HARDCODED_LONGITUDE }}
+          npm run web-build          
 
-      - name: Build Web
-        run: npm run web-build
+      #- name: Build Web
+      #  run: npm run web-build
 
       # 4. EC2에 빌드 결과 전송
       - name: Copy build folder to EC2
@@ -56,21 +64,41 @@ jobs:
           script: |
             cd ~/Frontend
 
-            echo "Creating .env file..."
-            cat > .env <<EOL
-            KAKAO_MAP_JS_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
-            KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
-            API_BASE_URL=${{ secrets.API_BASE_URL }}
-            EXPO_PUBLIC_USE_HARDCODED_LOCATION=${{ secrets.EXPO_PUBLIC_USE_HARDCODED_LOCATION }}
-            EXPO_PUBLIC_HARDCODED_LATITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LATITUDE }}
-            EXPO_PUBLIC_HARDCODED_LONGITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LONGITUDE }}
-            EOL
+            #echo "Creating .env file..."
+            #cat > .env <<EOL
+            #KAKAO_MAP_JS_KEY=${{ secrets.KAKAO_MAP_JS_KEY }}
+            #KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+            #API_BASE_URL=${{ secrets.API_BASE_URL }}
+            #EXPO_PUBLIC_USE_HARDCODED_LOCATION=${{ secrets.EXPO_PUBLIC_USE_HARDCODED_LOCATION }}
+            #EXPO_PUBLIC_HARDCODED_LATITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LATITUDE }}
+            #EXPO_PUBLIC_HARDCODED_LONGITUDE=${{ secrets.EXPO_PUBLIC_HARDCODED_LONGITUDE }}
+            #EOL
 
-            echo "Stopping existing process (if any)..."
-            pkill -f "npm start" || true
+            #echo "Stopping existing process (if any)..."
+            #pkill -f "npm start" || true
 
-            echo "Starting frontend with npm start..."
-            nohup npm start > frontend.log 2>&1 &
-            disown
+            #echo "Starting frontend with npm start..."
+            #nohup npm start > frontend.log 2>&1 &
+            #disown
 
-            echo "✅ Frontend started successfully!"
+            #echo "✅ Frontend started successfully!"
+
+
+            # pm2 설치 (한 번만 설치해도 됨)
+            npm install -g pm2 || true
+
+            # 기존 프로세스 종료
+            pm2 delete frontend || true
+
+            # serve 설치 (정적 파일 배포용)
+            npm install -g serve || true
+
+            # pm2로 serve 실행
+            pm2 start serve --name frontend -- -s web-build -l 8081
+
+            # pm2 프로세스 저장, EC2 재부팅 시 자동 시작
+            pm2 save
+            pm2 startup systemd -u $USER --hp $HOME
+
+            echo "✅ Frontend started successfully with pm2!"
+
