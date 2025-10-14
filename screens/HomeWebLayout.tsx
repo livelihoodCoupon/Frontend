@@ -7,6 +7,7 @@ import {
   Animated,
   TouchableOpacity,
 } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 import KakaoMap from "../components/KakaoMap";
 import SideMenu from "../components/layout/SideMenu";
 import { SearchResult, SearchOptions } from "../types/search";
@@ -264,7 +265,12 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
                 style={webStyles.recentlyViewedButton}
                 onPress={() => setShowRecentlyViewed(!showRecentlyViewed)}
               >
-                <Text style={webStyles.recentlyViewedButtonText}>최근 본 장소</Text>
+                <View style={webStyles.recentlyViewedButtonText}><Ionicons name="time-outline" size={20} color="#F8FAFE" style={{ marginRight: 5 }} /><Text style={{
+                    fontSize: 15, // Apply font size here
+                    color: '#F8FAFE', // Apply color here
+                    fontWeight: 'bold', // Apply font weight here
+                  }}>최근 본 장소</Text>
+                </View>
               </TouchableOpacity>
               {/* Recently Viewed Places Component */}
               {showRecentlyViewed && (

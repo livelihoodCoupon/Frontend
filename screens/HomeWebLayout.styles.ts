@@ -76,23 +76,24 @@ export const webStyles = StyleSheet.create({
     right: 20,
     backgroundColor: '#3690FF', // Base blue color
     paddingVertical: 10, // Slightly larger padding
-    paddingHorizontal: 18, // Slightly larger padding
-    borderRadius: 20, // More rounded
+    paddingHorizontal: 15, // Slightly larger padding
+    borderRadius: 50, // More rounded
     borderWidth: 1,
     borderColor: '#3690FF', // Match background color
     zIndex: 100,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4, // More prominent shadow
+      height: 2, // More prominent shadow
     },
-    shadowOpacity: 0.4, // Darker shadow
+    shadowOpacity: 0.5, // Darker shadow
     shadowRadius: 5.46, // Larger shadow radius
     elevation: 9, // Higher elevation for Android shadow
   },
   recentlyViewedButtonText: {
-    fontSize: 15, // Slightly larger font size
-    color: '#F8FAFE', // Text on blue color
-    fontWeight: 'bold', // Bolder text
+    flexDirection: 'row', // Enable flexbox
+    alignItems: 'center', // Vertically center items
+    // No fontSize, color, fontWeight here as they apply to Text components.
+    // The Text component inside the View will inherit or have its own styles.
   },
 });
