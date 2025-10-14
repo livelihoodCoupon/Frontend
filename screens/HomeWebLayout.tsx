@@ -13,9 +13,11 @@ import SideMenu from "../components/layout/SideMenu";
 import { SearchResult, SearchOptions } from "../types/search";
 import { PageResponse } from "../types/api";
 import { RouteResult } from "../types/route";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { webStyles } from "./HomeWebLayout.styles";
 import RecentlyViewedPlaces from "../components/RecentlyViewedPlaces";
+
+const SIDE_MENU_WIDTH = 330; // Define the side menu width
 
 interface HomeWebLayoutProps {
   // Props for HomeWebLayout
@@ -168,6 +170,8 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
   const recentlyViewedButtonRef = useRef<TouchableOpacity>(null);
 
+  const searchButtonTranslateX = isMenuOpen ? SIDE_MENU_WIDTH / 2 : 0;
+
   return (
     <View style={webStyles.container}>
       {errorMsg && (
@@ -256,7 +260,10 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
               />
               {showSearchInAreaButton && (
                 <TouchableOpacity
-                  style={webStyles.searchInAreaButton}
+                  style={[
+                    webStyles.searchInAreaButton,
+                    { transform: [{ translateX: searchButtonTranslateX }] },
+                  ]}
                   onPress={handleSearchInArea}
                 >
                   <Text style={webStyles.searchInAreaButtonText}>현재 지도에서 검색</Text>
