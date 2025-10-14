@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: web-build/**
-          target: ~/frontend/web-build/
+          target: ~/Frontend/web-build/
           overwrite: true
 
       # 5. EC2에서 npm start 실행
@@ -54,7 +54,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/frontend
+            cd ~/Frontend
 
             echo "Creating .env file..."
             cat > .env <<EOL
