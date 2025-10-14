@@ -51,7 +51,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: web-build/**
-          target: ~/Frontend/web-build/
+          target: ~/frontend/
           overwrite: true
 
       # 5. EC2에서 npm start 실행
@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/Frontend
+            cd ~/frontend
 
             #echo "Creating .env file..."
             #cat > .env <<EOL
@@ -85,13 +85,17 @@ jobs:
 
 
             # pm2 설치 (한 번만 설치해도 됨)
-            sudo npm install -g pm2 serve expo-cli || true
+            #sudo npm install -g pm2 serve expo-cli || true
+            sudo npm install -g pm2 serve expo-cli
+            sudo pm2 startup systemd -u ubuntu --hp /home/ubuntu            
 
             # 기존 프로세스 종료
-            pm2 delete all || true
+            #pm2 delete all || true
+            pm2 delete frontend || true
+            pm2 delete expo || true
 
             # 리액트 시작
-            pm2 start "serve -s web-build -l 8081" --name frontend
+            pm2 start "serve -s ./web-build -l 8081" --name frontend
 
             # expo 시작
             pm2 start "expo start --non-interactive --tunnel" --name expo
