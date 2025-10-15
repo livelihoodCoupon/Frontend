@@ -354,6 +354,16 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 
   // 지도 레벨 초기화 상태
   const [resetMapLevel, setResetMapLevel] = useState(false);
+  
+  // resetMapLevel 상태 변화 추적
+  useEffect(() => {
+    if (resetMapLevel) {
+      console.log('=== resetMapLevel이 true로 설정됨 ===');
+      console.log('현재 isRouteMode:', isRouteMode);
+      console.log('현재 showRouteDetail:', showRouteDetail);
+      console.trace('resetMapLevel 호출 스택');
+    }
+  }, [resetMapLevel, isRouteMode, showRouteDetail]);
 
   // resetMapLevel 상태 변화 추적
   useEffect(() => {
@@ -1006,11 +1016,29 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   // 길찾기 결과가 있을 때 줌 레벨 조정
   useEffect(() => {
     if (routeResult && webViewRef.current && isRouteMode) {
+      console.log('=== 길찾기 줌 레벨 조정 호출 시작 ===');
+      console.log('routeResult:', !!routeResult);
+      console.log('webViewRef.current:', !!webViewRef.current);
+      console.log('isRouteMode:', isRouteMode);
       
       const adjustRouteZoom = () => {
+        console.log('=== WebView에 줌 레벨 조정 스크립트 주입 ===');
         const script = `
+          console.log('=== WebView 내부 진입 ===');
+          console.log('map 존재:', typeof map !== 'undefined');
+          console.log('adjustZoomForRouteResults 함수 존재:', typeof adjustZoomForRouteResults === 'function');
+          
           if (typeof adjustZoomForRouteResults === 'function') {
-            adjustZoomForRouteResults();
+            console.log('adjustZoomForRouteResults 함수 호출 시작');
+            try {
+              adjustZoomForRouteResults();
+              console.log('adjustZoomForRouteResults 함수 호출 완료');
+            } catch (error) {
+              console.log('adjustZoomForRouteResults 함수 호출 오류:', error);
+            }
+          } else {
+            console.log('adjustZoomForRouteResults 함수가 존재하지 않음');
+            console.log('사용 가능한 함수들:', Object.keys(window).filter(key => typeof window[key] === 'function'));
           }
           true;
         `;
@@ -1023,49 +1051,41 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     }
   }, [routeResult, isRouteMode]);
 
-  // 상세 안내 바텀시트가 열릴 때 지도 중심 조정 (비활성화)
-  // useEffect(() => {
-  //   if (showRouteDetail && webViewRef.current) {
-  //     console.log('=== 상세 바텀시트 열림 - 지도 중심 조정 시작 ===');
-  //     console.log('showRouteDetail:', showRouteDetail);
-  //     console.log('webViewRef.current 존재:', !!webViewRef.current);
+  // 상세 안내 바텀시트가 열릴 때 지도 중심 조정 (처음 진입할 때만)
+  useEffect(() => {
+    if (showRouteDetail && webViewRef.current) {
+      console.log('=== 상세 바텀시트 열림 - 지도 중심 조정 시작 ===');
+      console.log('showRouteDetail:', showRouteDetail);
+      console.log('webViewRef.current 존재:', !!webViewRef.current);
       
-  //     // 바텀시트가 완전히 렌더링될 때까지 대기
-  //     const adjustMapCenter = () => {
-  //       const screenHeight = Dimensions.get('window').height;
-  //       const detailSheetHeightRatio = bottomSheetHeight / screenHeight;
+      // 바텀시트가 완전히 렌더링될 때까지 대기
+      const adjustMapCenter = () => {
+        const screenHeight = Dimensions.get('window').height;
+        // 기본값 사용 (화면의 60%) - 바텀시트 높이 변화에 반응하지 않음
+        const finalRatio = 0.6;
         
-  //       console.log('화면 높이:', screenHeight);
-  //       console.log('바텀시트 높이:', bottomSheetHeight);
-  //       console.log('바텀시트 높이 비율:', detailSheetHeightRatio);
+        console.log('화면 높이:', screenHeight);
+        console.log('바텀시트 높이 비율 (고정):', finalRatio);
         
-  //       // 바텀시트 높이가 0이면 기본값 사용 (화면의 60%)
-  //       const finalRatio = detailSheetHeightRatio > 0 ? detailSheetHeightRatio : 0.6;
+        const script = `
+          console.log('=== WebView에서 JavaScript 실행 ===');
+          if (typeof adjustMapCenterForDetailSheet === 'function') {
+            console.log('adjustMapCenterForDetailSheet 함수 존재');
+            adjustMapCenterForDetailSheet(${finalRatio});
+          } else {
+            console.log('adjustMapCenterForDetailSheet 함수 없음');
+          }
+          true;
+        `;
         
-  //       const script = `
-  //         console.log('=== WebView에서 JavaScript 실행 ===');
-  //         if (typeof adjustMapCenterForDetailSheet === 'function') {
-  //           console.log('adjustMapCenterForDetailSheet 함수 존재');
-  //           adjustMapCenterForDetailSheet(${finalRatio});
-  //         } else {
-  //           console.log('adjustMapCenterForDetailSheet 함수 없음');
-  //         }
-  //         true;
-  //       `;
-        
-  //       console.log('JavaScript 스크립트 실행:', script);
-  //       webViewRef.current.injectJavaScript(script);
-  //     };
+        console.log('JavaScript 스크립트 실행:', script);
+        webViewRef.current.injectJavaScript(script);
+      };
       
-  //     // 바텀시트가 렌더링될 때까지 잠시 대기
-  //     if (bottomSheetHeight > 0) {
-  //       adjustMapCenter();
-  //     } else {
-  //       // 바텀시트 높이가 0이면 잠시 후 다시 시도
-  //       setTimeout(adjustMapCenter, 300);
-  //     }
-  //   }
-  // }, [showRouteDetail, bottomSheetHeight]);
+      // 길찾기 상세 안내 모드로 처음 진입할 때만 지도 중심 조정
+      setTimeout(adjustMapCenter, 500);
+    }
+  }, [showRouteDetail]); // bottomSheetHeight 의존성 제거
 
   return (
     <SafeAreaView style={mobileStyles.safeAreaContainer}>

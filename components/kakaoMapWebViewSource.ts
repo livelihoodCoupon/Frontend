@@ -564,13 +564,30 @@ function updateMapCenter(lat, lng) {
               return;
             }
 
-            // 길찾기 결과에 적합한 줌 레벨 설정
-            // 4레벨: 경로가 잘 보이도록 조금 더 확대
-            const targetLevel = 4;
+            // 경로 거리에 따른 동적 줌 레벨 계산
+            const routeDistance = window.currentRouteResult?.totalDistance || 1000; // 미터 단위
+            let targetLevel;
+            
+            if (routeDistance < 1000) {
+              targetLevel = 10;
+            } else if (routeDistance < 1500) {
+              targetLevel = 5;
+            } else if (routeDistance < 2000) {
+              targetLevel = 4;
+            } else if (routeDistance < 2500) {
+              targetLevel = 3;
+            } else if (routeDistance < 3000) {
+              targetLevel = 2;
+            } else {
+              targetLevel = 1;
+            }
             
             console.log('=== 길찾기 결과 줌 레벨 조정 ===');
+            console.log('경로 거리:', routeDistance, 'm');
+            console.log('경로 거리 (km):', (routeDistance / 1000).toFixed(2), 'km');
             console.log('현재 줌 레벨:', map.getLevel());
             console.log('목표 줌 레벨:', targetLevel);
+            console.log('거리 구간:', routeDistance < 1000 ? '1km 미만' : routeDistance < 4000 ? '1km-4km' : '4km 이상');
             
             // 줌 레벨 변경
             map.setLevel(targetLevel);
@@ -632,7 +649,9 @@ function updateMapCenter(lat, lng) {
           
           // 복합 팩터 적용
           const combinedFactor = zoomFactor * distanceFactor * ratioFactor;
-          const offsetLat = offsetPixels * 0.00001 * combinedFactor;
+          // 스크린 높이의 15% 정도 아래로 더 이동하도록 오프셋 증가
+          const additionalOffset = screenHeight * 0.15 * 0.00001; // 스크린 높이의 15% 추가 오프셋
+          const offsetLat = (offsetPixels * 0.00001 * combinedFactor) + additionalOffset;
           
           const adjustedCenter = new kakao.maps.LatLng(
             centerLat - offsetLat, // 현재 중심에서 아래로 이동 (위도 감소)
