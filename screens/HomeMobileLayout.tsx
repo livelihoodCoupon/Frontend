@@ -251,39 +251,44 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   
   
 
-  // 뒤로가기 버튼 처리
+  // 뒤로가기 버튼 처리 (최적화된 우선순위)
   useEffect(() => {
     const backAction = () => {
+      // 1. 가장 구체적인 상태부터 처리 (우선순위 높음)
       if (showPlaceDetail) {
         setShowPlaceDetail(false);
-        return true; // 이벤트 소비
+        return true;
       }
+      
+      // 2. 길찾기 모드 (중간 우선순위)
       if (isRouteMode) {
         handleCloseRouteMode();
-        return true; // 이벤트 소비
+        return true;
       }
+      
+      // 3. 바텀시트 상태 처리 (낮은 우선순위)
       if (bottomSheetOpen) {
-        // 바텀시트 열림 → 바텀시트 접힘 (작은 핸들만 남음)
         setBottomSheetOpen(false);
         setBottomSheetHeight(SMALL_HANDLE_HEIGHT);
-        return true; // 이벤트 소비
+        return true;
       }
-      if (!bottomSheetOpen && bottomSheetHeight > 0) {
-        // 바텀시트 접힘 → 홈 화면으로 복귀
-        setBottomSheetHeight(0); // 완전히 사라짐
-        // 검색 관련 상태 초기화
+      
+      // 4. 바텀시트 완전 종료 (가장 낮은 우선순위)
+      if (bottomSheetHeight > 0) {
+        setBottomSheetHeight(0);
         clearSearchResults();
-        setHasSearched(false); // 검색 모드 비활성화
-        setSelectedCategory(''); // 카테고리 선택 초기화
-        return true; // 이벤트 소비
+        setHasSearched(false);
+        setSelectedCategory('');
+        return true;
       }
-      return false; // 기본 동작 허용
+      
+      // 5. 앱 종료 허용
+      return false;
     };
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
     return () => backHandler.remove();
-  }, [isRouteMode, showPlaceDetail, bottomSheetOpen]);
+  }, [isRouteMode, showPlaceDetail, bottomSheetOpen, bottomSheetHeight, clearSearchResults, SMALL_HANDLE_HEIGHT]);
 
   
 
@@ -348,21 +353,32 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     }
   }, [setShowPlaceDetail]);
 
-  const handleCloseRouteMode = useCallback(() => {
+  // 길찾기 관련 상태 초기화 함수 (최적화된 순서)
+  const resetRouteStates = useCallback(() => {
+    // 1. UI 상태 초기화 (사용자에게 즉시 반영)
     setIsRouteMode(false);
-    setStartLocation(''); // 출발지를 비워둠
+    
+    // 2. 입력 필드 상태 초기화 (배치 업데이트)
+    setStartLocation('');
     setEndLocation('');
+    
+    // 3. 검색 결과 상태 초기화 (배치 업데이트)
     setStartLocationResults([]);
     setEndLocationResults([]);
-    setSelectedEndLocation(null); // 선택된 목적지 정보도 초기화
-    setSelectedStartLocation(null); // 선택된 출발지 정보도 초기화
+    setSelectedEndLocation(null);
+    setSelectedStartLocation(null);
+  }, []);
+
+  const handleCloseRouteMode = useCallback(() => {
+    // 1. 상태 초기화 (배치 업데이트로 리렌더링 최소화)
+    resetRouteStates();
     
-    // 길찾기 결과 초기화 (지도에서 경로 제거)
+    // 2. 외부 리소스 정리 (지도에서 경로 제거)
     if (clearRoute) {
       clearRoute();
     }
     
-    // 길찾기 모드 종료 시 검색 결과 마커들 다시 표시
+    // 3. 마커 복원 (WebView 업데이트)
     if (webViewRef.current && allMarkers.length > 0) {
       const script = `
         if (typeof updateMarkers === 'function') {
@@ -372,7 +388,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
       `;
       webViewRef.current.injectJavaScript(script);
     }
-  }, [clearRoute, allMarkers]);
+  }, [resetRouteStates, clearRoute, allMarkers]);
 
   const handleTransportModeChange = (mode: string) => {
     setSelectedTransportMode(mode);
