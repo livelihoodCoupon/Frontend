@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -53,8 +53,8 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
     }).start();
   }, [bottomSheetHeight, bottomSheetOpen, showPlaceDetail, showRouteDetail]);
 
-  // 즉시 위치 계산 (애니메이션 없이)
-  const getCurrentBottom = () => {
+  // 즉시 위치 계산 (애니메이션 없이) - 메모이제이션
+  const currentBottom = useMemo(() => {
     let type: 'normal' | 'placeDetail' | 'routeDetail' = 'normal';
     if (showPlaceDetail) {
       type = 'placeDetail';
@@ -64,12 +64,10 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
     
     return bottomSheetOpen && bottomSheetHeight ? 
       calculateButtonPosition(bottomSheetHeight, 100, type) : 100;
-  };
+  }, [bottomSheetOpen, bottomSheetHeight, showPlaceDetail, showRouteDetail, calculateButtonPosition]);
 
-  const currentBottom = getCurrentBottom();
-
-  // 더블클릭 감지 함수
-  const handlePress = () => {
+  // 더블클릭 감지 함수 (useCallback 최적화)
+  const handlePress = useCallback(() => {
     console.log('CurrentLocationButton handlePress 호출됨');
     const now = Date.now();
     const timeDiff = now - lastPressTime;
@@ -98,10 +96,10 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
     setTimeout(() => {
       setPressCount(0);
     }, 300);
-  };
+  }, [lastPressTime, pressCount, onPress, onDoublePress]);
 
   return (
-    <View style={[styles.container, { bottom: getCurrentBottom() }]}>
+    <View style={[styles.container, { bottom: currentBottom }]}>
       <TouchableOpacity style={styles.button} onPress={handlePress}>
         <Ionicons name="locate" size={20} color="#3690FF" />
       </TouchableOpacity>

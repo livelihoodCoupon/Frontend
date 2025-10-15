@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -128,8 +128,8 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
   const { calculateHeight, calculateCurrentLocationOffset } = useBottomSheetHeight();
   
-  // 작은 핸들 높이 상수
-  const SMALL_HANDLE_HEIGHT = 60;
+  // 작은 핸들 높이 상수 (메모이제이션)
+  const SMALL_HANDLE_HEIGHT = useMemo(() => 60, []);
   
   // 길찾기 모드 상태
   const [isRouteMode, setIsRouteMode] = useState(false);
@@ -197,14 +197,14 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     }
   };
 
-  // 자동완성 제안 선택 핸들러
-  const handleSuggestionSelect = (suggestion: string) => {
+  // 자동완성 제안 선택 핸들러 (useCallback 최적화)
+  const handleSuggestionSelect = useCallback((suggestion: string) => {
     setSearchQuery(suggestion);
     setShowAutocomplete(false);
     setHasSearched(true);
     setIsSearchFocused(false);
     onSearch();
-  };
+  }, [onSearch]);
 
   // 검색어 변경 시 자동완성 제안 가져오기
   useEffect(() => {
@@ -239,7 +239,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
       // 바텀시트가 닫혀있을 때는 작은 핸들 높이로 설정 (0이 아님)
       setBottomSheetHeight(calculateHeight('closed', false));
     }
-  }, [bottomSheetOpen, showRouteDetail, showPlaceDetail, calculateHeight, setBottomSheetHeight]);
+  }, [bottomSheetOpen, showRouteDetail, showPlaceDetail]);
 
   // 상세안내 모드 진입 시 바텀시트 자동 열기
   useEffect(() => {
@@ -329,8 +329,8 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     }
   }, [searchQuery, selectedCategory, setShowPlaceDetail]);
 
-  // 길찾기 모드 관련 함수들
-  const handleRoutePress = () => {
+  // 길찾기 모드 관련 함수들 (useCallback 최적화)
+  const handleRoutePress = useCallback(() => {
     // 바텀시트 닫기
     setBottomSheetOpen(false);
     setShowPlaceDetail(false);
@@ -346,9 +346,9 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
       `;
       webViewRef.current.injectJavaScript(script);
     }
-  };
+  }, [setShowPlaceDetail]);
 
-  const handleCloseRouteMode = () => {
+  const handleCloseRouteMode = useCallback(() => {
     setIsRouteMode(false);
     setStartLocation(''); // 출발지를 비워둠
     setEndLocation('');
@@ -372,7 +372,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
       `;
       webViewRef.current.injectJavaScript(script);
     }
-  };
+  }, [clearRoute, allMarkers]);
 
   const handleTransportModeChange = (mode: string) => {
     setSelectedTransportMode(mode);

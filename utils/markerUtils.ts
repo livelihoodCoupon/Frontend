@@ -157,14 +157,23 @@ export class MarkerManager {
  * 마커 데이터 변환 유틸리티
  */
 export class MarkerDataConverter {
+  private static markerCache: { key: string; data: any[] } | null = null;
   /**
-   * 검색 결과를 마커 데이터로 변환
+   * 검색 결과를 마커 데이터로 변환 (메모이제이션 적용)
    */
   static convertSearchResultsToMarkers(
     searchResults: any[],
     selectedPlaceId: string | null,
     userLocation?: { latitude: number; longitude: number }
   ): any[] {
+    // 메모이제이션을 위한 캐시 키 생성
+    const cacheKey = `${searchResults.length}-${selectedPlaceId}-${userLocation?.latitude}-${userLocation?.longitude}`;
+    
+    // 캐시된 결과가 있으면 반환
+    if (MarkerDataConverter.markerCache && MarkerDataConverter.markerCache.key === cacheKey) {
+      return MarkerDataConverter.markerCache.data;
+    }
+
     const markers: any[] = [];
 
     // 현재 위치 마커 추가
@@ -200,6 +209,8 @@ export class MarkerDataConverter {
       });
     });
 
+    // 결과 캐시
+    MarkerDataConverter.markerCache = { key: cacheKey, data: markers };
     return markers;
   }
 

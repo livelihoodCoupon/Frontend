@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -106,8 +106,19 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   useEffect(() => {
   }, [isOpen]);
   
-  // 상세정보 표시 여부에 따른 바텀시트 높이 조정
-  const getBottomSheetHeight = () => {
+  // 길찾기 관련 상태
+  const [startLocation, setStartLocation] = useState('내 위치');
+  const [endLocation, setEndLocation] = useState('');
+  const [startLocationResults, setStartLocationResults] = useState<SearchResult[]>([]);
+  const [endLocationResults, setEndLocationResults] = useState<SearchResult[]>([]);
+  const [showStartResults, setShowStartResults] = useState(false);
+  const [showEndResults, setShowEndResults] = useState(false);
+  
+  // 장소 상세 정보 표시 상태 (부모에서만 관리)
+  const showPlaceDetail = propShowPlaceDetail || false;
+  
+  // 상세정보 표시 여부에 따른 바텀시트 높이 조정 (메모이제이션)
+  const getBottomSheetHeight = useMemo(() => {
     if (!isOpen) {
       return calculateHeight('closed', false);
     }
@@ -119,18 +130,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
       return calculateHeight('placeDetail', true);
     }
     return calculateHeight('normal', true);
-  };
-  
-  // 길찾기 관련 상태
-  const [startLocation, setStartLocation] = useState('내 위치');
-  const [endLocation, setEndLocation] = useState('');
-  const [startLocationResults, setStartLocationResults] = useState<SearchResult[]>([]);
-  const [endLocationResults, setEndLocationResults] = useState<SearchResult[]>([]);
-  const [showStartResults, setShowStartResults] = useState(false);
-  const [showEndResults, setShowEndResults] = useState(false);
-  
-  // 장소 상세 정보 표시 상태 (부모에서만 관리)
-  const showPlaceDetail = propShowPlaceDetail || false;
+  }, [isOpen, isRouteDetailMode, showPlaceDetail, calculateHeight]);
   const [selectedPlaceDetail, setSelectedPlaceDetail] = useState<SearchResult | null>(null);
 
   // selectedPlaceId가 변경될 때 selectedPlaceDetail 설정
@@ -159,13 +159,13 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   };
 
 
-  // 간단한 토글 핸들러
-  const handleToggle = () => {
+  // 간단한 토글 핸들러 (useCallback 최적화)
+  const handleToggle = useCallback(() => {
     onToggle();
-  };
+  }, [onToggle]);
 
-  // 길찾기 시작 함수
-  const handleStartRoute = () => {
+  // 길찾기 시작 함수 (useCallback 최적화)
+  const handleStartRoute = useCallback(() => {
     if (!startLocation || !endLocation) {
       Alert.alert('알림', '출발지와 목적지를 모두 입력해주세요.');
       return;
@@ -191,7 +191,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
     if (startLocationData && endLocationData && startRoute) {
       startRoute(startLocationData, endLocationData);
     }
-  };
+  }, [startLocation, endLocation, location, startLocationResults, endLocationResults, startRoute]);
 
   // 출발지/목적지 검색
   const searchLocation = (query: string, type: 'start' | 'end') => {
@@ -223,7 +223,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
           styles.container, 
           { 
             bottom: isOpen ? 0 : insets.bottom, // 닫혀있을 때는 하드웨어 버튼 영역 피하기
-            height: getBottomSheetHeight(),
+            height: getBottomSheetHeight,
           },
           style
         ]}

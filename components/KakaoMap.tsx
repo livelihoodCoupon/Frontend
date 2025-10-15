@@ -91,7 +91,7 @@ import { MarkerManager } from "../utils/markerUtils";
         infowindowInstance.current = new window.kakao.maps.InfoWindow({ disableAutoPan: true });
         setIsMapReady(true); // Map is ready
       }
-    }, [isLoaded, mapRef.current, latitude, longitude]);
+    }, [isLoaded, latitude, longitude]);
 
     // Effect for updating map center
     useEffect(() => {
@@ -803,7 +803,7 @@ const MobileKakaoMap = React.memo(forwardRef<any, KakaoMapProps>(({
       
       webViewRef.current.injectJavaScript(script);
     }
-  }, [isMapInitialized, latitude, longitude, htmlContent]);
+  }, [isMapInitialized, latitude, longitude]);
 
   // Effect for updating markers when markers prop changes (Debounced)
   useEffect(() => {
@@ -823,7 +823,7 @@ const MobileKakaoMap = React.memo(forwardRef<any, KakaoMapProps>(({
         clearTimeout(updateTimeout.current);
       }
     };
-  }, [markers, htmlContent, isMapInitialized]);
+  }, [markers, isMapInitialized]);
 
   // 경로 표시 Effect (모바일 WebView)
   useEffect(() => {
@@ -862,7 +862,7 @@ const MobileKakaoMap = React.memo(forwardRef<any, KakaoMapProps>(({
         clearTimeout(updateTimeout.current);
       }
     };
-  }, [routeResult, htmlContent, isMapInitialized]);
+  }, [routeResult, isMapInitialized]);
 
   // resetMapLevel prop 처리 (모바일 WebView)
   useEffect(() => {

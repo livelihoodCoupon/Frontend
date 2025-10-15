@@ -151,7 +151,7 @@ export default function Home() {
       clearSearchResults(); // 홈 화면에서 마커 제거
     } else {
     }
-  }, [bottomSheetOpen, bottomSheetHeight, allMarkers.length, clearSearchResults]);
+  }, [bottomSheetOpen, bottomSheetHeight, allMarkers.length]);
 
   // 지도 중심과 검색 중심 비교하여 "현재위치에서 검색" 버튼 표시
   useEffect(() => {
@@ -168,14 +168,14 @@ export default function Home() {
     } else {
       setShowSearchInAreaButton(false);
     }
-  }, [searchCenter, mapCenter, searchResults, bottomSheetOpen, bottomSheetHeight, showPlaceDetail]);
+  }, [searchCenter, mapCenter, searchResults?.length, bottomSheetOpen, bottomSheetHeight, showPlaceDetail]);
 
   // 현재 위치가 로드되면 지도 중심을 설정 (초기 로딩 시에만)
   useEffect(() => {
     if (location && !mapCenter) {
       setMapCenter({ latitude: location.latitude, longitude: location.longitude });
     }
-  }, [location, mapCenter, setMapCenter]);
+  }, [location, mapCenter]);
 
   // 최초 검색 성공 후, 모든 마커를 가져오는 로직 (한 번만 실행)
   useEffect(() => {
@@ -373,13 +373,16 @@ export default function Home() {
     // 이 함수는 KakaoMap에서 호출될 예정
   }, []);
 
-  // 로딩 및 에러 상태 계산
-  const isLoading = locationLoading || searchLoading;
-  const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
+  // 로딩 및 에러 상태 계산 (메모이제이션)
+  const isLoading = useMemo(() => locationLoading || searchLoading, [locationLoading, searchLoading]);
+  const errorMsg = useMemo(() => 
+    (locationError || searchError) ? String(locationError || searchError) : null, 
+    [locationError, searchError]
+  );
 
   const markers = useMemo(() => {
     return convertSearchResultsToMarkers(allMarkers, selectedPlaceId, location || undefined);
-  }, [location, allMarkers, selectedPlaceId, convertSearchResultsToMarkers]);
+  }, [location, allMarkers, selectedPlaceId]);
 
   // 플랫폼에 따라 적절한 레이아웃 렌더링
   if (Platform.OS === 'web') {
