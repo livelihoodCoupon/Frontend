@@ -70,6 +70,7 @@ interface HomeMobileLayoutProps {
   handleSearchInArea: (currentMapCenter?: { latitude: number; longitude: number }, selectedCategory?: string) => void;
   handleCategorySearch: (categoryName: string) => Promise<void>;
   searchCenter?: { latitude: number; longitude: number } | null;
+  setSearchCenter: (center: { latitude: number; longitude: number } | null) => void;
   clearSearchResults: () => void;
   locationError?: string | null;
 }
@@ -119,6 +120,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   handleSearchInArea,
   handleCategorySearch,
   searchCenter,
+  setSearchCenter,
   clearSearchResults,
 }) => {
   const insets = useSafeAreaInsets();
@@ -308,7 +310,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   //     return () => clearTimeout(timer);
   //   }
   // }, [showRouteDetail, showPlaceDetail]);
-
+  
   // 바텀시트 상태 로그
   useEffect(() => {
   }, [bottomSheetOpen, BOTTOM_SHEET_HEIGHT, SCREEN_HEIGHT, USABLE_SCREEN_HEIGHT, insets.bottom, isRouteMode, showRouteDetail]);
@@ -352,7 +354,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 
   // 지도 레벨 초기화 상태
   const [resetMapLevel, setResetMapLevel] = useState(false);
-  
+
   // resetMapLevel 상태 변화 추적
   useEffect(() => {
   }, [resetMapLevel]);
@@ -371,6 +373,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
       handleSearchInArea(currentMapCenter, selectedCategoryRef.current);
     };
     
+    
     return () => {
       delete (global as any).handleSearchInAreaWithCurrentCenter;
     };
@@ -379,6 +382,13 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   // 더블클릭 감지를 위한 상태
   const [lastPressTime, setLastPressTime] = useState(0);
   const [pressCount, setPressCount] = useState(0);
+
+  // 검색어나 카테고리가 변경될 때 장소 상세 정보 닫기
+  useEffect(() => {
+    if (showPlaceDetail) {
+      setShowPlaceDetail(false);
+    }
+  }, [searchQuery, selectedCategory, setShowPlaceDetail]);
 
   // 길찾기 모드 관련 함수들
   const handleRoutePress = () => {
@@ -520,7 +530,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     
     // 길찾기 모드가 아닐 때만 바텀시트 열기
     if (!isRouteMode) {
-      setBottomSheetOpen(true); // 검색 시 바텀시트 열기
+    setBottomSheetOpen(true); // 검색 시 바텀시트 열기
     } else {
     }
     
@@ -557,7 +567,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
             location.longitude // userLng
           );
           setStartLocationResults(searchResults.content);
-          setStartLocationSearching(true);
+      setStartLocationSearching(true);
         }
       } catch (error) {
         console.error('출발지 검색 오류:', error);
@@ -629,7 +639,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
             location.longitude // userLng
           );
           setEndLocationResults(searchResults.content);
-          setEndLocationSearching(true);
+      setEndLocationSearching(true);
         }
       } catch (error) {
         console.error('목적지 검색 오류:', error);
@@ -870,30 +880,56 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         }
       }
       if (isRouteMode) {
-        console.log('길찾기 모드 -> 검색 모드로 돌아가기');
-        setIsRouteMode(false);
+        // 길찾기 모드 -> 홈화면으로 돌아가기 (무조건)
+        console.log('길찾기 모드 -> 홈화면으로 돌아가기');
         
         // 길찾기 결과 시각화 제거
         if (webViewRef.current) {
           const script = `
-            if (typeof clearRouteVisualization === 'function') {
-              clearRouteVisualization();
+            if (typeof clearRoute === 'function') {
+              clearRoute();
             }
             true;
           `;
           webViewRef.current.injectJavaScript(script);
         }
         
-        // 검색 결과 마커들 다시 표시
+        // 검색 결과 마커들 제거
         if (webViewRef.current && allMarkers.length > 0) {
           const script = `
-            if (typeof updateMarkers === 'function') {
-              updateMarkers(${JSON.stringify(allMarkers)});
+            if (typeof clearSearchMarkers === 'function') {
+              clearSearchMarkers();
             }
             true;
           `;
           webViewRef.current.injectJavaScript(script);
         }
+        
+        // 상태 초기화 - 바텀시트 완전히 제거
+        setIsRouteMode(false);
+        setBottomSheetHeight(0);
+        setBottomSheetOpen(false);
+        setShowPlaceDetail(false);
+        setShowRouteDetail(false);
+        setSelectedCategory('');
+        setHasSearched(false);
+        clearSearchResults();
+        
+        // 길찾기 모드 관련 상태 초기화 (X버튼과 동일한 초기화)
+        setStartLocation('내 위치');
+        setEndLocation('');
+        setStartLocationResults([]);
+        setEndLocationResults([]);
+        setSelectedEndLocation(null);
+        setSelectedStartLocation(null);
+        setStartLocationSearching(false);
+        setEndLocationSearching(false);
+        
+        // 강제로 바텀시트 완전 제거
+        setTimeout(() => {
+          setBottomSheetHeight(0);
+          setBottomSheetOpen(false);
+        }, 100);
         
         return true;
       }
@@ -902,12 +938,69 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         setShowPlaceDetail(false);
         return true;
       }
+      
+      // 바텀시트가 접혀있을 때 홈화면으로 돌아가기
+      if (!bottomSheetOpen && bottomSheetHeight > 0 && bottomSheetHeight <= SMALL_HANDLE_HEIGHT) {
+        console.log('바텀시트 접힘 상태 -> 홈화면으로 돌아가기');
+        
+        // 길찾기 결과 시각화 제거 (길찾기 모드에서 온 경우)
+        if (webViewRef.current) {
+          const script = `
+            if (typeof clearRoute === 'function') {
+              clearRoute();
+            }
+            true;
+          `;
+          webViewRef.current.injectJavaScript(script);
+        }
+        
+        // 검색 결과 마커들 제거
+        if (webViewRef.current && allMarkers.length > 0) {
+          const script = `
+            if (typeof clearSearchMarkers === 'function') {
+              clearSearchMarkers();
+            }
+            true;
+          `;
+          webViewRef.current.injectJavaScript(script);
+        }
+        
+        // 상태 초기화 - 바텀시트 완전히 제거
+        setBottomSheetHeight(0);
+        setBottomSheetOpen(false);
+        setShowPlaceDetail(false);
+        setShowRouteDetail(false);
+        setIsRouteMode(false);
+        setSelectedCategory('');
+        setHasSearched(false);
+        clearSearchResults();
+        
+        // 길찾기 모드 관련 상태 초기화 (X버튼과 동일한 초기화)
+        setStartLocation('내 위치');
+        setEndLocation('');
+        setStartLocationResults([]);
+        setEndLocationResults([]);
+        setSelectedEndLocation(null);
+        setSelectedStartLocation(null);
+        setStartLocationSearching(false);
+        setEndLocationSearching(false);
+        
+        // 강제로 바텀시트 완전 제거
+        setTimeout(() => {
+          setBottomSheetHeight(0);
+          setBottomSheetOpen(false);
+        }, 100);
+        
+        return true;
+      }
+      
       console.log('기본 뒤로가기 동작');
       return false;
     });
 
     return () => backHandler.remove();
-  }, [showRouteDetail, showPlaceDetail, setShowPlaceDetail, bottomSheetOpen, isRouteMode]);
+  }, [showRouteDetail, showPlaceDetail, setShowPlaceDetail, bottomSheetOpen, isRouteMode, bottomSheetHeight, allMarkers, clearSearchResults]);
+
 
 
   // 길찾기 결과가 있을 때 줌 레벨 조정
@@ -978,7 +1071,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     <SafeAreaView style={mobileStyles.safeAreaContainer}>
       {/* 플로팅 검색 바 - 상세 경로 안내 모드일 때는 숨김 */}
       {!showRouteDetail && (
-        <FloatingSearchBar
+      <FloatingSearchBar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearch={handleSearch}
@@ -1007,7 +1100,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 
       {/* 길찾기 패널 - 상세 경로 안내 모드일 때는 숨김 */}
       {!showRouteDetail && (
-        <RouteSearchPanel
+      <RouteSearchPanel
         isVisible={isRouteMode}
         onClose={handleCloseRouteMode}
         onTransportModeChange={handleTransportModeChange}
@@ -1079,10 +1172,10 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 
       {/* 길찾기 상세 안내 바텀시트 */}
       {showRouteDetail && routeResult && (
-        <RouteBottomSheet
-          isOpen={bottomSheetOpen}
+      <RouteBottomSheet
+        isOpen={bottomSheetOpen}
           isRouteDetailMode={true}
-          onToggle={() => {
+        onToggle={() => {
             // 길찾기 상세안내 모드에서는 바텀시트만 닫기 (모드 변경 없음)
             if (bottomSheetOpen) {
               // 바텀시트 닫기: 작은 핸들 높이로 설정
@@ -1093,9 +1186,9 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
               setBottomSheetOpen(true);
               setBottomSheetHeight(BOTTOM_SHEET_HEIGHT);
             }
-          }}
-          allMarkers={allMarkers}
-          onSelectResult={(result) => {
+        }}
+        allMarkers={allMarkers}
+        onSelectResult={(result) => {
             setSelectedSearchResult(result);
             onSelectResult(result);
           }}
@@ -1212,7 +1305,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: insets.bottom, backgroundColor: 'white', zIndex: 9 }} />
       )}
 
-      <KakaoMap
+          <KakaoMap
         ref={webViewRef}
         latitude={mapCenter?.latitude ?? 37.5665}
         longitude={mapCenter?.longitude ?? 126.9780}
@@ -1253,7 +1346,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
               webViewRef.current.injectJavaScript(script);
             }}
           />
-      {showSearchInAreaButton && !showRouteDetail && (
+      {showSearchInAreaButton && !showRouteDetail && !isRouteMode && (
         <>
           <TouchableOpacity
             style={[
@@ -1326,8 +1419,8 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                       setLastPressTime(0);
                     }, 500);
                     
-                    if (bottomSheetHeight > 0) {
-                      // 바텀시트가 열려있을 때: 한 번 터치해도 줌 레벨 초기화 + 상단 중앙으로 이동
+                    if (bottomSheetOpen && bottomSheetHeight > 60) {
+                      // 바텀시트가 완전히 열려있을 때만: 상단 중앙으로 이동
                       setResetMapLevel(true);
                       
                       const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -1346,7 +1439,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                         longitude: location.longitude
                       });
                     } else {
-                      // 바텀시트가 닫혀있을 때: 일반적인 현재 위치 이동
+                      // 바텀시트가 닫혀있거나 접혀있을 때: 정확한 현재 위치로 이동
                       setMapCenter(location);
                     }
                   }
@@ -1355,8 +1448,8 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
               onLongPress={() => {
                 if (location) {
                   
-                  if (bottomSheetHeight > 0) {
-                    // 바텀시트가 열려있을 때: 상단 중앙에 현재 위치가 보이도록 조정
+                  if (bottomSheetOpen && bottomSheetHeight > 60) {
+                    // 바텀시트가 완전히 열려있을 때만: 상단 중앙에 현재 위치가 보이도록 조정
                     const { height: SCREEN_HEIGHT } = Dimensions.get('window');
                     const visibleHeight = SCREEN_HEIGHT - bottomSheetHeight;
                     const centerRatio = visibleHeight / SCREEN_HEIGHT;
@@ -1372,7 +1465,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                       longitude: location.longitude
                     });
                   } else {
-                    // 바텀시트가 닫혀있을 때: 일반적인 현재 위치 이동
+                    // 바텀시트가 닫혀있거나 접혀있을 때: 정확한 현재 위치로 이동
                     setMapCenter(location);
                   }
                   

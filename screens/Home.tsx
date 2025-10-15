@@ -153,27 +153,20 @@ export default function Home() {
 
   // 지도 중심과 검색 중심 비교하여 "현재위치에서 검색" 버튼 표시
   useEffect(() => {
-    if (mapCenter && searchResults && searchResults.length > 0 && (bottomSheetOpen || bottomSheetHeight > 0)) {
-      let shouldShowButton = false;
+    // searchCenter가 설정된 후에만 버튼 표시 여부 계산 (가장 중요한 조건)
+    // 장소 상세 설명 바텀시트 상태일 때는 버튼 비활성화
+    if (searchCenter && mapCenter && searchResults && searchResults.length > 0 && (bottomSheetOpen || bottomSheetHeight > 0) && !showPlaceDetail) {
+      const latDiff = Math.abs(mapCenter.latitude - searchCenter.latitude);
+      const lngDiff = Math.abs(mapCenter.longitude - searchCenter.longitude);
+      const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
       
-      if (searchCenter) {
-        // 두 좌표 간의 거리 계산 (간단한 유클리드 거리)
-        const latDiff = Math.abs(mapCenter.latitude - searchCenter.latitude);
-        const lngDiff = Math.abs(mapCenter.longitude - searchCenter.longitude);
-        const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
-        
-        // 거리가 0.001도 이상 차이나면 버튼 표시 (약 100m)
-        shouldShowButton = distance > 0.001;
-      } else {
-        // searchCenter가 없으면 항상 버튼 표시 (검색 후 지도 이동)
-        shouldShowButton = true;
-      }
-      
+      // 거리가 0.001도 이상 차이나면 버튼 표시 (약 100m)
+      const shouldShowButton = distance > 0.001;
       setShowSearchInAreaButton(shouldShowButton);
     } else {
       setShowSearchInAreaButton(false);
     }
-  }, [searchCenter, mapCenter, searchResults, bottomSheetOpen, bottomSheetHeight]);
+  }, [searchCenter, mapCenter, searchResults, bottomSheetOpen, bottomSheetHeight, showPlaceDetail]);
 
   // 현재 위치가 로드되면 지도 중심을 설정 (초기 로딩 시에만)
   useEffect(() => {
@@ -322,10 +315,13 @@ export default function Home() {
       // 화면 높이 대비 바텀시트 높이 비율을 계산하여 위도 오프셋 적용
       const { height: SCREEN_HEIGHT } = Dimensions.get('window');
       const heightRatio = bottomSheetHeight / SCREEN_HEIGHT;
-      // 지도 줌 레벨을 고려한 동적 오프셋 (줌 레벨이 높을수록 작은 오프셋)
+      // 지도 줌 레벨을 고려한 동적 오프셋 (줌 확대 시 더 아래로 이동)
       const baseOffset = -0.002; // 기본 오프셋 (장소 선택용)
       const zoomFactor = Math.max(0.5, Math.min(2.0, heightRatio * 3)); // 줌 레벨 대응 계수
-      const offsetLat = baseOffset * zoomFactor;
+      
+      // 줌 확대 시 추가 오프셋 적용 (더 아래로 이동)
+      const zoomLevelOffset = heightRatio > 0.5 ? 0.002 : 0; // 바텀시트가 클 때 추가 아래 이동 (절반으로 줄임)
+      const offsetLat = baseOffset * zoomFactor + zoomLevelOffset;
       
       setMapCenter({ 
         latitude: item.lat + offsetLat, 
@@ -525,6 +521,7 @@ export default function Home() {
         handleSearchInArea={handleSearchInArea}
         handleCategorySearch={handleCategorySearch}
         searchCenter={searchCenter}
+        setSearchCenter={setSearchCenter}
         clearSearchResults={clearSearchResults}
       />
     );
