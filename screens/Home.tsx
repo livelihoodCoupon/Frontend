@@ -263,9 +263,7 @@ export default function Home() {
       return;
     }
     
-    console.log('=== 현재 지도에서 검색 버튼 클릭 ===');
-    console.log('검색 시도 당시 지도 중심:', searchCenter);
-    console.log('현재 지도 중심:', actualMapCenter);
+    // 현재 지도에서 검색 버튼 클릭
     
     // 검색 시작 시 이전 선택 상태 초기화
     setSelectedPlaceId(null);
@@ -435,7 +433,7 @@ export default function Home() {
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
         onMapIdle={(latitude: number, longitude: number) => {
-          console.log('새로운 지도 중심:', { latitude, longitude });
+          // 새로운 지도 중심 설정
           setMapCenter({ latitude, longitude });
         }}
         markers={markers}
@@ -483,7 +481,7 @@ export default function Home() {
         mapCenter={mapCenter}
         setMapCenter={setMapCenter}
         onMapIdle={(latitude: number, longitude: number) => {
-          console.log('새로운 지도 중심:', { latitude, longitude });
+          // 새로운 지도 중심 설정
           setMapCenter({ latitude, longitude });
         }}
         markers={markers}

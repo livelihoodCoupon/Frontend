@@ -97,9 +97,7 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
       if (mapInstance.current && latitude !== undefined && longitude !== undefined) {
         const newCenter = new window.kakao.maps.LatLng(latitude, longitude);
         
-        console.log('=== 지도 중심 이동 시작 ===');
-        console.log('새로운 중심:', latitude, longitude);
-        console.log('지도 인스턴스:', !!mapInstance.current);
+        // 지도 중심 이동 시작
         
         // 확실한 지도 이동을 위해 setCenter와 panTo 조합 사용
         mapInstance.current.setCenter(newCenter);
@@ -112,7 +110,6 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
         // 이동 후 중심 확인
         setTimeout(() => {
           const actualCenter = mapInstance.current.getCenter();
-          console.log('실제 지도 중심:', actualCenter.getLat(), actualCenter.getLng());
           // 지도 중심 이동 완료
         }, 100);
       }
@@ -138,7 +135,7 @@ import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../co
           };
           adjustLevel();
         }
-        console.log('지도 레벨 초기화:', MAP_CONFIG.CURRENT_LOCATION_LEVEL);
+        // 지도 레벨 초기화
       }
     }, []);
 

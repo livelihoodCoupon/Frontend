@@ -161,10 +161,7 @@ export const useSearch = () => {
 
   // 검색어를 직접 전달하는 검색 함수
   const performSearchWithQuery = useCallback(async (query: string, latitude: number, longitude: number, userLatitude: number, userLongitude: number) => {
-    console.log('=== performSearchWithQuery 호출 ===');
-    console.log('query:', query);
-    console.log('latitude:', latitude, 'longitude:', longitude);
-    console.log('userLatitude:', userLatitude, 'userLongitude:', userLongitude);
+    // performSearchWithQuery 호출
     
     if (!query.trim()) {
       return;
@@ -179,8 +176,7 @@ export const useSearch = () => {
       // 검색 결과가 없어도 성공으로 처리 (오류가 아님)
       dispatch({ type: 'SEARCH_SUCCESS', payload: firstPageData });
     } catch (err: any) {
-      console.error('Search error:', err);
-      console.error('에러 상세:', err.message, err.stack);
+      // Search error
       dispatch({ type: 'SEARCH_FAILURE', payload: err.message || "검색 중 오류가 발생했습니다." });
     }
   }, [state.searchOptions]);
@@ -193,7 +189,7 @@ export const useSearch = () => {
             const resultsData = await searchPlaces(state.searchQuery, latitude, longitude, state.searchOptions.radius, state.searchOptions.sort, nextPage, userLatitude, userLongitude);
             dispatch({ type: 'NEXT_PAGE_SUCCESS', payload: resultsData });
           } catch (err: any) {
-            console.error("다음 페이지 로딩 중 오류:", err);
+            // 다음 페이지 로딩 중 오류
             dispatch({ type: 'SEARCH_FAILURE', payload: err.message || "다음 페이지 로딩 중 오류가 발생했습니다." });
           }
         }, [state.pagination, state.loadingNextPage, state.searchQuery, state.searchOptions]);
@@ -240,7 +236,7 @@ export const useSearch = () => {
             break;
           }
         } catch (pageError) {
-          console.error(`Failed to fetch page ${pageNum}:`, pageError);
+          // Failed to fetch page
           // 개별 페이지 에러 시 중단하지 않고 계속 진행
           continue;
         }
@@ -253,7 +249,7 @@ export const useSearch = () => {
 
       dispatch({ type: 'FINISH_ALL_MARKERS_LOAD', payload: { limitReached } });
     } catch (error) {
-      console.error("Error fetching all markers:", error);
+      // Error fetching all markers
       dispatch({ type: 'FINISH_ALL_MARKERS_LOAD', payload: { limitReached: true } });
     }
   }, [state.pagination, state.searchQuery, state.searchOptions, state.loadingAllMarkers]);

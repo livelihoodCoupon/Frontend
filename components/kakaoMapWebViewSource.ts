@@ -65,9 +65,9 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
             averageCenter: true,
             minLevel: 7,
           });
-          console.log('클러스터 초기화 성공');
+          // 클러스터 초기화 성공
         } catch (clusterError) {
-          console.error('클러스터 초기화 실패:', clusterError);
+          // 클러스터 초기화 실패
           // 클러스터 없이도 작동하도록 설정
           clusterer = null;
         }
@@ -83,8 +83,7 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
       }
 
 function updateMapCenter(lat, lng) {
-  console.log('=== WebView updateMapCenter 호출 ===');
-  console.log('요청된 중심:', lat, lng);
+  // WebView updateMapCenter 호출
   
   if (map) {
     const moveLatLon = new kakao.maps.LatLng(lat, lng);
@@ -93,10 +92,10 @@ function updateMapCenter(lat, lng) {
     // 실제 적용된 중심 확인
     setTimeout(() => {
       const actualCenter = map.getCenter();
-      console.log('실제 적용된 중심:', actualCenter.getLat(), actualCenter.getLng());
+      // 실제 적용된 중심 확인
     }, 100);
   } else {
-    console.log('지도 인스턴스가 없음');
+    // 지도 인스턴스가 없음
   }
 }
 
@@ -122,7 +121,7 @@ function updateMapCenter(lat, lng) {
           
           // markerImages가 초기화되지 않았으면 초기화
           if (!markerImages) {
-            console.log('markerImages 초기화 중...');
+            // markerImages 초기화 중
             markerImages = {
               default: new kakao.maps.MarkerImage(
                 createDotMarkerImage(false),
@@ -140,12 +139,12 @@ function updateMapCenter(lat, lng) {
                 { offset: new kakao.maps.Point(14, 14) }
               )
             };
-            console.log('markerImages 초기화 완료');
+            // markerImages 초기화 완료
           }
           
           // 클러스터가 없어도 작동하도록 처리
           if (!clusterer) {
-            console.log('클러스터가 없어서 직접 마커를 지도에 추가합니다.');
+            // 클러스터가 없어서 직접 마커를 지도에 추가
           }
           
           // 현재 마커 데이터를 전역 변수에 저장
@@ -170,14 +169,12 @@ function updateMapCenter(lat, lng) {
           const placeMarkersData = markersData.filter(m => m.markerType !== 'userLocation');
 
           if (userLocationData) {
-              console.log('=== 현재 위치 마커 생성 시작 ===');
-              console.log('현재 위치 데이터:', userLocationData);
-              console.log('마커 이미지 URL:', markerImages.userLocation);
+              // 현재 위치 마커 생성 시작
               
               // 기존 마커 제거
               if (userLocationMarker) {
                   userLocationMarker.setMap(null);
-                  console.log('기존 현재 위치 마커 제거');
+                  // 기존 현재 위치 마커 제거
               }
               
               // 새 마커 생성 (현재 위치 마커 이미지 사용)
@@ -228,7 +225,7 @@ function updateMapCenter(lat, lng) {
               }
           }
         } catch (e) {
-          console.error('Error in updateMarkers:', e);
+          // Error in updateMarkers
           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', message: 'Error in updateMarkers: ' + e.message }));
         }
       }

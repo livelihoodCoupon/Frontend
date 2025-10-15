@@ -20,6 +20,7 @@ import { SearchResult } from '../../types/search';
 import { RouteResult } from '../../types/route';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
 import { COLORS } from '../../constants/colors';
+import { SIZES } from '../../constants/sizes';
 import RouteResultComponent from '../route/RouteResult';
 
 interface RouteBottomSheetProps {
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
   },
   handleIndicator: {
-    backgroundColor: '#999',
+    backgroundColor: COLORS.textLight,
     width: 50,
     height: 5,
   },
@@ -569,12 +570,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: SIZES.borderRadius.xxl,
+    borderTopRightRadius: SIZES.borderRadius.xxl,
     zIndex: 1000, // z-index 추가
     borderTopWidth: 2,
-    borderTopColor: '#e0e0e0', // 상단 테두리 추가
+    borderTopColor: COLORS.borderGray, // 상단 테두리 추가
     ...Platform.select({
       ios: {
         shadowColor: '#000',

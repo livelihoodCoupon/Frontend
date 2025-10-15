@@ -38,6 +38,33 @@ export const COLORS = {
   // 그림자 색상
   shadow: 'rgba(0, 0, 0, 0.1)',
   shadowLight: 'rgba(0, 0, 0, 0.05)',
+  
+  // 추가 색상 (하드코딩된 값들)
+  red: '#FF385C',
+  blue: '#007bff',
+  green: '#28a745',
+  yellow: '#ffc107',
+  orange: '#FF5722',
+  gray: '#6c757d',
+  lightGray: '#9CA3AF',
+  darkGray: '#495057',
+  
+  // 상태별 색상
+  selected: '#FF385C',
+  default: '#007bff',
+  
+  // 배경 색상
+  backgroundGray: '#f0f0f0',
+  backgroundWhite: '#ffffff',
+  
+  // 테두리 색상
+  borderGray: '#e0e0e0',
+  borderDark: '#ddd',
+  
+  // 텍스트 색상
+  textDark: '#333',
+  textMedium: '#666',
+  textDisabled: '#ccc',
 } as const;
 
 export type ColorKey = keyof typeof COLORS;
