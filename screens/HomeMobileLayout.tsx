@@ -251,29 +251,29 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   
   
 
-  // 뒤로가기 버튼 처리 (최적화된 우선순위)
+  // 뒤로가기 버튼 처리
   useEffect(() => {
     const backAction = () => {
-      // 1. 가장 구체적인 상태부터 처리 (우선순위 높음)
+      // 1. 가장 구체적인 상태부터 처리
       if (showPlaceDetail) {
         setShowPlaceDetail(false);
         return true;
       }
       
-      // 2. 길찾기 모드 (중간 우선순위)
+      // 2. 길찾기 모드
       if (isRouteMode) {
         handleCloseRouteMode();
         return true;
       }
       
-      // 3. 바텀시트 상태 처리 (낮은 우선순위)
+      // 3. 바텀시트 상태 처리
       if (bottomSheetOpen) {
         setBottomSheetOpen(false);
         setBottomSheetHeight(SMALL_HANDLE_HEIGHT);
         return true;
       }
       
-      // 4. 바텀시트 완전 종료 (가장 낮은 우선순위)
+      // 4. 바텀시트 완전 종료
       if (bottomSheetHeight > 0) {
         setBottomSheetHeight(0);
         clearSearchResults();
@@ -282,7 +282,6 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         return true;
       }
       
-      // 5. 앱 종료 허용
       return false;
     };
 
@@ -295,18 +294,15 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   // 지도 레벨 초기화 상태
   const [resetMapLevel, setResetMapLevel] = useState(false);
   
-  // resetMapLevel 상태 변화 추적
   useEffect(() => {
     if (resetMapLevel) {
-      // resetMapLevel 상태 변화 처리
+      setResetMapLevel(false);
     }
   }, [resetMapLevel, isRouteMode, showRouteDetail]);
 
   
-  // WebView 참조
   const webViewRef = useRef<any>(null);
   
-  // selectedCategory를 ref로 관리하여 최신 값을 참조
   const selectedCategoryRef = useRef(selectedCategory);
   selectedCategoryRef.current = selectedCategory;
   
@@ -353,16 +349,16 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     }
   }, [setShowPlaceDetail]);
 
-  // 길찾기 관련 상태 초기화 함수 (최적화된 순서)
+  // 길찾기 관련 상태 초기화 함수
   const resetRouteStates = useCallback(() => {
-    // 1. UI 상태 초기화 (사용자에게 즉시 반영)
+    // 1. UI 상태 초기화 
     setIsRouteMode(false);
     
-    // 2. 입력 필드 상태 초기화 (배치 업데이트)
+    // 2. 입력 필드 상태 초기화 
     setStartLocation('');
     setEndLocation('');
     
-    // 3. 검색 결과 상태 초기화 (배치 업데이트)
+    // 3. 검색 결과 상태 초기화
     setStartLocationResults([]);
     setEndLocationResults([]);
     setSelectedEndLocation(null);
@@ -370,7 +366,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   }, []);
 
   const handleCloseRouteMode = useCallback(() => {
-    // 1. 상태 초기화 (배치 업데이트로 리렌더링 최소화)
+    // 1. 상태 초기화
     resetRouteStates();
     
     // 2. 외부 리소스 정리 (지도에서 경로 제거)

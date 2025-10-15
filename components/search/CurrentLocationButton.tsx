@@ -82,8 +82,6 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
         setPressCount(0);
       }
     } else {
-      // 첫 번째 클릭
-      console.log('첫 번째 클릭');
       setPressCount(1);
       if (onPress) {
         onPress();
@@ -91,8 +89,6 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
     }
     
     setLastPressTime(now);
-    
-    // 300ms 후 카운트 리셋
     setTimeout(() => {
       setPressCount(0);
     }, 300);

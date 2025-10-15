@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { SearchResult } from '../../types/search';
 import { RouteResult } from '../../types/route';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
@@ -37,7 +36,6 @@ interface RouteBottomSheetProps {
   routeError?: string | null;
   startRoute?: any;
   clearRoute?: () => void;
-  // 검색 관련 props 추가
   hasSearched?: boolean;
   searchResults?: SearchResult[];
   searchQuery?: string;
@@ -50,11 +48,9 @@ interface RouteBottomSheetProps {
   showPlaceDetail?: boolean;
   setShowPlaceDetail?: (show: boolean) => void;
   selectedPlaceId?: string | null;
-  // 길찾기 모드 관련 props
   onRoutePress?: () => void;
   onSetStartLocation?: (location: string | SearchResult) => void;
   onSetEndLocation?: (location: string | SearchResult) => void;
-  // 상세 안내 모드 (길찾기 결과만 표시)
   isRouteDetailMode?: boolean;
 }
 
@@ -71,7 +67,6 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   routeError,
   startRoute,
   clearRoute,
-  // 검색 관련 props
   hasSearched = false,
   searchResults = [],
   searchQuery = '',
@@ -93,18 +88,13 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   const insets = useSafeAreaInsets();
   const { calculateHeight } = useBottomSheetHeight();
 
-  // 드래그 관련 상태 (현재 사용하지 않음)
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartY, setDragStartY] = useState(0);
   const [currentTranslateY, setCurrentTranslateY] = useState(0);
   const routeScrollViewRef = useRef<ScrollView>(null);
   
-  // 현재 위치
   const { location } = useCurrentLocation();
   
-  // 바텀시트 상태 로그
-  useEffect(() => {
-  }, [isOpen]);
   
   // 길찾기 관련 상태
   const [startLocation, setStartLocation] = useState('내 위치');
@@ -114,10 +104,8 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   const [showStartResults, setShowStartResults] = useState(false);
   const [showEndResults, setShowEndResults] = useState(false);
   
-  // 장소 상세 정보 표시 상태 (부모에서만 관리)
   const showPlaceDetail = propShowPlaceDetail || false;
   
-  // 상세정보 표시 여부에 따른 바텀시트 높이 조정 (메모이제이션)
   const getBottomSheetHeight = useMemo(() => {
     if (!isOpen) {
       return calculateHeight('closed', false);

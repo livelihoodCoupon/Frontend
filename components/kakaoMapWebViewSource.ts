@@ -16,9 +16,7 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
       let clusterer;
       let userLocationMarker = null;
       let infoWindowOverlay = null;
-      let markerImages = null; // 전역 변수로 선언
-      
-      // 바텀시트 높이 비율 전역 변수
+      let markerImages = null;
 
       function initMap(lat, lng) {
         const mapContainer = document.getElementById('map');
@@ -39,13 +37,13 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
           markerImages = {
             default: new kakao.maps.MarkerImage(
               createDotMarkerImage(false),
-              new kakao.maps.Size(16, 16), // New size
-              { offset: new kakao.maps.Point(8, 8) } // New offset (size / 2)
+              new kakao.maps.Size(16, 16),
+              { offset: new kakao.maps.Point(8, 8) }
             ),
             selected: new kakao.maps.MarkerImage(
               createDotMarkerImage(true),
-              new kakao.maps.Size(24, 24), // New size
-              { offset: new kakao.maps.Point(12, 12) } // New offset (size / 2)
+              new kakao.maps.Size(24, 24),
+              { offset: new kakao.maps.Point(12, 12) }
             ),
             userLocation: new kakao.maps.MarkerImage(
               'MARKER_IMAGE_USER_LOCATION_PLACEHOLDER',
@@ -83,33 +81,27 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
       }
 
 function updateMapCenter(lat, lng) {
-  // WebView updateMapCenter 호출
-  
   if (map) {
     const moveLatLon = new kakao.maps.LatLng(lat, lng);
     map.setCenter(moveLatLon);
     
-    // 실제 적용된 중심 확인
     setTimeout(() => {
       const actualCenter = map.getCenter();
-      // 실제 적용된 중심 확인
     }, 100);
-  } else {
-    // 지도 인스턴스가 없음
   }
 }
 
 
 
       function createDotMarkerImage(isSelected) {
-        const size = isSelected ? 24 : 16; // 선택됨 24px, 기본 16px
+        const size = isSelected ? 24 : 16;
         const borderWidth = isSelected ? 2 : 1;
-        const fillColor = isSelected ? '#FF385C' : '#007bff'; // 선택됨 빨간색, 기본 파란색
-        const borderColor = '#fff'; // 흰색 테두리
+        const fillColor = isSelected ? '#FF385C' : '#007bff';
+        const borderColor = '#fff';
         const svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg">' +
                     '<circle cx="' + (size / 2) + '" cy="' + (size / 2) + '" r="' + ((size - borderWidth * 2) / 2) + '" fill="' + fillColor + '" stroke="' + borderColor + '" stroke-width="' + borderWidth + '"/>' +
                     '</svg>';
-        return 'data:image/svg+xml;base64,' + btoa(svg); // 수정됨
+        return 'data:image/svg+xml;base64,' + btoa(svg);
       }
 
       function updateMarkers(markersData) {
@@ -142,8 +134,6 @@ function updateMapCenter(lat, lng) {
           
           // 현재 마커 데이터 저장
           window.currentMarkers = markersData;
-
-          // 기존 마커들 제거
           if (clusterer) {
             clusterer.clear();
           } else if (window.existingMarkers) {
@@ -158,8 +148,6 @@ function updateMapCenter(lat, lng) {
           // 마커 데이터 분리
           const userLocationData = markersData.find(m => m.markerType === 'userLocation');
           const placeMarkersData = markersData.filter(m => m.markerType !== 'userLocation');
-
-          // 현재 위치 마커 생성
           if (userLocationData) {
             userLocationMarker = new kakao.maps.Marker({
               position: new kakao.maps.LatLng(userLocationData.lat, userLocationData.lng),
@@ -169,7 +157,6 @@ function updateMapCenter(lat, lng) {
             userLocationMarker.setMap(map);
           }
 
-          // 장소 마커들 생성
           if (placeMarkersData && placeMarkersData.length > 0) {
             const kakaoMarkers = placeMarkersData.map(markerData => {
               const isSelected = markerData.markerType === 'selected';
@@ -192,7 +179,6 @@ function updateMapCenter(lat, lng) {
               return marker;
             });
             
-            // 마커 추가
             if (clusterer) {
               clusterer.addMarkers(kakaoMarkers);
             } else {
@@ -332,7 +318,7 @@ function updateMapCenter(lat, lng) {
         infoWindowOverlay = new kakao.maps.CustomOverlay({
           position: new kakao.maps.LatLng(markerData.lat, markerData.lng),
           content: infoWindowContent,
-          yAnchor: 1.1, // 마커 위쪽에 배치
+          yAnchor: 1.1,
           zIndex: 1000,
         });
 
