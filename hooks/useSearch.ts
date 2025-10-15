@@ -34,7 +34,7 @@ type SearchAction =
 
 const initialState: SearchState = {
   searchQuery: "",
-  searchOptions: { radius: 1000, sort: 'distance' },
+  searchOptions: { radius: 1000, sort: 'accuracy' }, // 기본값을 정확순으로 설정
   listResults: [],
   allMapMarkers: [],
   pagination: null,
@@ -97,7 +97,14 @@ const searchReducer = (state: SearchState, action: SearchAction): SearchState =>
       };
 
     case 'CLEAR_SEARCH':
-      return { ...state, listResults: [], allMapMarkers: [], pagination: null, markerCountReachedLimit: false };
+      return { 
+        ...state, 
+        searchQuery: '', 
+        listResults: [], 
+        allMapMarkers: [], 
+        pagination: null, 
+        markerCountReachedLimit: false 
+      };
 
     case 'START_ALL_MARKERS_LOAD':
       return { ...state, loadingAllMarkers: true };
@@ -137,16 +144,6 @@ export const useSearch = () => {
   };
 
   const performSearch = useCallback(async (latitude: number, longitude: number, userLatitude: number, userLongitude: number) => {
-    console.log('performSearch 호출:', { 
-      searchQuery: state.searchQuery, 
-      latitude, 
-      longitude, 
-      userLatitude, 
-      userLongitude,
-      radius: state.searchOptions.radius,
-      sort: state.searchOptions.sort
-    });
-    
     if (!state.searchQuery.trim()) {
       alert("검색어를 입력해주세요.");
       return;
@@ -154,7 +151,6 @@ export const useSearch = () => {
     dispatch({ type: 'START_SEARCH' });
     try {
       const firstPageData = await searchPlaces(state.searchQuery, latitude, longitude, state.searchOptions.radius, state.searchOptions.sort, 1, userLatitude, userLongitude);
-      console.log('검색 성공:', firstPageData);
       // 검색 결과가 없어도 성공으로 처리 (오류가 아님)
       dispatch({ type: 'SEARCH_SUCCESS', payload: firstPageData });
     } catch (err: any) {
@@ -162,6 +158,32 @@ export const useSearch = () => {
       dispatch({ type: 'SEARCH_FAILURE', payload: err.message || "검색 중 오류가 발생했습니다." });
     }
   }, [state.searchQuery, state.searchOptions]);
+
+  // 검색어를 직접 전달하는 검색 함수
+  const performSearchWithQuery = useCallback(async (query: string, latitude: number, longitude: number, userLatitude: number, userLongitude: number) => {
+    console.log('=== performSearchWithQuery 호출 ===');
+    console.log('query:', query);
+    console.log('latitude:', latitude, 'longitude:', longitude);
+    console.log('userLatitude:', userLatitude, 'userLongitude:', userLongitude);
+    
+    if (!query.trim()) {
+      return;
+    }
+    
+    dispatch({ type: 'START_SEARCH' });
+    
+    try {
+      
+      const firstPageData = await searchPlaces(query, latitude, longitude, state.searchOptions.radius, state.searchOptions.sort, 1, userLatitude, userLongitude);
+      
+      // 검색 결과가 없어도 성공으로 처리 (오류가 아님)
+      dispatch({ type: 'SEARCH_SUCCESS', payload: firstPageData });
+    } catch (err: any) {
+      console.error('Search error:', err);
+      console.error('에러 상세:', err.message, err.stack);
+      dispatch({ type: 'SEARCH_FAILURE', payload: err.message || "검색 중 오류가 발생했습니다." });
+    }
+  }, [state.searchOptions]);
 
         const fetchNextPage = useCallback(async (latitude: number, longitude: number, userLatitude: number, userLongitude: number) => {
           if (state.loadingNextPage || !state.pagination || state.pagination.isLast || state.pagination.currentPage >= 10) return;
@@ -253,6 +275,7 @@ export const useSearch = () => {
     markerCountReachedLimit: state.markerCountReachedLimit,
     error: state.error,
     performSearch,
+    performSearchWithQuery,
     fetchNextPage,
     fetchAllMarkers,
     clearSearchResults,

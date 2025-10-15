@@ -16,6 +16,9 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
       let clusterer;
       let userLocationMarker = null;
       let infoWindowOverlay = null;
+      let markerImages = null; // 전역 변수로 선언
+      
+      // 바텀시트 높이 비율 전역 변수
 
       function initMap(lat, lng) {
         const mapContainer = document.getElementById('map');
@@ -30,17 +33,7 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
         try {
           map = new kakao.maps.Map(mapContainer, mapOption);
           
-          // 지도 초기화 후 현재 위치 마커 즉시 생성 (기본 마커)
-          setTimeout(() => {
-            if (map) {
-              const userLocationMarker = new kakao.maps.Marker({
-                position: new kakao.maps.LatLng(lat, lng),
-                zIndex: 101
-              });
-              userLocationMarker.setMap(map);
-              console.log('초기 현재 위치 마커 생성 (기본 마커):', lat, lng);
-            }
-          }, 100);
+          // 지도 초기화 완료 (마커는 updateMarkers에서 처리)
 
           // markerImages 초기화 로직
           markerImages = {
@@ -66,11 +59,18 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
           return;
         }
 
-        clusterer = new kakao.maps.MarkerClusterer({
-          map: map,
-          averageCenter: true,
-          minLevel: 7,
-        });
+        try {
+          clusterer = new kakao.maps.MarkerClusterer({
+            map: map,
+            averageCenter: true,
+            minLevel: 7,
+          });
+          console.log('클러스터 초기화 성공');
+        } catch (clusterError) {
+          console.error('클러스터 초기화 실패:', clusterError);
+          // 클러스터 없이도 작동하도록 설정
+          clusterer = null;
+        }
 
         kakao.maps.event.addListener(map, 'idle', function() {
           const latlng = map.getCenter();
@@ -83,9 +83,20 @@ export const kakaoMapWebViewHtml = `<!DOCTYPE html>
       }
 
 function updateMapCenter(lat, lng) {
+  console.log('=== WebView updateMapCenter 호출 ===');
+  console.log('요청된 중심:', lat, lng);
+  
   if (map) {
     const moveLatLon = new kakao.maps.LatLng(lat, lng);
     map.setCenter(moveLatLon);
+    
+    // 실제 적용된 중심 확인
+    setTimeout(() => {
+      const actualCenter = map.getCenter();
+      console.log('실제 적용된 중심:', actualCenter.getLat(), actualCenter.getLng());
+    }, 100);
+  } else {
+    console.log('지도 인스턴스가 없음');
   }
 }
 
@@ -102,19 +113,55 @@ function updateMapCenter(lat, lng) {
         return 'data:image/svg+xml;base64,' + btoa(svg); // 수정됨
       }
 
-      let markerImages;
-
       function updateMarkers(markersData) {
         try {
-          if (!map || !clusterer) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', message: 'Map or clusterer not initialized in updateMarkers.' }));
+          if (!map) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'error', message: 'Map not initialized in updateMarkers.' }));
             return;
+          }
+          
+          // markerImages가 초기화되지 않았으면 초기화
+          if (!markerImages) {
+            console.log('markerImages 초기화 중...');
+            markerImages = {
+              default: new kakao.maps.MarkerImage(
+                createDotMarkerImage(false),
+                new kakao.maps.Size(16, 16),
+                { offset: new kakao.maps.Point(8, 8) }
+              ),
+              selected: new kakao.maps.MarkerImage(
+                createDotMarkerImage(true),
+                new kakao.maps.Size(24, 24),
+                { offset: new kakao.maps.Point(12, 12) }
+              ),
+              userLocation: new kakao.maps.MarkerImage(
+                'MARKER_IMAGE_USER_LOCATION_PLACEHOLDER',
+                new kakao.maps.Size(28, 28),
+                { offset: new kakao.maps.Point(14, 14) }
+              )
+            };
+            console.log('markerImages 초기화 완료');
+          }
+          
+          // 클러스터가 없어도 작동하도록 처리
+          if (!clusterer) {
+            console.log('클러스터가 없어서 직접 마커를 지도에 추가합니다.');
           }
           
           // 현재 마커 데이터를 전역 변수에 저장
           window.currentMarkers = markersData;
 
-          clusterer.clear();
+          // 클러스터가 있으면 클리어, 없으면 기존 마커들 제거
+          if (clusterer) {
+            clusterer.clear();
+          } else {
+            // 클러스터가 없으면 기존 마커들을 직접 제거
+            if (window.existingMarkers) {
+              window.existingMarkers.forEach(marker => marker.setMap(null));
+              window.existingMarkers = [];
+            }
+          }
+          
           if (userLocationMarker) {
               userLocationMarker.setMap(null);
           }
@@ -142,11 +189,7 @@ function updateMapCenter(lat, lng) {
               
               // 마커를 지도에 추가
               userLocationMarker.setMap(map);
-              console.log('현재 위치 마커 지도에 추가 완료');
-              console.log('=== 현재 위치 마커 생성 완료 ===');
-          } else {
-              console.log('현재 위치 데이터 없음');
-              console.log('전체 마커 데이터:', markersData);
+              // 현재 위치 마커 지도에 추가 완료
           }
 
           if (placeMarkersData && placeMarkersData.length > 0) {
@@ -174,7 +217,15 @@ function updateMapCenter(lat, lng) {
                   });
                   return marker;
               });
-              clusterer.addMarkers(kakaoMarkers);
+              
+              // 클러스터가 있으면 클러스터에 추가, 없으면 직접 지도에 추가
+              if (clusterer) {
+                clusterer.addMarkers(kakaoMarkers);
+              } else {
+                // 클러스터가 없으면 직접 지도에 추가하고 추적
+                kakaoMarkers.forEach(marker => marker.setMap(map));
+                window.existingMarkers = kakaoMarkers;
+              }
           }
         } catch (e) {
           console.error('Error in updateMarkers:', e);
@@ -326,10 +377,39 @@ function updateMapCenter(lat, lng) {
       let routeStartMarker = null;
       let routeEndMarker = null;
 
+      // 경로 마커 이미지 생성 함수
+      function createRouteMarkerImage(type) {
+        const size = new kakao.maps.Size(32, 32);
+        const offset = new kakao.maps.Point(16, 32);
+        
+        let imageSrc;
+        if (type === 'start') {
+          // 출발지 마커 (녹색 원)
+          const svg = \`
+            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="14" fill="#28a745" stroke="#fff" stroke-width="2"/>
+              <text x="16" y="20" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">S</text>
+            </svg>
+          \`;
+          imageSrc = 'data:image/svg+xml;base64,' + btoa(svg);
+        } else {
+          // 도착지 마커 (빨간색 원)
+          const svg = \`
+            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="14" fill="#dc3545" stroke="#fff" stroke-width="2"/>
+              <text x="16" y="20" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">E</text>
+            </svg>
+          \`;
+          imageSrc = 'data:image/svg+xml;base64,' + btoa(svg);
+        }
+        
+        return new kakao.maps.MarkerImage(imageSrc, size, { offset });
+      }
+
       // 경로 표시 함수
       function drawRoute(routeResult) {
         try {
-          console.log('drawRoute 호출됨:', routeResult);
+          // drawRoute 호출됨
           
           if (!map) {
             console.error('Map instance not available');
@@ -340,7 +420,7 @@ function updateMapCenter(lat, lng) {
           clearRoute();
 
           if (!routeResult || !routeResult.coordinates || routeResult.coordinates.length === 0) {
-            console.log('경로 데이터가 없습니다');
+            // 경로 데이터가 없습니다
             return;
           }
 
@@ -391,12 +471,27 @@ function updateMapCenter(lat, lng) {
             routeEndMarker.setMap(map);
           }
 
-          // 4. 경로 전체가 보이도록 지도 범위 조정
-          const bounds = new kakao.maps.LatLngBounds();
-          path.forEach(point => bounds.extend(point));
-          map.setBounds(bounds);
+          // 4. 경로 안내 중심 좌표를 기준으로 지도 중심 설정
+          const screenHeight = window.innerHeight;
+          const routePanelHeight = screenHeight * 0.25; // 25% 가정
+          const targetPosition = routePanelHeight + (screenHeight - routePanelHeight) / 2;
           
-          console.log('경로 표시 완료');
+          // 경로 안내 중심 좌표 계산 (출발지와 도착지의 중점)
+          const startStep = routeResult.steps[0];
+          const endStep = routeResult.steps[routeResult.steps.length - 1];
+          const centerLat = (startStep.startLocation.lat + endStep.endLocation.lat) / 2;
+          const centerLng = (startStep.startLocation.lon + endStep.endLocation.lon) / 2;
+          
+          // 경로 안내 중심을 목표 위치에 맞춰서 지도 중심 조정
+          const offsetLat = (targetPosition / screenHeight - 0.5) * 0.01; // 임시 오프셋
+          const adjustedCenter = new kakao.maps.LatLng(
+            centerLat + offsetLat,
+            centerLng
+          );
+          
+          map.setCenter(adjustedCenter);
+          
+          // 경로 표시 완료
         } catch (error) {
           console.error('drawRoute 오류:', error);
         }
@@ -417,40 +512,232 @@ function updateMapCenter(lat, lng) {
             routeEndMarker.setMap(null);
             routeEndMarker = null;
           }
-          console.log('경로 제거 완료');
+          // 경로 제거 완료
         } catch (error) {
           console.error('clearRoute 오류:', error);
         }
       }
 
-      // 경로 마커 이미지 생성 함수
-      function createRouteMarkerImage(type) {
-        const size = new kakao.maps.Size(32, 32);
-        const offset = new kakao.maps.Point(16, 32);
-        
-        let imageSrc;
-        if (type === 'start') {
-          // 출발지 마커 (녹색 원)
-          const svg = \`
-            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="14" fill="#28a745" stroke="#fff" stroke-width="2"/>
-              <text x="16" y="20" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">S</text>
-            </svg>
-          \`;
-          imageSrc = \`data:image/svg+xml;base64,\${btoa(svg)}\`;
-        } else {
-          // 도착지 마커 (빨간색 원)
-          const svg = \`
-            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="14" fill="#dc3545" stroke="#fff" stroke-width="2"/>
-              <text x="16" y="20" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">E</text>
-            </svg>
-          \`;
-          imageSrc = \`data:image/svg+xml;base64,\${btoa(svg)}\`;
+      // 검색 결과 마커들 제거 함수
+      function clearSearchMarkers() {
+        try {
+          if (clusterer) {
+            clusterer.clear();
+          }
+          // 검색 결과 마커들 제거 완료
+        } catch (error) {
+          console.error('clearSearchMarkers 오류:', error);
         }
-        
-        return new kakao.maps.MarkerImage(imageSrc, size, { offset });
       }
+
+        // 검색 결과에 맞는 줌 레벨 조정 함수
+        function adjustZoomForSearchResults() {
+          try {
+            if (!map) {
+              console.error('Map instance not available');
+              return;
+            }
+
+            // 검색 결과에 적합한 고정 줌 레벨 설정
+            // 6레벨: 적당한 범위로 검색 결과들이 잘 보이도록 설정
+            const targetLevel = 6;
+            
+            console.log('=== 검색 결과 줌 레벨 조정 ===');
+            console.log('현재 줌 레벨:', map.getLevel());
+            console.log('목표 줌 레벨:', targetLevel);
+            
+            // 줌 레벨 변경
+            map.setLevel(targetLevel);
+            
+            console.log('줌 레벨 조정 완료');
+            
+          } catch (error) {
+            console.error('adjustZoomForSearchResults 오류:', error);
+          }
+        }
+
+        // 길찾기 결과에 맞는 줌 레벨 조정 함수
+        function adjustZoomForRouteResults() {
+          try {
+            if (!map) {
+              console.error('Map instance not available');
+              return;
+            }
+
+            // 길찾기 결과에 적합한 줌 레벨 설정
+            // 4레벨: 경로가 잘 보이도록 조금 더 확대
+            const targetLevel = 4;
+            
+            console.log('=== 길찾기 결과 줌 레벨 조정 ===');
+            console.log('현재 줌 레벨:', map.getLevel());
+            console.log('목표 줌 레벨:', targetLevel);
+            
+            // 줌 레벨 변경
+            map.setLevel(targetLevel);
+            
+            console.log('길찾기 줌 레벨 조정 완료');
+            
+          } catch (error) {
+            console.error('adjustZoomForRouteResults 오류:', error);
+          }
+        }
+
+        // 상세 바텀시트를 고려한 지도 중심 조정 함수
+        function adjustMapCenterForDetailSheet(detailSheetHeightRatio = 0.6) {
+        try {
+          if (!map) {
+            console.error('Map instance not available');
+            return;
+          }
+          
+          // 현재 지도 중심을 원래 위치로 저장 (복원용)
+          if (!window.originalMapCenter) {
+            window.originalMapCenter = map.getCenter();
+            console.log('원래 지도 중심 저장:', window.originalMapCenter.getLat(), window.originalMapCenter.getLng());
+          }
+
+          // 상단 패널 높이 비율 (25%)
+          const panelHeightRatio = 0.25;
+          
+          // 화면 높이
+          const screenHeight = window.innerHeight;
+          
+          // 바텀시트 높이 계산
+          const bottomSheetHeight = screenHeight * detailSheetHeightRatio;
+          
+          // 지도가 보이는 영역의 중앙 위치 계산
+          const mapVisibleTop = screenHeight * panelHeightRatio;
+          const mapVisibleBottom = screenHeight * (1 - detailSheetHeightRatio);
+          const mapVisibleHeight = mapVisibleBottom - mapVisibleTop;
+          const mapVisibleCenterPosition = mapVisibleTop + (mapVisibleHeight / 2);
+          const mapVisibleCenterRatio = mapVisibleCenterPosition / screenHeight;
+          
+          // 현재 지도 중심을 경로 안내 중심으로 설정
+          const currentCenter = map.getCenter();
+          const centerLat = currentCenter.getLat();
+          const centerLng = currentCenter.getLng();
+          
+          // (screenHeight - bottomSheetHeight) 크기만큼 지도 중심을 아래로 이동
+          const offsetPixels = screenHeight - bottomSheetHeight;
+          
+          // 동적 조정 팩터들
+          const currentLevel = map.getLevel();
+          const zoomFactor = Math.pow(1.5, currentLevel - 3); // 줌 레벨에 따른 스케일 (레벨 3 기준, 더 큰 증가)
+          
+          const routeDistance = window.currentRouteResult?.totalDistance || 1000;
+          const distanceFactor = Math.min(routeDistance / 1000, 3); // 1km 기준으로 최대 3배
+          
+          const visibleRatio = (screenHeight - bottomSheetHeight) / screenHeight;
+          const ratioFactor = Math.max(0.5, visibleRatio); // 최소 0.5배
+          
+          // 복합 팩터 적용
+          const combinedFactor = zoomFactor * distanceFactor * ratioFactor;
+          const offsetLat = offsetPixels * 0.00001 * combinedFactor;
+          
+          const adjustedCenter = new kakao.maps.LatLng(
+            centerLat - offsetLat, // 현재 중심에서 아래로 이동 (위도 감소)
+            centerLng
+          );
+          
+          console.log('=== 상세 바텀시트를 고려한 지도 중심 조정 ===');
+          console.log('화면 높이:', screenHeight);
+          console.log('바텀시트 높이:', bottomSheetHeight);
+          console.log('오프셋 픽셀:', offsetPixels);
+          console.log('현재 줌 레벨:', currentLevel);
+          console.log('줌 팩터:', zoomFactor);
+          console.log('경로 거리:', routeDistance, 'm');
+          console.log('거리 팩터:', distanceFactor);
+          console.log('화면 비율:', visibleRatio);
+          console.log('비율 팩터:', ratioFactor);
+          console.log('복합 팩터:', combinedFactor);
+          console.log('오프셋 위도:', offsetLat);
+          console.log('현재 지도 중심:', centerLat, centerLng);
+          console.log('조정된 중심:', adjustedCenter.getLat(), adjustedCenter.getLng());
+          
+          // 지도 중심 조정
+          console.log('=== 지도 중심 변경 전 ===');
+          console.log('현재 지도 중심:', map.getCenter().getLat(), map.getCenter().getLng());
+          console.log('변경할 지도 중심:', adjustedCenter.getLat(), adjustedCenter.getLng());
+          
+          map.setCenter(adjustedCenter);
+          
+          // 변경 후 확인
+          setTimeout(() => {
+            console.log('=== 지도 중심 변경 후 ===');
+            console.log('실제 지도 중심:', map.getCenter().getLat(), map.getCenter().getLng());
+            console.log('변경 성공 여부:', 
+              Math.abs(map.getCenter().getLat() - adjustedCenter.getLat()) < 0.0001 ? '성공' : '실패'
+            );
+          }, 100);
+          
+        } catch (error) {
+          console.error('adjustMapCenterForDetailSheet 오류:', error);
+        }
+      }
+
+      // 바텀시트가 접힐 때 지도 중심을 원래 위치로 복원
+      window.restoreMapCenterForBottomSheet = function() {
+        try {
+          console.log('=== 바텀시트 접힘 - 지도 중심 복원 시작 ===');
+          
+          // 이전에 저장된 원래 지도 중심이 있다면 복원
+          if (window.originalMapCenter) {
+            console.log('원래 지도 중심으로 복원:', window.originalMapCenter.getLat(), window.originalMapCenter.getLng());
+            map.setCenter(window.originalMapCenter);
+            
+            // 복원 후 확인
+            setTimeout(() => {
+              console.log('=== 지도 중심 복원 후 ===');
+              console.log('복원된 지도 중심:', map.getCenter().getLat(), map.getCenter().getLng());
+            }, 100);
+          } else {
+            console.log('저장된 원래 지도 중심이 없음 - 복원 불가');
+          }
+          
+        } catch (error) {
+          console.error('restoreMapCenterForBottomSheet 오류:', error);
+        }
+      }
+
+      // 모든 검색 결과 마커 숨기기 (길찾기/상세안내 모드용)
+      window.hideAllSearchMarkers = function() {
+        try {
+          console.log('=== 모든 검색 결과 마커 숨김 ===');
+          
+          // 검색 결과 마커들 숨기기
+          if (window.searchMarkers && window.searchMarkers.length > 0) {
+            window.searchMarkers.forEach(marker => {
+              marker.setMap(null);
+            });
+            console.log('검색 결과 마커 개수:', window.searchMarkers.length, '개 숨김');
+          }
+          
+          // 검색 결과 마커 배열 초기화
+          window.searchMarkers = [];
+          
+          // 선택된 장소 마커도 숨기기 (길찾기 모드에서는 필요 없음)
+          if (window.selectedMarker) {
+            window.selectedMarker.setMap(null);
+            window.selectedMarker = null;
+            console.log('선택된 장소 마커 숨김');
+          }
+          
+          // 추가로 모든 마커를 강제로 숨기기
+          if (window.allMarkers && window.allMarkers.length > 0) {
+            window.allMarkers.forEach(marker => {
+              marker.setMap(null);
+            });
+            console.log('전체 마커 개수:', window.allMarkers.length, '개 숨김');
+            window.allMarkers = [];
+          }
+          
+          console.log('=== 검색 결과 마커 숨김 완료 ===');
+          
+        } catch (error) {
+          console.error('hideAllSearchMarkers 오류:', error);
+        }
+      }
+
 
 
     </script>  </body>

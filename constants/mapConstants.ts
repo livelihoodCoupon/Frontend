@@ -5,7 +5,7 @@ export type MarkerType = 'userLocation' | 'selected' | 'default' | 'routeStart' 
 export const MARKER_IMAGES = {
   // 현재 위치 마커 (파란색 아이콘, 배경 없음)
   USER_LOCATION: "data:image/svg+xml;base64," + btoa(`
-    <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg width="40" height="40" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#3690FF"/>
     </svg>
   `),
@@ -82,8 +82,8 @@ export const MARKER_CONFIG = {
   // 현재 위치 마커 설정
   userLocation: {
     image: MARKER_IMAGES.USER_LOCATION,
-    size: { width: 32, height: 32 },
-    offset: { x: 14, y: 14 }, // 마커 중앙에 위치
+    size: { width: 40, height: 40 },
+    offset: { x: 18, y: 18 }, // 마커 중앙에 위치
     zIndex: 101,
     clickable: false, // 클릭 불가
   },

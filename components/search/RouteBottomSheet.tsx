@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { SearchResult } from '../../types/search';
 import { RouteResult } from '../../types/route';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
@@ -25,6 +26,7 @@ interface RouteBottomSheetProps {
   isOpen: boolean;
   onToggle: () => void;
   onHeightChange?: (height: number) => void;
+  style?: any;
   allMarkers: SearchResult[];
   onSelectResult: (item: SearchResult) => void;
   onSetRouteLocation?: (type: 'departure' | 'arrival', placeInfo: SearchResult) => void;
@@ -48,8 +50,8 @@ interface RouteBottomSheetProps {
   selectedPlaceId?: string | null;
   // 길찾기 모드 관련 props
   onRoutePress?: () => void;
-  onSetStartLocation?: (location: string) => void;
-  onSetEndLocation?: (location: string) => void;
+  onSetStartLocation?: (location: string | SearchResult) => void;
+  onSetEndLocation?: (location: string | SearchResult) => void;
   // 상세 안내 모드 (길찾기 결과만 표시)
   isRouteDetailMode?: boolean;
 }
@@ -58,6 +60,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   isOpen,
   onToggle,
   onHeightChange,
+  style,
   allMarkers,
   onSelectResult,
   onSetRouteLocation,
@@ -88,9 +91,9 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   const insets = useSafeAreaInsets();
   const USABLE_SCREEN_HEIGHT = SCREEN_HEIGHT - insets.bottom;
   const BOTTOM_SHEET_HEIGHT = USABLE_SCREEN_HEIGHT * 0.6; 
-  const PLACE_DETAIL_HEIGHT = USABLE_SCREEN_HEIGHT * 0.44; // 상세정보용 낮은 높이
+  const PLACE_DETAIL_HEIGHT = USABLE_SCREEN_HEIGHT * 0.5; // 상세정보용 높이
   const ROUTE_DETAIL_HEIGHT = USABLE_SCREEN_HEIGHT * 0.65; // 상세 경로 안내용 높은 높이
-  const CLOSED_HEIGHT = 30;
+  const CLOSED_HEIGHT = 60; // 더 큰 높이로 조정
 
   // 드래그 관련 상태 (현재 사용하지 않음)
   const [isDragging, setIsDragging] = useState(false);
@@ -101,10 +104,17 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   // 현재 위치
   const { location } = useCurrentLocation();
   
-  // 디버깅: isOpen 상태 로그
+  // 바텀시트 상태 로그
+  useEffect(() => {
+  }, [isOpen]);
   
   // 상세정보 표시 여부에 따른 바텀시트 높이 조정
   const getBottomSheetHeight = () => {
+    // 바텀시트가 닫혀있을 때는 작은 핸들만 표시
+    if (!isOpen) {
+      return CLOSED_HEIGHT;
+    }
+    
     if (isRouteDetailMode) {
       return ROUTE_DETAIL_HEIGHT;
     }
@@ -204,35 +214,54 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
     }
   };
 
+  
+  // 검색 모드가 아닐 때는 바텀시트를 완전히 숨김
+  if (!hasSearched && !isRouteDetailMode) {
+    return null;
+  }
+
   return (
-    <View 
-      style={[
-        styles.container, 
-        { 
-          bottom: isOpen ? 0 : -getBottomSheetHeight(),
-          height: getBottomSheetHeight(),
-        }
-      ]}
-    >
-      {/* 드래그 핸들 */}
+      <Animated.View 
+        style={[
+          styles.container, 
+          { 
+            bottom: isOpen ? 0 : insets.bottom, // 닫혀있을 때는 하드웨어 버튼 영역 피하기
+            height: getBottomSheetHeight(),
+          },
+          style
+        ]}
+      >
+      {/* 토글 핸들 */}
       <TouchableOpacity
         style={styles.dragHandle}
         activeOpacity={0.7}
         onPress={() => {
-          handleToggle();
+          if (isRouteDetailMode) {
+            // 길찾기 상세안내 모드일 때는 바텀시트만 닫기 (모드 변경 없음)
+            onToggle();
+          } else {
+            // 일반 모드일 때는 기존 동작
+            onToggle();
+          }
         }}
       >
-        <View style={styles.dragIndicator} />
+        <Ionicons 
+          name={isOpen ? "chevron-down" : "chevron-up"} 
+          size={24} 
+          color="#666" 
+        />
       </TouchableOpacity>
       
-      <View style={styles.contentContainer}>
-        {/* 헤더 - 상세 안내 모드일 때는 헤더 제거 */}
-        {!hasSearched && !isRouteDetailMode && (
-          <View style={styles.header}>
-            <Ionicons name="navigate-outline" size={20} color="#007bff" />
-            <Text style={styles.headerText}>길찾기</Text>
-          </View>
-        )}
+      {/* 바텀시트가 열려있을 때만 내용 표시 */}
+      {isOpen && (
+        <View style={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}>
+          {/* 헤더 - 상세 안내 모드일 때는 헤더 제거 */}
+          {!hasSearched && !isRouteDetailMode && (
+            <View style={styles.header}>
+              <Ionicons name="navigate-outline" size={20} color="#007bff" />
+              <Text style={styles.headerText}>길찾기</Text>
+            </View>
+          )}
 
         {/* 상세 안내 모드일 때는 바로 경로 안내 표시 */}
         {isRouteDetailMode ? (
@@ -267,8 +296,8 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
                       style={styles.routeButton}
                       onPress={() => {
                         if (selectedPlaceDetail && onSetStartLocation && onRoutePress) {
-                          // 출발지 설정
-                          onSetStartLocation(selectedPlaceDetail.placeName);
+                          // 출발지 설정 - selectedPlaceDetail 객체 전체를 전달
+                          onSetStartLocation(selectedPlaceDetail);
                           // 상세정보 닫기
                           if (propSetShowPlaceDetail) {
                             propSetShowPlaceDetail(false);
@@ -286,8 +315,8 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
                       style={[styles.routeButton, styles.routeButtonActive]}
                       onPress={() => {
                         if (selectedPlaceDetail && onSetEndLocation && onRoutePress) {
-                          // 목적지 설정
-                          onSetEndLocation(selectedPlaceDetail.placeName);
+                          // 목적지 설정 - selectedPlaceDetail 객체 전체를 전달
+                          onSetEndLocation(selectedPlaceDetail);
                           // 상세정보 닫기
                           if (propSetShowPlaceDetail) {
                             propSetShowPlaceDetail(false);
@@ -518,12 +547,23 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
           </>
           </ScrollView>
         )}
-      </View>
-    </View>
+        </View>
+      )}
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  bottomSheetBackground: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  handleIndicator: {
+    backgroundColor: '#999',
+    width: 50,
+    height: 5,
+  },
   container: {
     position: 'absolute',
     bottom: 0,
@@ -538,31 +578,27 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
+        shadowOffset: { width: 0, height: -1 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 1,
       },
       android: {
-        elevation: 8,
+        elevation: 2,
       },
     }),
   },
   dragHandle: {
     alignItems: 'center',
-    paddingVertical: 8, // 터치 영역 축소
-    backgroundColor: 'white', // 흰색으로 통일
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-  },
-  dragIndicator: {
-    width: 50,
-    height: 5,
-    backgroundColor: '#999', // 더 명확한 색상
-    borderRadius: 3,
   },
   contentContainer: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 40, // 하드웨어 버튼 영역을 위한 하단 패딩 (동적으로 조정됨)
   },
   header: {
     flexDirection: 'row',
@@ -722,6 +758,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 30, // 하단 여백 추가
   },
   placeDetailInfo: {
     flex: 1,

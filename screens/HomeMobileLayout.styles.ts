@@ -36,7 +36,7 @@ export const mobileStyles = StyleSheet.create({
   },
   currentLocationButton: {
     position: 'absolute',
-    bottom: 80, // Adjust this value based on your layout
+    bottom: 80, // 기본값, 동적으로 조정됨
     right: 20,
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -52,16 +52,21 @@ export const mobileStyles = StyleSheet.create({
   },
   searchInAreaButton: {
     position: 'absolute',
-    bottom: 120, // Adjust this value based on your layout
+    bottom: 120, // 기본값, 동적으로 조정됨
     alignSelf: 'center',
-    backgroundColor: '#007bff',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    backgroundColor: 'white',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
     zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 3,
   },
   searchInAreaButtonText: {
-    color: 'white',
+    color: '#007bff',
     fontWeight: 'bold',
   },
   routeResultContainer: {

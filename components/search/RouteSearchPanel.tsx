@@ -35,12 +35,11 @@ interface RouteSearchPanelProps {
   onEndLocationSelect: (result: SearchResult) => void;
   setStartLocationResults: (results: SearchResult[]) => void;
   setEndLocationResults: (results: SearchResult[]) => void;
-  onStartRoute: () => void;
-  isRouteLoading: boolean;
   startLocationSearching?: boolean;
   endLocationSearching?: boolean;
   onStartLocationSearch?: () => void;
   onEndLocationSearch?: () => void;
+  onSwapLocations?: () => void;
 }
 
 const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
@@ -58,20 +57,19 @@ const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
   onEndLocationSelect,
   setStartLocationResults,
   setEndLocationResults,
-  onStartRoute,
-  isRouteLoading,
   startLocationSearching = false,
   endLocationSearching = false,
   onStartLocationSearch,
   onEndLocationSearch,
+  onSwapLocations,
 }) => {
   if (!isVisible) return null;
 
   const transportModes = [
-    { id: 'driving', icon: 'car-outline', label: '자동차' },
-    { id: 'transit', icon: 'bus-outline', label: '대중교통' },
-    { id: 'walking', icon: 'walk-outline', label: '도보' },
-    { id: 'cycling', icon: 'bicycle-outline', label: '자전거' },
+    { id: 'driving', icon: 'car-outline', label: '자동차', disabled: false },
+    { id: 'transit', icon: 'bus-outline', label: '대중교통', disabled: true },
+    { id: 'walking', icon: 'walk-outline', label: '도보', disabled: false },
+    { id: 'cycling', icon: 'bicycle-outline', label: '자전거', disabled: false },
   ];
 
   // 유효한 경로인지 확인하는 함수
@@ -80,8 +78,9 @@ const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
     const isValidStart = startLocation === '내 위치' || 
       startLocationResults.some(result => result.placeName === startLocation);
     
-    // 목적지가 검색 결과에 있는 경우
-    const isValidEnd = endLocationResults.some(result => result.placeName === endLocation);
+    // 목적지가 검색 결과에 있거나, 이미 선택된 장소명이 있는 경우
+    const isValidEnd = endLocationResults.some(result => result.placeName === endLocation) ||
+      (endLocation && endLocation.trim() !== '');
     
     return isValidStart && isValidEnd && startLocation && endLocation;
   };
@@ -97,19 +96,31 @@ const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
               key={mode.id}
               style={[
                 styles.transportButton,
-                selectedTransportMode === mode.id && styles.transportButtonSelected
+                selectedTransportMode === mode.id && styles.transportButtonSelected,
+                mode.disabled && styles.transportButtonDisabled
               ]}
-              onPress={() => onTransportModeChange(mode.id)}
+              onPress={() => {
+                if (mode.disabled) {
+                  return; // 비활성화된 버튼은 아무 동작 안함
+                }
+                
+                onTransportModeChange(mode.id);
+              }}
+              disabled={mode.disabled}
             >
               <Ionicons 
                 name={mode.icon as any} 
-                size={20} 
-                color={selectedTransportMode === mode.id ? '#fff' : '#666'} 
+                size={18} 
+                color={
+                  mode.disabled 
+                    ? '#ccc' 
+                    : selectedTransportMode === mode.id ? '#fff' : '#666'
+                } 
               />
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={20} color="#666" />
+            <Ionicons name="close" size={18} color="#666" />
           </TouchableOpacity>
         </View>
       </View>
@@ -126,15 +137,26 @@ const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
             onSubmitEditing={onStartLocationSearch}
             returnKeyType="search"
           />
-          <TouchableOpacity 
-            style={styles.inputButton}
-            onPress={() => {
-              setStartLocation('내 위치');
-              setStartLocationResults([]);
-            }}
-          >
-            <Ionicons name="locate" size={16} color="#007bff" />
-          </TouchableOpacity>
+          <View style={styles.inputButtons}>
+            <TouchableOpacity 
+              style={styles.inputButton}
+              onPress={() => {
+                setStartLocation('내 위치');
+                setStartLocationResults([]);
+              }}
+            >
+              <Ionicons name="locate" size={16} color="#007bff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.inputButton}
+              onPress={() => {
+                setStartLocation('');
+                setStartLocationResults([]);
+              }}
+            >
+              <Ionicons name="close" size={16} color="#666" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.locationInput}>
@@ -147,20 +169,34 @@ const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
             onSubmitEditing={onEndLocationSearch}
             returnKeyType="search"
           />
-          <TouchableOpacity 
-            style={styles.inputButton}
-            onPress={() => {
-              const temp = startLocation;
-              setStartLocation(endLocation);
-              setEndLocation(temp);
-              // 검색 결과도 교체
-              const tempResults = startLocationResults;
-              setStartLocationResults(endLocationResults);
-              setEndLocationResults(tempResults);
-            }}
-          >
-            <Ionicons name="swap-vertical" size={16} color="#666" />
-          </TouchableOpacity>
+          <View style={styles.inputButtons}>
+            <TouchableOpacity 
+              style={styles.inputButton}
+              onPress={() => {
+                setEndLocation('내 위치');
+                setEndLocationResults([]);
+              }}
+            >
+              <Ionicons name="locate" size={16} color="#007bff" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.inputButton}
+              onPress={() => {
+                if (onSwapLocations) {
+                  onSwapLocations();
+                } else {
+                  // fallback: 기본 바꾸기 로직
+                  const temp = startLocation;
+                  setStartLocation(endLocation);
+                  setEndLocation(temp);
+                  setStartLocationResults([]);
+                  setEndLocationResults([]);
+                }
+              }}
+            >
+              <Ionicons name="swap-vertical" size={16} color="#666" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -204,19 +240,6 @@ const RouteSearchPanel: React.FC<RouteSearchPanelProps> = ({
           </View>
         )}
 
-        {/* 길찾기 시작 버튼 */}
-        {isValidRoute() && (
-          <TouchableOpacity
-            style={[styles.routeButton, isRouteLoading && styles.routeButtonDisabled]}
-            onPress={onStartRoute}
-            disabled={isRouteLoading}
-          >
-            <Ionicons name="navigate" size={20} color="white" />
-            <Text style={styles.routeButtonText}>
-              {isRouteLoading ? '길찾기 중...' : '길찾기 시작'}
-            </Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
     </View>
   );
@@ -245,8 +268,8 @@ const styles = StyleSheet.create({
   },
   transportContainer: {
     paddingTop: Platform.OS === 'ios' ? 60 : 50,
-    paddingHorizontal: 24,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
   transportButtons: {
     flexDirection: 'row',
@@ -254,9 +277,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   transportButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
@@ -264,33 +287,42 @@ const styles = StyleSheet.create({
   transportButtonSelected: {
     backgroundColor: '#007bff',
   },
+  transportButtonDisabled: {
+    backgroundColor: '#f0f0f0',
+    opacity: 0.5,
+  },
   closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 'auto',
   },
   inputContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 2,
+    paddingHorizontal: 20,
+    paddingBottom: 0,
   },
   locationInput: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginBottom: 4,
-    gap: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 6,
+    marginBottom: 6,
+    gap: 10,
   },
   input: {
     flex: 1,
     fontSize: 16,
     color: '#333',
+  },
+  inputButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   inputButton: {
     width: 32,
@@ -301,13 +333,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   resultsContainer: {
-    maxHeight: 250,
+    maxHeight: 330,
     paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 16,
   },
   resultsSection: {
-    marginBottom: 8,
+    marginBottom: 24,
   },
   resultsTitle: {
     fontSize: 14,
