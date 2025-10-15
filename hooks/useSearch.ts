@@ -158,8 +158,9 @@ export const useSearch = () => {
     dispatch({ type: 'SET_SEARCH_OPTIONS', payload: options });
   };
 
-  const performSearch = useCallback(async (latitude: number, longitude: number, userLatitude: number, userLongitude: number, overrideForceLocationSearch?: boolean) => {
-    if (!state.searchQuery.trim()) {
+  const performSearch = useCallback(async (latitude: number, longitude: number, userLatitude: number, userLongitude: number, overrideForceLocationSearch?: boolean, query?: string) => {
+    const searchQuery = query ?? state.searchQuery;
+    if (!searchQuery.trim()) {
       alert("검색어를 입력해주세요.");
       return;
     }
@@ -171,7 +172,7 @@ export const useSearch = () => {
 
       const search = async (radius: number) => {
         return await searchPlaces(
-          state.searchQuery,
+          searchQuery,
           latitude,
           longitude,
           radius, // Use provided radius

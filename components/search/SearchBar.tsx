@@ -1,38 +1,44 @@
-import React from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
-import { webStyles } from './styles/SearchBar.web.styles';
+import React, { forwardRef } from 'react';
+import { TextInput, TouchableOpacity, Text, View, Platform, NativeSyntheticEvent, TextInputFocusEventData, TextInputProps } from 'react-native';
 import { mobileStyles } from './styles/SearchBar.mobile.styles';
+import { webStyles } from './styles/SearchBar.web.styles';
+import { Ionicons } from '@expo/vector-icons'; // Import Ionicons
 
-/**
- * SearchBar 컴포넌트의 Props 인터페이스
- */
 interface SearchBarProps {
-  searchQuery: string; // 현재 검색 쿼리
-  setSearchQuery: (query: string) => void; // 검색 쿼리 설정 핸들러
-  onSearch: () => void; // 검색 실행 핸들러
-  style?: ViewStyle; // 추가적인 스타일
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  onSearch: () => void;
+  onClearSearch: () => void; // New prop for clearing search
+  onFocus?: TextInputProps['onFocus']; // New prop for focus event
+  onBlur?: TextInputProps['onBlur']; // New prop for blur event
 }
 
-/**
- * SearchBar 컴포넌트
- * 검색 입력 필드와 검색 버튼을 제공하는 재사용 가능한 컴포넌트
- */
-const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, onSearch, style }) => {
+const SearchBar = forwardRef<TextInput, SearchBarProps>((props, ref) => {
   const styles = Platform.OS === 'web' ? webStyles : mobileStyles;
+
   return (
-    <View style={[styles.searchContainer, style]}>
+    <View style={styles.searchContainer}>
       <TextInput
+        ref={ref}
         style={styles.searchInput}
-        placeholder="장소를 검색하세요..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        onSubmitEditing={onSearch}
+        placeholder="장소를 입력하세요..."
+        value={props.searchQuery}
+        onChangeText={props.setSearchQuery}
+        onSubmitEditing={props.onSearch}
+        returnKeyType="search"
+        onFocus={props.onFocus} // Pass onFocus prop
+        onBlur={props.onBlur} // Pass onBlur prop
       />
-      <TouchableOpacity style={styles.searchButton} onPress={onSearch}>
+      {props.searchQuery.length > 0 && ( // Conditionally render clear button
+        <TouchableOpacity style={styles.clearButton} onPress={props.onClearSearch}>
+          <Ionicons name="close-circle" size={24} color="#B9B9B9" />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity style={styles.searchButton} onPress={props.onSearch}>
         <Text style={styles.searchButtonText}>검색</Text>
       </TouchableOpacity>
     </View>
   );
-};
+});
 
 export default SearchBar;

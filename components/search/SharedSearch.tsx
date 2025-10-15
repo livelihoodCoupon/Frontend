@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,8 @@ interface SharedSearchProps {
   isWebView: boolean;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  onSearch: () => void;
+  onSearch: (query?: string) => void;
+  onClearSearch: () => void; // New prop
   searchResults: SearchResult[];
   allMarkers: SearchResult[];
   isLoading: boolean;
@@ -81,6 +82,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   searchQuery,
   setSearchQuery,
   onSearch,
+  onClearSearch,
   searchResults,
   allMarkers,
   isLoading,
@@ -127,24 +129,84 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   setStartLocationObject,
   endLocationObject,
   setEndLocationObject,
-}) => {
+  }) => {
+  const [activeSearchTab, setActiveSearchTab] = useState<'searchResults' | 'nearbyParking'>('searchResults');
+  const [hasPerformedSearch, setHasPerformedSearch] = useState(false); // New state to track if a search has been performed
+  const [recentSearches, setRecentSearches] = useState<string[]>([]); // New state for recent searches
+  const [isSearchBarFocused, setIsSearchBarFocused] = useState(false); // New state for search bar focus
+  const [searchSubmitted, setSearchSubmitted] = useState(false); // New state to track if a search has been submitted
   const routeScrollViewRef = useRef<ScrollView>(null);
+  const searchBarRef = useRef<TextInput>(null); // Ref for the SearchBar's TextInput
+  const suggestionsContainerRef = useRef<View>(null); // Ref for the suggestions container
 
-  const handleLocalSearch = () => {
-    onSearch();
-    setShowAutocomplete(false);
+  // Functions to manage recent searches
+  const loadRecentSearches = () => {
+    if (Platform.OS === 'web') {
+      const storedSearches = localStorage.getItem('recentSearches');
+      if (storedSearches) {
+        setRecentSearches(JSON.parse(storedSearches));
+      }
+    }
   };
+
+  const addRecentSearch = (search: string) => {
+    if (Platform.OS === 'web') {
+      setRecentSearches((prevSearches) => {
+        const newSearches = [search, ...prevSearches.filter((s) => s !== search)].slice(0, 5); // Keep last 5 unique searches
+        localStorage.setItem('recentSearches', JSON.stringify(newSearches));
+        return newSearches;
+      });
+    }
+  };
+
+  const removeRecentSearch = (searchToRemove: string) => {
+    if (Platform.OS === 'web') {
+      setRecentSearches((prevSearches) => {
+        const newSearches = prevSearches.filter((search) => search !== searchToRemove);
+        localStorage.setItem('recentSearches', JSON.stringify(newSearches));
+        return newSearches;
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadRecentSearches();
+  }, []); // Load on mount
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleClickOutside = (event: MouseEvent) => {
+        const suggestionsNode = suggestionsContainerRef.current as any;
+        const searchBarNode = searchBarRef.current as any;
+
+        if (
+          suggestionsNode && !suggestionsNode.contains(event.target as Node) &&
+          searchBarNode && !searchBarNode.contains(event.target as Node)
+        ) {
+          setShowAutocomplete(false);
+          if (searchBarNode.blur) {
+            searchBarNode.blur();
+          }
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showAutocomplete, setShowAutocomplete]);
 
   const renderFooter = () => {
     if (!loadingNextPage || !pagination || pagination.isLast || pagination.currentPage >= pagination.totalPages) {
       return null;
     }
-    return <ActivityIndicator style={{ paddingVertical: 20 }} size="large" color="#007bff" />;
+    return <ActivityIndicator style={{ paddingVertical: 20 }} size="large" color="#3690FF" />;
   };
 
   const renderContent = () => {
     if (isLoading) {
-      return <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />;
+      return <ActivityIndicator size="large" color="#3690FF" style={{ marginTop: 20 }} />;
     }
     if (errorMsg) {
       return <Text style={commonStyles.errorText}>{String(errorMsg)}</Text>;
@@ -174,71 +236,182 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
           style={[commonStyles.tabButton, activeTab === 'search' && commonStyles.activeTabButton]}
           onPress={() => setActiveTab('search')}
         >
-          <Ionicons name="search-outline" size={20} color={activeTab === 'search' ? '#007bff' : '#6c757d'} />
-          <Text style={[commonStyles.tabButtonText, activeTab === 'search' && commonStyles.activeTabButtonText]}>검색</Text>
+          <Ionicons name="search-outline" size={20} color={activeTab === 'search' ? '#3690FF' : Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9'} />
+          <Text style={[
+            commonStyles.tabButtonText,
+            activeTab === 'search' && commonStyles.activeTabButtonText,
+            activeTab !== 'search' && { color: Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9' }
+          ]}>검색</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[commonStyles.tabButton, activeTab === 'route' && commonStyles.activeTabButton]}
           onPress={() => setActiveTab('route')}
         >
-          <Ionicons name="navigate-outline" size={20} color={activeTab === 'route' ? '#007bff' : '#6c757d'} />
-          <Text style={[commonStyles.tabButtonText, activeTab === 'route' && commonStyles.activeTabButtonText]}>길찾기</Text>
+          <Ionicons name="navigate-outline" size={20} color={activeTab === 'route' ? '#3690FF' : Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9'} />
+          <Text style={[
+            commonStyles.tabButtonText,
+            activeTab === 'route' && commonStyles.activeTabButtonText,
+            activeTab !== 'route' && { color: Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9' }
+          ]}>길찾기</Text>
         </TouchableOpacity>
       </View>
 
       {activeTab === 'search' ? (
         <View style={commonStyles.searchTabContent}>
           <SearchBar
+            ref={searchBarRef}
             searchQuery={searchQuery}
             setSearchQuery={(text) => {
               setSearchQuery(text);
+              if (text.length > 0) {
+                setShowAutocomplete(true); // Show autocomplete as user types
+                setHasPerformedSearch(false); // Reset search performed flag
+              } else {
+                setShowAutocomplete(false); // Hide autocomplete if query is empty
+              }
               debouncedAutocomplete(text);
+              setSearchSubmitted(false);
             }}
-            onSearch={handleLocalSearch}
+            onSearch={() => {
+              onSearch();
+              setShowAutocomplete(false);
+              setSearchSubmitted(true);
+              if (searchQuery.trim().length > 0) {
+                addRecentSearch(searchQuery); // Add current search query to recent searches
+              }
+            }}
+            onClearSearch={() => {
+              onClearSearch();
+              setIsSearchBarFocused(false);
+            }}
+            onFocus={() => setIsSearchBarFocused(true)}
+            onBlur={(e: any) => {
+              if (Platform.OS === 'web') {
+                // Check if the focus is moving to an element within the suggestions container
+                const suggestionsNode = suggestionsContainerRef.current as any;
+                if (e.relatedTarget && suggestionsNode && suggestionsNode.contains(e.relatedTarget as Node)) {
+                  return; // Do not blur if focus moves to a suggestion item
+                }
+              }
+              setIsSearchBarFocused(false); // Set focus state immediately
+            }}
           />
-          {showAutocomplete && autocompleteSuggestions.length > 0 && (
-            <View style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
-              <TouchableOpacity
-                style={commonStyles.closeButton}
-                onPress={() => setShowAutocomplete(false)}
-              >
-                <Ionicons name="close" size={24} color="black" />
-              </TouchableOpacity>
-              <FlatList
-                data={autocompleteSuggestions}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={commonStyles.suggestionItem}
-                    onPress={() => {
-                      setSearchQuery(item.word);
-                      setShowAutocomplete(false);
-                    }}
-                  >
-                    <Text>{item.word}</Text>
-                  </TouchableOpacity>
-                )}
-                style={commonStyles.suggestionsList}
-              />
+          {(showAutocomplete && !hasPerformedSearch && autocompleteSuggestions.length > 0 && !searchSubmitted) || (searchQuery.length === 0 && isSearchBarFocused && recentSearches.length > 0) ? (
+            <View ref={suggestionsContainerRef} style={[commonStyles.suggestionsContainer, suggestionsContainerStyles]}>
+              {searchQuery.length === 0 && isSearchBarFocused ? (
+                // Display Recent Searches
+                <View>
+                  <Text style={commonStyles.suggestionsTitle}>최근 검색</Text>
+                  <FlatList
+                    data={recentSearches}
+                    keyExtractor={(item, index) => `recent-${item}-${index}`}
+                    renderItem={({ item }) => (
+
+                        <TouchableOpacity
+                            style={commonStyles.suggestionItem}
+                            onPress={() => {
+                                setSearchQuery(item);
+                                onSearch(item);
+                                addRecentSearch(item);
+                                setHasPerformedSearch(true);
+                                setShowAutocomplete(false);
+                                setSearchSubmitted(true);
+                            }}
+                        >
+                        <Text>{item}</Text>
+                        <TouchableOpacity
+                            onPress={() => removeRecentSearch(item)}
+                            style={commonStyles.removeRecentSearchButton}
+                        >
+                          <Ionicons name="close-circle-outline" size={18} color="#B9B9B9" />
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                    )}
+                    style={commonStyles.suggestionsList}
+                  />
+                </View>
+              ) : (
+                // Display Autocomplete Suggestions
+                <FlatList
+                  data={autocompleteSuggestions}
+                  keyExtractor={(item, index) => index.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={commonStyles.suggestionItem}
+                      onPress={() => {
+                        setSearchQuery(item.word);
+                        setShowAutocomplete(false);
+                      }}
+                    >
+                      <Text>{item.word}</Text>
+                    </TouchableOpacity>
+                  )}
+                  style={commonStyles.suggestionsList}
+                />
+              )}
             </View>
-          )}
+          ) : null}
           <SearchOptionsComponent searchOptions={searchOptions} setSearchOptions={setSearchOptions} />
-          {pagination && searchResults.length > 0 && (
-            <View style={commonStyles.resultCountContainer}>
-              <Text style={commonStyles.resultCountText}>총 {pagination.totalElements}개 결과</Text>
-              {loadingAllMarkers && (
-                <Text style={commonStyles.markerStatusText}>
-                  (전체 마커 로딩중...)
-                </Text>
-              )}
-              {markerCountReachedLimit && (
-                <Text style={commonStyles.markerStatusText}>
-                  (지도에 {allMarkers.length}개만 표시)
-                </Text>
-              )}
-            </View>
-          )}
-          {renderContent()}
+          <View style={commonStyles.subTabContainer}>
+            <TouchableOpacity
+              style={[
+                commonStyles.subTabButton,
+                activeSearchTab === 'searchResults' && commonStyles.activeSubTabButton,
+              ]}
+              onPress={() => setActiveSearchTab('searchResults')}
+            >
+              <Text
+                style={[
+                  commonStyles.subTabButtonText,
+                  activeSearchTab === 'searchResults' && commonStyles.activeSubTabButtonText,
+                ]}
+              >
+                검색 결과
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                commonStyles.subTabButton,
+                activeSearchTab === 'nearbyParking' && commonStyles.activeSubTabButton,
+              ]}
+              onPress={() => setActiveSearchTab('nearbyParking')}
+            >
+              <Text
+                style={[
+                  commonStyles.subTabButtonText,
+                  activeSearchTab === 'nearbyParking' && commonStyles.activeSubTabButtonText,
+                ]}
+              >
+                주변 주차장
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={commonStyles.tabContent}>
+            {activeSearchTab === 'searchResults' ? (
+              <>
+                {pagination && searchResults.length > 0 && (
+                  <View style={commonStyles.resultCountContainer}>
+                    <Text style={commonStyles.resultCountText}>총 {pagination.totalElements}개 결과</Text>
+                    {loadingAllMarkers && (
+                      <Text style={commonStyles.markerStatusText}>
+                        (전체 마커 로딩중...)
+                      </Text>
+                    )}
+                    {markerCountReachedLimit && (
+                      <Text style={commonStyles.markerStatusText}>
+                        (지도에 {allMarkers.length}개만 표시)
+                      </Text>
+                    )}
+                  </View>
+                )}
+                {renderContent()}
+              </>
+            ) : (
+              <View style={commonStyles.parkingLotContent}>
+                <Text style={commonStyles.parkingLotText}>주변 주차장 정보가 여기에 표시됩니다.</Text>
+              </View>
+            )}
+          </View>
         </View>
       ) : (
         <ScrollView
@@ -252,8 +425,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             <View style={commonStyles.transportModeContainer}>
               <TouchableOpacity
                 style={[
-                  commonStyles.transportModeButton,
-                  selectedTransportMode === 'driving' && commonStyles.transportModeButtonSelected
+                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
+                  selectedTransportMode === 'driving' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
                 ]}
                 onPress={() => {
                   handleTextEdit();
@@ -263,15 +436,19 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 <Ionicons
                   name="car-outline"
                   size={20}
-                  color={selectedTransportMode === 'driving' ? '#007bff' : '#666'}
+                  color={
+                    selectedTransportMode === 'driving'
+                      ? '#3690FF'
+                      : '#666'
+                  }
                 />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
-                  commonStyles.transportModeButton,
+                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
                   commonStyles.transportModeButtonDisabled, // 대중교통 미구현
-                  selectedTransportMode === 'transit' && commonStyles.transportModeButtonSelected
+                  selectedTransportMode === 'transit' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
                 ]}
                 onPress={() => {
                   console.log('대중교통 모드는 아직 구현되지 않았습니다.');
@@ -287,8 +464,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
               <TouchableOpacity
                 style={[
-                  commonStyles.transportModeButton,
-                  selectedTransportMode === 'walking' && commonStyles.transportModeButtonSelected
+                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
+                  selectedTransportMode === 'walking' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
                 ]}
                 onPress={() => {
                   handleTextEdit();
@@ -298,14 +475,18 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 <Ionicons
                   name="walk-outline"
                   size={20}
-                  color={selectedTransportMode === 'walking' ? '#007bff' : '#666'}
+                  color={
+                    selectedTransportMode === 'walking'
+                      ? '#3690FF'
+                      : '#666'
+                  }
                 />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
-                  commonStyles.transportModeButton,
-                  selectedTransportMode === 'cycling' && commonStyles.transportModeButtonSelected
+                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
+                  selectedTransportMode === 'cycling' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
                 ]}
                 onPress={() => {
                   handleTextEdit();
@@ -315,7 +496,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 <Ionicons
                   name="bicycle-outline"
                   size={20}
-                  color={selectedTransportMode === 'cycling' ? '#007bff' : '#666'}
+                  color={
+                    selectedTransportMode === 'cycling'
+                      ? '#3690FF'
+                      : '#666'
+                  }
                 />
               </TouchableOpacity>
             </View>
@@ -327,6 +512,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 <TextInput
                   style={commonStyles.routeTextInput}
                   placeholder="출발지를 입력하세요"
+                  placeholderTextColor="#B9B9B9"
                   value={startLocation}
                   onChangeText={(text) => {
                     handleTextEdit();
@@ -339,7 +525,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   underlineColorAndroid="transparent"
                 />
                 {isSearchingStart && (
-                  <ActivityIndicator size="small" color="#007bff" style={commonStyles.searchIndicator} />
+                  <ActivityIndicator size="small" color="#3690FF" style={commonStyles.searchIndicator} />
                 )}
               </View>
 
@@ -360,7 +546,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 <Ionicons
                   name="compass-outline"
                   size={16}
-                  color={location ? "#007bff" : "#ccc"}
+                  color={location ? "#3690FF" : "#B9B9B9"}
                 />
               </TouchableOpacity>
             </View>
@@ -370,6 +556,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 <TextInput
                   style={commonStyles.routeTextInput}
                   placeholder="도착지를 입력하세요"
+                  placeholderTextColor="#B9B9B9"
                   value={endLocation}
                   onChangeText={(text) => {
                     handleTextEdit();
@@ -382,7 +569,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   underlineColorAndroid="transparent"
                 />
                 {isSearchingEnd && (
-                  <ActivityIndicator size="small" color="#007bff" style={commonStyles.searchIndicator} />
+                  <ActivityIndicator size="small" color="#3690FF" style={commonStyles.searchIndicator} />
                 )}
               </View>
 
@@ -401,7 +588,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   handleTextEdit();
                 }}
               >
-                <Ionicons name="swap-vertical-outline" size={16} color="#666" />
+                <Ionicons name="swap-vertical-outline" size={16} color="#3690FF" />
               </TouchableOpacity>
             </View>
           </View>
@@ -598,3 +785,4 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
 
 export default SharedSearch;
+

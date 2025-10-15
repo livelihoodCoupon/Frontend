@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { SearchResult } from '../types/search';
 import { getAutocompleteSuggestions, searchPlaces } from '../services/searchApi';
 import { useCurrentLocation } from './useCurrentLocation';
@@ -129,8 +129,6 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
         console.error('목적지 검색 오류:', error);
         setEndLocationResults([]);
         setShowEndResults(false);
-      } finally {
-        setIsSearchingEnd(false);
       }
     }, 500);
   };
@@ -151,17 +149,20 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
 
   useEffect(() => {
     const handleSetRouteLocation = (type: 'departure' | 'arrival', placeInfo: SearchResult) => {
-      onToggleSidebar();
-      setActiveTab('route');
+      setActiveTab('route'); // Set active tab first
+      onToggleSidebar(); // Then toggle sidebar
       if (type === 'departure') {
         setStartLocation(placeInfo.placeName);
         setStartLocationObject(placeInfo);
+        console.log('After setting startLocationObject:', placeInfo);
       } else {
         setEndLocation(placeInfo.placeName);
         setEndLocationObject(placeInfo);
+        console.log('After setting endLocationObject:', placeInfo);
         if (!startLocation || startLocation.trim() === '') {
           setStartLocation('내 위치');
           setStartLocationObject(null);
+          console.log('startLocation was empty, set startLocationObject to null.');
         }
       }
       setShowStartResults(false);
@@ -193,7 +194,6 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
     selectedTransportMode,
     setSelectedTransportMode,
     autocompleteSuggestions,
-    setAutocompleteSuggestions,
     showAutocomplete,
     setShowAutocomplete,
     debouncedAutocomplete,

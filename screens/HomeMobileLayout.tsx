@@ -37,6 +37,7 @@ interface HomeMobileLayoutProps {
   isLoading: boolean;
   errorMsg: string | null;
   onSearch: () => Promise<void>;
+  onClearSearch: () => void; // New prop
   onSelectResult: (item: SearchResult) => void;
   onMarkerPress: (placeId: string, lat?: number, lng?: number) => void;
   searchOptions: SearchOptions;
@@ -48,13 +49,43 @@ interface HomeMobileLayoutProps {
   pagination: Omit<PageResponse<any>, 'content'> | null;
   onSetRouteLocation?: (type: 'departure' | 'arrival', placeInfo: SearchResult) => void;
   onOpenSidebar?: () => void;
-  routeResult?: RouteResult | null;
-  isRouteLoading?: boolean;
-  routeError?: string | null;
-  startRoute?: any;
-  clearRoute?: () => void;
+  routeResult: RouteResult | null;
+  isRouteLoading: boolean;
+  routeError: string | null;
+  startRoute: any;
+  clearRoute: () => void;
   showSearchInAreaButton: boolean;
   handleSearchInArea: () => void;
+  activeTab: 'search' | 'route'; // Add activeTab here
+  setActiveTab: (tab: 'search' | 'route') => void; // Add setActiveTab here
+  // New props from useSharedSearch
+  startLocation: string;
+  setStartLocation: (location: string) => void;
+  endLocation: string;
+  setEndLocation: (location: string) => void;
+  startLocationResults: SearchResult[];
+  endLocationResults: SearchResult[];
+  isSearchingStart: boolean;
+  isSearchingEnd: boolean;
+  showStartResults: boolean;
+  setShowStartResults: (show: boolean) => void;
+  showEndResults: boolean;
+  setShowEndResults: (show: boolean) => void;
+  selectedTransportMode: 'driving' | 'transit' | 'walking' | 'cycling';
+  setSelectedTransportMode: (mode: 'driving' | 'transit' | 'walking' | 'cycling') => void;
+  autocompleteSuggestions: any[];
+  showAutocomplete: boolean;
+  setShowAutocomplete: (show: boolean) => void;
+  debouncedAutocomplete: (query: string) => void;
+  debouncedSearchStartLocation: (query: string) => void;
+  debouncedSearchEndLocation: (query: string) => void;
+  handleTextEdit: () => void;
+  searchLocation: { lat: number; lng: number };
+  sharedSearchLocationFromHook: { latitude: number; longitude: number } | null;
+  startLocationObject: SearchResult | null;
+  setStartLocationObject: (loc: SearchResult | null) => void;
+  endLocationObject: SearchResult | null;
+  setEndLocationObject: (loc: SearchResult | null) => void;
 }
 
 const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
@@ -77,6 +108,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   isLoading,
   errorMsg,
   onSearch,
+  onClearSearch,
   onSelectResult,
   onMarkerPress,
   searchOptions,
@@ -95,6 +127,36 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
   clearRoute,
   showSearchInAreaButton,
   handleSearchInArea,
+  activeTab,
+  setActiveTab,
+  // New props from useSharedSearch
+  startLocation,
+  setStartLocation,
+  endLocation,
+  setEndLocation,
+  startLocationResults,
+  endLocationResults,
+  isSearchingStart,
+  isSearchingEnd,
+  showStartResults,
+  setShowStartResults,
+  showEndResults,
+  setShowEndResults,
+  selectedTransportMode,
+  setSelectedTransportMode,
+  autocompleteSuggestions,
+  showAutocomplete,
+  setShowAutocomplete,
+  debouncedAutocomplete,
+  debouncedSearchStartLocation,
+  debouncedSearchEndLocation,
+  handleTextEdit,
+  searchLocation,
+  sharedSearchLocationFromHook,
+  startLocationObject,
+  setStartLocationObject,
+  endLocationObject,
+  setEndLocationObject,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -113,6 +175,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearch={onSearch}
+        onClearSearch={onClearSearch}
         searchResults={searchResults}
         allMarkers={allMarkers}
         isLoading={isLoading}
@@ -131,6 +194,36 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         routeError={routeError}
         startRoute={startRoute}
         clearRoute={clearRoute}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        // New props from useSharedSearch
+        startLocation={startLocation}
+        setStartLocation={setStartLocation}
+        endLocation={endLocation}
+        setEndLocation={setEndLocation}
+        startLocationResults={startLocationResults}
+        endLocationResults={endLocationResults}
+        isSearchingStart={isSearchingStart}
+        isSearchingEnd={isSearchingEnd}
+        showStartResults={showStartResults}
+        setShowStartResults={setShowStartResults}
+        showEndResults={showEndResults}
+        setShowEndResults={setShowEndResults}
+        selectedTransportMode={selectedTransportMode}
+        setSelectedTransportMode={setSelectedTransportMode}
+        autocompleteSuggestions={autocompleteSuggestions}
+        showAutocomplete={showAutocomplete}
+        setShowAutocomplete={setShowAutocomplete}
+        debouncedAutocomplete={debouncedAutocomplete}
+        debouncedSearchStartLocation={debouncedSearchStartLocation}
+        debouncedSearchEndLocation={debouncedSearchEndLocation}
+        handleTextEdit={handleTextEdit}
+        searchLocation={searchLocation}
+        location={sharedSearchLocationFromHook}
+        startLocationObject={startLocationObject}
+        setStartLocationObject={setStartLocationObject}
+        endLocationObject={endLocationObject}
+        setEndLocationObject={setEndLocationObject}
       />
 
       {bottomSheetOpen && (
