@@ -77,7 +77,7 @@ interface SharedSearchProps {
   setEndLocationObject: (loc: SearchResult | null) => void;
 }
 
-const SharedSearch: React.FC<SharedSearchProps> = ({
+const WebSharedSearch: React.FC<SharedSearchProps> = ({
   isWebView,
   searchQuery,
   setSearchQuery,
@@ -226,8 +226,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
     return <Text style={commonStyles.noResultText}>검색 결과가 없거나, 검색을 시작하세요.</Text>;
   };
 
-  const contentContainerStyles = Platform.OS === 'web' ? webStyles.contentContainer : mobileStyles.contentContainer;
-  const suggestionsContainerStyles = Platform.OS === 'web' ? webStyles.suggestionsContainer : {};
+  const contentContainerStyles = webStyles.contentContainer;
+  const suggestionsContainerStyles = webStyles.suggestionsContainer;
 
   const triggerRouteSearch = React.useCallback(async (modeOverride?: 'driving' | 'transit' | 'walking' | 'cycling') => {
     const transportMode = modeOverride || selectedTransportMode;
@@ -314,22 +314,22 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
           style={[commonStyles.tabButton, activeTab === 'search' && commonStyles.activeTabButton]}
           onPress={() => setActiveTab('search')}
         >
-          <Ionicons name="search-outline" size={20} color={activeTab === 'search' ? '#3690FF' : Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9'} />
+          <Ionicons name="search-outline" size={20} color={activeTab === 'search' ? '#3690FF' : '#F0F0F0'} />
           <Text style={[
             commonStyles.tabButtonText,
             activeTab === 'search' && commonStyles.activeTabButtonText,
-            activeTab !== 'search' && { color: Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9' }
+            activeTab !== 'search' && { color: '#F0F0F0' }
           ]}>검색</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[commonStyles.tabButton, activeTab === 'route' && commonStyles.activeTabButton]}
           onPress={() => setActiveTab('route')}
         >
-          <Ionicons name="navigate-outline" size={20} color={activeTab === 'route' ? '#3690FF' : Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9'} />
+          <Ionicons name="navigate-outline" size={20} color={activeTab === 'route' ? '#3690FF' : '#F0F0F0'} />
           <Text style={[
             commonStyles.tabButtonText,
             activeTab === 'route' && commonStyles.activeTabButtonText,
-            activeTab !== 'route' && { color: Platform.OS === 'web' ? '#F0F0F0' : '#B9B9B9' }
+            activeTab !== 'route' && { color: '#F0F0F0' }
           ]}>길찾기</Text>
         </TouchableOpacity>
       </View>
@@ -421,7 +421,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                         setShowAutocomplete(false);
                       }}
                     >
-                      <Text>{item.word}</Text>
+                      <Text>{item}</Text>
                     </TouchableOpacity>
                   )}
                   style={commonStyles.suggestionsList}
@@ -503,8 +503,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
             <View style={commonStyles.transportModeContainer}>
               <TouchableOpacity
                 style={[
-                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
-                  selectedTransportMode === 'driving' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
+                  webStyles.transportModeButton,
+                  selectedTransportMode === 'driving' && webStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   const newMode = 'driving';
@@ -527,9 +527,9 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
               <TouchableOpacity
                 style={[
-                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
+                  webStyles.transportModeButton,
                   commonStyles.transportModeButtonDisabled, // 대중교통 미구현
-                  selectedTransportMode === 'transit' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
+                  selectedTransportMode === 'transit' && webStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   console.log('대중교통 모드는 아직 구현되지 않았습니다.');
@@ -545,8 +545,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
               <TouchableOpacity
                 style={[
-                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
-                  selectedTransportMode === 'walking' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
+                  webStyles.transportModeButton,
+                  selectedTransportMode === 'walking' && webStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   const newMode = 'walking';
@@ -569,8 +569,8 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 
               <TouchableOpacity
                 style={[
-                  Platform.OS === 'web' ? webStyles.transportModeButton : mobileStyles.transportModeButton,
-                  selectedTransportMode === 'cycling' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
+                  webStyles.transportModeButton,
+                  selectedTransportMode === 'cycling' && webStyles.transportModeButtonSelected
                 ]}
                 onPress={() => {
                   const newMode = 'cycling';
@@ -829,5 +829,4 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
 };
 
 
-export default SharedSearch;
-
+export default WebSharedSearch;
