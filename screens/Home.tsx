@@ -14,6 +14,7 @@ import HomeMobileLayout from "./HomeMobileLayout";
 import { SearchResult } from "../types/search";
 import { CATEGORIES } from "../constants/categories";
 import { useBottomSheetHeight } from "../utils/bottomSheetUtils";
+import { useMarkerManager } from "../utils/markerUtils";
 
 /**
  * Home 컴포넌트
@@ -308,6 +309,7 @@ export default function Home() {
    * 바텀시트가 열려있을 때는 지도 중심을 위로 조정하여 마커가 보이도록 합니다.
    */
   const { calculateMapCenterOffset } = useBottomSheetHeight();
+  const { convertSearchResultsToMarkers } = useMarkerManager();
   
   const handleSelectResult = useCallback((item: SearchResult) => {
     // 바텀시트가 열려있을 때 지도 중심 조정
@@ -376,42 +378,8 @@ export default function Home() {
   const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
 
   const markers = useMemo(() => {
-    // WebView에서 현재 위치 마커 표시
-    const userLocationMarker: any[] = [];
-    
-    // 현재 위치가 있으면 현재 위치 마커 추가
-    if (location) {
-      userLocationMarker.push({
-        placeId: 'user_location',
-        placeName: '내 위치',
-        lat: location.latitude,
-        lng: location.longitude,
-        categoryGroupName: '내 위치',
-        roadAddress: '현재 위치',
-        lotAddress: '',
-        phone: '',
-        placeUrl: '',
-        markerType: 'userLocation'
-      });
-    }
-    
-    return [
-      ...userLocationMarker,
-      ...allMarkers.map(marker => ({
-        placeId: marker.placeId,
-        placeName: marker.placeName,
-        lat: marker.lat,
-        lng: marker.lng,
-        categoryGroupName: marker.categoryGroupName,
-        roadAddress: marker.roadAddress,
-        roadAddressDong: marker.roadAddressDong,
-        lotAddress: marker.lotAddress,
-        phone: marker.phone,
-        placeUrl: marker.placeUrl,
-        markerType: marker.placeId === selectedPlaceId ? 'selected' : 'default'
-      }))
-    ];
-  }, [location, allMarkers, selectedPlaceId]);
+    return convertSearchResultsToMarkers(allMarkers, selectedPlaceId, location || undefined);
+  }, [location, allMarkers, selectedPlaceId, convertSearchResultsToMarkers]);
 
   // 플랫폼에 따라 적절한 레이아웃 렌더링
   if (Platform.OS === 'web') {

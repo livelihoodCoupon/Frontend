@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
   },
 });
 import { MARKER_IMAGES, MARKER_CONFIG, getMarkerConfig, MAP_CONFIG } from "../constants/mapConstants";
+import { MarkerManager } from "../utils/markerUtils";
 
   const WebKakaoMap = forwardRef<any, KakaoMapProps>(({
     latitude,
