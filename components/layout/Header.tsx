@@ -20,6 +20,7 @@ const Header: React.FC = () => {
     </SafeAreaView>
   );
   */
+  return null;
 };
 
 export default Header;

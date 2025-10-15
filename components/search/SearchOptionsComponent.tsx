@@ -7,6 +7,7 @@ import { SearchOptions } from "../../types/search";
 interface Props {
   searchOptions: SearchOptions;
   setSearchOptions: (options: Partial<SearchOptions>) => void;
+  locationError?: string | null; // 위치 에러 상태
 }
 
 const SearchOptionsComponent: React.FC<Props> = (props) => {

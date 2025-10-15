@@ -42,7 +42,7 @@ interface HomeWebLayoutProps {
   allMarkers: SearchResult[];
   isLoading: boolean;
   errorMsg: string | null;
-  onSearch: () => Promise<void>;
+  onSearch: (query?: string) => Promise<void>; // Modified to accept optional query
   onClearSearch: () => void; // New prop
   onSelectResult: (item: SearchResult) => void;
   onMarkerPress: (placeId: string, lat?: number, lng?: number) => void;

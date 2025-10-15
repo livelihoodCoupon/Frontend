@@ -421,7 +421,7 @@ const WebSharedSearch: React.FC<SharedSearchProps> = ({
                         setShowAutocomplete(false);
                       }}
                     >
-                      <Text>{item}</Text>
+                      <Text>{item.word}</Text>
                     </TouchableOpacity>
                   )}
                   style={commonStyles.suggestionsList}
