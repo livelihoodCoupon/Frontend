@@ -21,6 +21,7 @@ import { RouteResult } from '../../types/route';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
 import { COLORS } from '../../constants/colors';
 import { SIZES } from '../../constants/sizes';
+import { useBottomSheetHeight } from '../../utils/bottomSheetUtils';
 import RouteResultComponent from '../route/RouteResult';
 
 interface RouteBottomSheetProps {
@@ -90,11 +91,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
 }) => {
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
-  const USABLE_SCREEN_HEIGHT = SCREEN_HEIGHT - insets.bottom;
-  const BOTTOM_SHEET_HEIGHT = USABLE_SCREEN_HEIGHT * 0.6; 
-  const PLACE_DETAIL_HEIGHT = USABLE_SCREEN_HEIGHT * 0.5; // 상세정보용 높이
-  const ROUTE_DETAIL_HEIGHT = USABLE_SCREEN_HEIGHT * 0.65; // 상세 경로 안내용 높은 높이
-  const CLOSED_HEIGHT = 60; // 더 큰 높이로 조정
+  const { calculateHeight } = useBottomSheetHeight();
 
   // 드래그 관련 상태 (현재 사용하지 않음)
   const [isDragging, setIsDragging] = useState(false);
@@ -111,18 +108,17 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   
   // 상세정보 표시 여부에 따른 바텀시트 높이 조정
   const getBottomSheetHeight = () => {
-    // 바텀시트가 닫혀있을 때는 작은 핸들만 표시
     if (!isOpen) {
-      return CLOSED_HEIGHT;
+      return calculateHeight('closed', false);
     }
     
     if (isRouteDetailMode) {
-      return ROUTE_DETAIL_HEIGHT;
+      return calculateHeight('routeDetail', true);
     }
     if (showPlaceDetail) {
-      return PLACE_DETAIL_HEIGHT;
+      return calculateHeight('placeDetail', true);
     }
-    return BOTTOM_SHEET_HEIGHT;
+    return calculateHeight('normal', true);
   };
   
   // 길찾기 관련 상태

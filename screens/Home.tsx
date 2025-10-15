@@ -13,6 +13,7 @@ import HomeWebLayout from "./HomeWebLayout";
 import HomeMobileLayout from "./HomeMobileLayout";
 import { SearchResult } from "../types/search";
 import { CATEGORIES } from "../constants/categories";
+import { useBottomSheetHeight } from "../utils/bottomSheetUtils";
 
 /**
  * Home 컴포넌트
@@ -306,20 +307,12 @@ export default function Home() {
    * 선택된 장소로 지도를 이동하고 마커만 표시합니다. (InfoWindow는 표시하지 않음)
    * 바텀시트가 열려있을 때는 지도 중심을 위로 조정하여 마커가 보이도록 합니다.
    */
+  const { calculateMapCenterOffset } = useBottomSheetHeight();
+  
   const handleSelectResult = useCallback((item: SearchResult) => {
     // 바텀시트가 열려있을 때 지도 중심 조정
     if (bottomSheetOpen && bottomSheetHeight) {
-      // 바텀시트 높이를 위도로 변환 (적절한 비율 사용)
-      // 화면 높이 대비 바텀시트 높이 비율을 계산하여 위도 오프셋 적용
-      const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-      const heightRatio = bottomSheetHeight / SCREEN_HEIGHT;
-      // 지도 줌 레벨을 고려한 동적 오프셋 (줌 확대 시 더 아래로 이동)
-      const baseOffset = -0.002; // 기본 오프셋 (장소 선택용)
-      const zoomFactor = Math.max(0.5, Math.min(2.0, heightRatio * 3)); // 줌 레벨 대응 계수
-      
-      // 줌 확대 시 추가 오프셋 적용 (더 아래로 이동)
-      const zoomLevelOffset = heightRatio > 0.5 ? 0.002 : 0; // 바텀시트가 클 때 추가 아래 이동 (절반으로 줄임)
-      const offsetLat = baseOffset * zoomFactor + zoomLevelOffset;
+      const offsetLat = calculateMapCenterOffset(bottomSheetHeight);
       
       setMapCenter({ 
         latitude: item.lat + offsetLat, 

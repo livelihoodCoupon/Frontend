@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
+import { useBottomSheetHeight } from '../../utils/bottomSheetUtils';
 
 interface CurrentLocationButtonProps {
   onPress: () => void;
@@ -29,20 +30,19 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
   const animatedBottom = useRef(new Animated.Value(100)).current; // 초기값 100
   const [lastPressTime, setLastPressTime] = useState(0);
   const [pressCount, setPressCount] = useState(0);
+  const { calculateButtonPosition } = useBottomSheetHeight();
 
   // 바텀시트 높이에 따른 애니메이션
   useEffect(() => {
-    
-    // 상세정보 표시 시에는 더 낮은 위치에 배치
-    let heightMultiplier = 0.85;
+    let type: 'normal' | 'placeDetail' | 'routeDetail' = 'normal';
     if (showPlaceDetail) {
-      heightMultiplier = 0.6;
+      type = 'placeDetail';
     } else if (showRouteDetail) {
-      heightMultiplier = 0.8; // 상세 경로 안내는 더 높은 위치
+      type = 'routeDetail';
     }
     
     const targetBottom = bottomSheetOpen && bottomSheetHeight ? 
-      100 + bottomSheetHeight * heightMultiplier : 100;
+      calculateButtonPosition(bottomSheetHeight, 100, type) : 100;
     
     
     Animated.spring(animatedBottom, {
@@ -55,16 +55,15 @@ const CurrentLocationButton: React.FC<CurrentLocationButtonProps> = ({
 
   // 즉시 위치 계산 (애니메이션 없이)
   const getCurrentBottom = () => {
-    // 상세정보 표시 시에는 더 낮은 위치에 배치
-    let heightMultiplier = 0.85;
+    let type: 'normal' | 'placeDetail' | 'routeDetail' = 'normal';
     if (showPlaceDetail) {
-      heightMultiplier = 0.6;
+      type = 'placeDetail';
     } else if (showRouteDetail) {
-      heightMultiplier = 0.8; // 상세 경로 안내는 더 높은 위치
+      type = 'routeDetail';
     }
     
     return bottomSheetOpen && bottomSheetHeight ? 
-      100 + bottomSheetHeight * heightMultiplier : 100;
+      calculateButtonPosition(bottomSheetHeight, 100, type) : 100;
   };
 
   const currentBottom = getCurrentBottom();

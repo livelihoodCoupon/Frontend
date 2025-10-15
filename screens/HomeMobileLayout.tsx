@@ -23,6 +23,7 @@ import { RouteResult } from "../types/route";
 import { mobileStyles } from "./HomeMobileLayout.styles";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CATEGORIES } from "../constants/categories";
+import { useBottomSheetHeight } from "../utils/bottomSheetUtils";
 
 interface HomeMobileLayoutProps {
   // Props for HomeMobileLayout
@@ -125,13 +126,10 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+  const { calculateHeight } = useBottomSheetHeight();
   
   // 작은 핸들 높이 상수
   const SMALL_HANDLE_HEIGHT = 60;
-  
-  // 바텀시트 높이 계산
-  const USABLE_SCREEN_HEIGHT = SCREEN_HEIGHT - insets.bottom;
-  const BOTTOM_SHEET_HEIGHT = USABLE_SCREEN_HEIGHT * 0.6; // 50%에서 60%로 증가
   
   // 길찾기 모드 상태
   const [isRouteMode, setIsRouteMode] = useState(false);
@@ -229,19 +227,19 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     if (bottomSheetOpen) {
       if (showRouteDetail) {
         // 경로 상세 안내 바텀시트
-        setBottomSheetHeight(USABLE_SCREEN_HEIGHT * 0.65);
+        setBottomSheetHeight(calculateHeight('routeDetail', true));
       } else if (showPlaceDetail) {
         // 상세장소정보 바텀시트
-        setBottomSheetHeight(USABLE_SCREEN_HEIGHT * 0.5);
+        setBottomSheetHeight(calculateHeight('placeDetail', true));
       } else {
         // 일반 검색 결과 바텀시트
-        setBottomSheetHeight(BOTTOM_SHEET_HEIGHT);
+        setBottomSheetHeight(calculateHeight('normal', true));
       }
     } else {
       // 바텀시트가 닫혀있을 때는 작은 핸들 높이로 설정 (0이 아님)
-      setBottomSheetHeight(SMALL_HANDLE_HEIGHT);
+      setBottomSheetHeight(calculateHeight('closed', false));
     }
-  }, [bottomSheetOpen, showRouteDetail, showPlaceDetail, BOTTOM_SHEET_HEIGHT, USABLE_SCREEN_HEIGHT, setBottomSheetHeight, SMALL_HANDLE_HEIGHT]);
+  }, [bottomSheetOpen, showRouteDetail, showPlaceDetail, calculateHeight, setBottomSheetHeight]);
 
   // 상세안내 모드 진입 시 바텀시트 자동 열기
   useEffect(() => {
@@ -1091,7 +1089,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
             } else {
               // 바텀시트 열기: 전체 높이로 설정
               setBottomSheetOpen(true);
-              setBottomSheetHeight(BOTTOM_SHEET_HEIGHT);
+              setBottomSheetHeight(calculateHeight('normal', true));
             }
         }}
         allMarkers={allMarkers}
@@ -1156,7 +1154,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
             } else {
               // 바텀시트 열기: 전체 높이로 설정
               setBottomSheetOpen(true);
-              setBottomSheetHeight(BOTTOM_SHEET_HEIGHT);
+              setBottomSheetHeight(calculateHeight('normal', true));
             }
           }}
           style={{ zIndex: 9999 }}
