@@ -126,7 +126,7 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-  const { calculateHeight } = useBottomSheetHeight();
+  const { calculateHeight, calculateCurrentLocationOffset } = useBottomSheetHeight();
   
   // 작은 핸들 높이 상수
   const SMALL_HANDLE_HEIGHT = 60;
@@ -1315,20 +1315,11 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                       // 바텀시트가 완전히 열려있을 때만: 상단 중앙으로 이동
                       setResetMapLevel(true);
                       
-                      const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-                      const visibleHeight = SCREEN_HEIGHT - bottomSheetHeight;
-                      const centerRatio = visibleHeight / SCREEN_HEIGHT;
-                      
-                      // 현재 위치를 상단 중앙에 배치하기 위한 오프셋 계산 (줌 레벨에 따라 조정)
-                      const baseOffset = 0.01; // 기본 오프셋
-                      // 줌이 축소되면 더 큰 오프셋, 줌이 확대되면 더 작은 오프셋
-                      const zoomFactor = Math.max(0.5, Math.min(3.0, 1 / centerRatio)); // 줌 레벨에 반비례, 줌 축소 시 더 큰 오프셋
-                      const offsetLat = (0.5 - centerRatio) * baseOffset * zoomFactor;
-                      
+                      const offset = calculateCurrentLocationOffset(bottomSheetHeight, SCREEN_HEIGHT);
                       
                       setMapCenter({
-                        latitude: location.latitude - offsetLat, // - offsetLat = 위쪽으로 이동
-                        longitude: location.longitude
+                        latitude: location.latitude + offset.latitude,
+                        longitude: location.longitude + offset.longitude
                       });
                     } else {
                       // 바텀시트가 닫혀있거나 접혀있을 때: 정확한 현재 위치로 이동
@@ -1342,19 +1333,11 @@ const HomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                   
                   if (bottomSheetOpen && bottomSheetHeight > 60) {
                     // 바텀시트가 완전히 열려있을 때만: 상단 중앙에 현재 위치가 보이도록 조정
-                    const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-                    const visibleHeight = SCREEN_HEIGHT - bottomSheetHeight;
-                    const centerRatio = visibleHeight / SCREEN_HEIGHT;
-                    
-                    // 현재 위치를 상단 중앙에 배치하기 위한 오프셋 계산 (줌 레벨에 따라 동적 조정)
-                    const baseOffset = 0.01; // 기본 오프셋
-                    const zoomFactor = Math.max(0.5, Math.min(2.0, centerRatio * 3)); // 줌 레벨 대응 계수
-                    const offsetLat = (0.5 - centerRatio) * baseOffset * zoomFactor;
-                    
+                    const offset = calculateCurrentLocationOffset(bottomSheetHeight, SCREEN_HEIGHT);
                     
                     setMapCenter({
-                      latitude: location.latitude - offsetLat, // - offsetLat = 위쪽으로 이동
-                      longitude: location.longitude
+                      latitude: location.latitude + offset.latitude,
+                      longitude: location.longitude + offset.longitude
                     });
                   } else {
                     // 바텀시트가 닫혀있거나 접혀있을 때: 정확한 현재 위치로 이동

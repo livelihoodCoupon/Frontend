@@ -596,7 +596,7 @@ function updateMapCenter(lat, lng) {
           }
         }
 
-        // 상세 바텀시트를 고려한 지도 중심 조정 함수
+        // 상세 바텀시트를 고려한 지도 중심 조정 함수 (간소화)
         function adjustMapCenterForDetailSheet(detailSheetHeightRatio = 0.6) {
         try {
           if (!map) {
@@ -607,84 +607,30 @@ function updateMapCenter(lat, lng) {
           // 현재 지도 중심을 원래 위치로 저장 (복원용)
           if (!window.originalMapCenter) {
             window.originalMapCenter = map.getCenter();
-            console.log('원래 지도 중심 저장:', window.originalMapCenter.getLat(), window.originalMapCenter.getLng());
           }
 
-          // 상단 패널 높이 비율 (25%)
-          const panelHeightRatio = 0.25;
-          
-          // 화면 높이
           const screenHeight = window.innerHeight;
-          
-          // 바텀시트 높이 계산
           const bottomSheetHeight = screenHeight * detailSheetHeightRatio;
-          
-          // 지도가 보이는 영역의 중앙 위치 계산
-          const mapVisibleTop = screenHeight * panelHeightRatio;
-          const mapVisibleBottom = screenHeight * (1 - detailSheetHeightRatio);
-          const mapVisibleHeight = mapVisibleBottom - mapVisibleTop;
-          const mapVisibleCenterPosition = mapVisibleTop + (mapVisibleHeight / 2);
-          const mapVisibleCenterRatio = mapVisibleCenterPosition / screenHeight;
-          
-          // 현재 지도 중심을 경로 안내 중심으로 설정
           const currentCenter = map.getCenter();
           const centerLat = currentCenter.getLat();
           const centerLng = currentCenter.getLng();
           
-          // (screenHeight - bottomSheetHeight) 크기만큼 지도 중심을 아래로 이동
+          // 간소화된 오프셋 계산
           const offsetPixels = screenHeight - bottomSheetHeight;
-          
-          // 동적 조정 팩터들
-          const currentLevel = map.getLevel();
-          const zoomFactor = Math.pow(1.5, currentLevel - 3); // 줌 레벨에 따른 스케일 (레벨 3 기준, 더 큰 증가)
-          
           const routeDistance = window.currentRouteResult?.totalDistance || 1000;
-          const distanceFactor = Math.min(routeDistance / 1000, 3); // 1km 기준으로 최대 3배
-          
+          const distanceFactor = Math.min(routeDistance / 1000, 3);
           const visibleRatio = (screenHeight - bottomSheetHeight) / screenHeight;
-          const ratioFactor = Math.max(0.5, visibleRatio); // 최소 0.5배
-          
-          // 복합 팩터 적용
-          const combinedFactor = zoomFactor * distanceFactor * ratioFactor;
-          // 스크린 높이의 15% 정도 아래로 더 이동하도록 오프셋 증가
-          const additionalOffset = screenHeight * 0.15 * 0.00001; // 스크린 높이의 15% 추가 오프셋
+          const ratioFactor = Math.max(0.5, visibleRatio);
+          const combinedFactor = distanceFactor * ratioFactor;
+          const additionalOffset = screenHeight * 0.15 * 0.00001;
           const offsetLat = (offsetPixels * 0.00001 * combinedFactor) + additionalOffset;
           
           const adjustedCenter = new kakao.maps.LatLng(
-            centerLat - offsetLat, // 현재 중심에서 아래로 이동 (위도 감소)
+            centerLat - offsetLat,
             centerLng
           );
           
-          console.log('=== 상세 바텀시트를 고려한 지도 중심 조정 ===');
-          console.log('화면 높이:', screenHeight);
-          console.log('바텀시트 높이:', bottomSheetHeight);
-          console.log('오프셋 픽셀:', offsetPixels);
-          console.log('현재 줌 레벨:', currentLevel);
-          console.log('줌 팩터:', zoomFactor);
-          console.log('경로 거리:', routeDistance, 'm');
-          console.log('거리 팩터:', distanceFactor);
-          console.log('화면 비율:', visibleRatio);
-          console.log('비율 팩터:', ratioFactor);
-          console.log('복합 팩터:', combinedFactor);
-          console.log('오프셋 위도:', offsetLat);
-          console.log('현재 지도 중심:', centerLat, centerLng);
-          console.log('조정된 중심:', adjustedCenter.getLat(), adjustedCenter.getLng());
-          
-          // 지도 중심 조정
-          console.log('=== 지도 중심 변경 전 ===');
-          console.log('현재 지도 중심:', map.getCenter().getLat(), map.getCenter().getLng());
-          console.log('변경할 지도 중심:', adjustedCenter.getLat(), adjustedCenter.getLng());
-          
           map.setCenter(adjustedCenter);
-          
-          // 변경 후 확인
-          setTimeout(() => {
-            console.log('=== 지도 중심 변경 후 ===');
-            console.log('실제 지도 중심:', map.getCenter().getLat(), map.getCenter().getLng());
-            console.log('변경 성공 여부:', 
-              Math.abs(map.getCenter().getLat() - adjustedCenter.getLat()) < 0.0001 ? '성공' : '실패'
-            );
-          }, 100);
           
         } catch (error) {
           console.error('adjustMapCenterForDetailSheet 오류:', error);

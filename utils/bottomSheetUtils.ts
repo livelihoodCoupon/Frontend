@@ -84,6 +84,63 @@ export class BottomSheetHeightCalculator {
     
     return baseOffset * zoomFactor + zoomLevelOffset;
   }
+
+  /**
+   * 바텀시트를 고려한 지도 중심 조정 (현재 위치 버튼용)
+   */
+  static calculateCurrentLocationOffset(
+    bottomSheetHeight: number,
+    screenHeight: number = this.screenHeight
+  ): { latitude: number; longitude: number } {
+    const visibleHeight = screenHeight - bottomSheetHeight;
+    const centerRatio = visibleHeight / screenHeight;
+    
+    // 현재 위치를 상단 중앙에 배치하기 위한 오프셋 계산
+    const baseOffset = 0.01;
+    const zoomFactor = Math.max(0.5, Math.min(3.0, 1 / centerRatio));
+    const offsetLat = (0.5 - centerRatio) * baseOffset * zoomFactor;
+    
+    return {
+      latitude: -offsetLat, // 위쪽으로 이동
+      longitude: 0
+    };
+  }
+
+  /**
+   * 경로 안내를 위한 지도 중심 조정
+   */
+  static calculateRouteCenterOffset(
+    bottomSheetHeight: number,
+    screenHeight: number = this.screenHeight,
+    routeDistance: number = 1000
+  ): { latitude: number; longitude: number } {
+    const panelHeightRatio = 0.25;
+    const detailSheetHeightRatio = bottomSheetHeight / screenHeight;
+    
+    // 지도가 보이는 영역의 중앙 위치 계산
+    const mapVisibleTop = screenHeight * panelHeightRatio;
+    const mapVisibleBottom = screenHeight * (1 - detailSheetHeightRatio);
+    const mapVisibleHeight = mapVisibleBottom - mapVisibleTop;
+    const mapVisibleCenterPosition = mapVisibleTop + (mapVisibleHeight / 2);
+    
+    // 동적 조정 팩터들
+    const currentLevel = 3; // 기본 줌 레벨
+    const zoomFactor = Math.pow(1.5, currentLevel - 3);
+    const distanceFactor = Math.min(routeDistance / 1000, 3);
+    const visibleRatio = (screenHeight - bottomSheetHeight) / screenHeight;
+    const ratioFactor = Math.max(0.5, visibleRatio);
+    
+    // 복합 팩터 적용
+    const combinedFactor = zoomFactor * distanceFactor * ratioFactor;
+    const additionalOffset = screenHeight * 0.15 * 0.00001;
+    const offsetPixels = screenHeight - bottomSheetHeight;
+    const offsetLat = (offsetPixels * 0.00001 * combinedFactor) + additionalOffset;
+    
+    return {
+      latitude: -offsetLat, // 아래로 이동
+      longitude: 0
+    };
+  }
 }
 
 /**
@@ -99,5 +156,7 @@ export const useBottomSheetHeight = () => {
     calculateHeight: BottomSheetHeightCalculator.calculateHeight.bind(BottomSheetHeightCalculator),
     calculateButtonPosition: BottomSheetHeightCalculator.calculateButtonPosition.bind(BottomSheetHeightCalculator),
     calculateMapCenterOffset: BottomSheetHeightCalculator.calculateMapCenterOffset.bind(BottomSheetHeightCalculator),
+    calculateCurrentLocationOffset: BottomSheetHeightCalculator.calculateCurrentLocationOffset.bind(BottomSheetHeightCalculator),
+    calculateRouteCenterOffset: BottomSheetHeightCalculator.calculateRouteCenterOffset.bind(BottomSheetHeightCalculator),
   };
 };
