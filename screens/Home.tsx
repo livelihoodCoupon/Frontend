@@ -151,6 +151,7 @@ export default function Home() {
     setSearchQuery("");
     clearSearchResultsFromHook();
     setShowAutocomplete(false);
+    setShowSearchInAreaButton(false); // 버튼 숨기기 로직 추가
   }, [clearSearchResultsFromHook, setSearchQuery, setShowAutocomplete]);
 
   useEffect(() => {
