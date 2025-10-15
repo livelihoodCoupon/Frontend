@@ -39,4 +39,5 @@ export const webStyles = StyleSheet.create({
     borderColor: '#dee2e6',
     boxShadow: '3px 2px 4px rgba(0,0,0,0.2)',
   },
-});
+}
+);

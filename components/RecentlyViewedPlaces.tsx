@@ -6,7 +6,7 @@ import { MarkerData } from "../types/kakaoMap";
 interface RecentlyViewedPlacesProps {
   onPlaceClick: (place: MarkerData) => void;
   onClickOutside: () => void; // New prop to handle clicks outside
-  toggleButtonRef: React.RefObject<HTMLElement>; // Ref to the button that toggles this component
+  toggleButtonRef: React.RefObject<any>; // Ref to the button that toggles this component
 }
 
 const RecentlyViewedContainer = styled.div`

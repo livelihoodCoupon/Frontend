@@ -92,6 +92,8 @@ export default function Home() {
   // UI 상태 관리
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [initialPanComplete, setInitialPanComplete] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
   const sideMenuAnimation = useRef(new Animated.Value(0)).current;
   const prevIsMenuOpen = usePrevious(isMenuOpen);
   const onToggleSidebarCallback = useCallback(() => setIsMenuOpen(true), [setIsMenuOpen]);
@@ -185,6 +187,20 @@ export default function Home() {
     }).start();
   }, [isMenuOpen]);
 
+  const handleMapReady = useCallback(() => {
+    setIsMapReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && isMapReady && location && isMenuOpen && !initialPanComplete) {
+      const SIDE_MENU_WIDTH = 330;
+      setTimeout(() => {
+        mapRef.current?.panBy(-SIDE_MENU_WIDTH / 2, 0);
+      }, 100);
+      setInitialPanComplete(true);
+    }
+  }, [isMapReady, location, isMenuOpen, initialPanComplete]);
+
   // Effect to handle map panning when the side menu opens or closes
   useEffect(() => {
     const focusPointExists = showInfoWindow || !!routeResult || !!location;
@@ -209,7 +225,7 @@ export default function Home() {
   }, [isMenuOpen, prevIsMenuOpen, showInfoWindow, routeResult, location]);
 
 
-  const handleSearch = useCallback(async () => {
+  const handleSearch = useCallback(async (query?: string) => {
     Keyboard.dismiss();
     setShowSearchInAreaButton(false);
     if (!mapCenter) {
@@ -231,7 +247,7 @@ export default function Home() {
       searchLng = newCoords.lng;
     }
 
-    await performSearch(searchLat, searchLng, location.latitude, location.longitude);
+    await performSearch(searchLat, searchLng, location.latitude, location.longitude, undefined, query);
 
     setBottomSheetOpen(true);
   }, [mapCenter, location, performSearch, isMenuOpen]);
@@ -348,6 +364,7 @@ export default function Home() {
   if (Platform.OS === 'web') {
     return (
       <HomeWebLayout
+        onMapReady={handleMapReady}
         mapRef={mapRef as React.RefObject<MapHandles>}
         selectedPlaceId={selectedPlaceId}
         setSelectedPlaceId={setSelectedPlaceId}

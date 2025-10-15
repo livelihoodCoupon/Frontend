@@ -41,6 +41,7 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
   onCloseInfoWindow,
   onSetRouteLocation,
   isMenuOpen,
+  onMapReady,
 }, ref) => {
   console.log('WebKakaoMap 렌더링:', { routeResult: !!routeResult, routeResultCoordinates: routeResult?.coordinates?.length });
   
@@ -119,8 +120,11 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
 
       infowindowInstance.current = new window.kakao.maps.InfoWindow({ disableAutoPan: true });
       setIsMapReady(true); // Map is ready
+      if (onMapReady) {
+        onMapReady();
+      }
     }
-  }, [isLoaded, latitude, longitude]);
+  }, [isLoaded, latitude, longitude, onMapReady]);
 
   // Effect for idle listener (now using onMapIdleRef)
   useEffect(() => {

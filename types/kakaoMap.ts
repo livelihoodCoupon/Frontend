@@ -36,4 +36,5 @@ export type KakaoMapProps = {
   onCloseInfoWindow?: () => void; // InfoWindow 닫기 콜백
   onSetRouteLocation?: (type: 'departure' | 'arrival', placeInfo: any) => void; // 길찾기 위치 설정 콜백
   isMenuOpen?: boolean; // 사이드 메뉴 열림 여부
+  onMapReady?: () => void; // 지도가 준비되었을 때 호출되는 콜백
 };

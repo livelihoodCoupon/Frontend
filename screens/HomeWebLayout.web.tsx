@@ -94,6 +94,7 @@ interface HomeWebLayoutProps {
   setEndLocationObject: (loc: SearchResult | null) => void;
   setTemporarySelectedMarker: (marker: MarkerData | null) => void;
   onRecentlyViewedPlaceClick: (place: MarkerData) => void; // Add this prop
+  onMapReady?: () => void;
 }
 
 const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
@@ -169,6 +170,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   setEndLocationObject,
   setTemporarySelectedMarker,
   onRecentlyViewedPlaceClick,
+  onMapReady,
 }) => {
   const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
   const recentlyViewedButtonRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
@@ -262,8 +264,9 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
                 }}
                 onSetRouteLocation={onSetRouteLocation}
                 isMenuOpen={isMenuOpen}
+                onMapReady={onMapReady}
               />
-              {showSearchInAreaButton && (
+              {showSearchInAreaButton && activeTab === 'search' && (
                 <TouchableOpacity
                   style={[
                     webStyles.searchInAreaButton,
@@ -308,7 +311,17 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
           {location && (
             <TouchableOpacity 
               style={webStyles.currentLocationButton}
-              onPress={() => setMapCenter({ latitude: location.latitude, longitude: location.longitude })}>
+              onPress={async () => {
+                if (location && mapRef.current) {
+                  if (isMenuOpen) {
+                    const offsetX = SIDE_MENU_WIDTH / 2;
+                    const adjustedCoords = await mapRef.current.getCoordsFromOffset(location.latitude, location.longitude, -offsetX, 0);
+                    setMapCenter({ latitude: adjustedCoords.lat, longitude: adjustedCoords.lng });
+                  } else {
+                    setMapCenter({ latitude: location.latitude, longitude: location.longitude });
+                  }
+                }
+              }}>
               <Text style={webStyles.currentLocationButtonIcon}>📍</Text>
             </TouchableOpacity>
           )}

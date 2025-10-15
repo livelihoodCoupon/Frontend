@@ -280,7 +280,10 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                 addRecentSearch(searchQuery); // Add current search query to recent searches
               }
             }}
-            onClearSearch={onClearSearch}
+            onClearSearch={() => {
+              onClearSearch();
+              setIsSearchBarFocused(false);
+            }}
             onFocus={() => setIsSearchBarFocused(true)}
             onBlur={(e: any) => {
               if (Platform.OS === 'web') {
@@ -308,9 +311,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                             style={commonStyles.suggestionItem}
                             onPress={() => {
                                 setSearchQuery(item);
-                                addRecentSearch(item); // Add to recent searches immediately
-                                setHasPerformedSearch(true); // Mark that a search has been performed
+                                onSearch(item);
+                                addRecentSearch(item);
+                                setHasPerformedSearch(true);
                                 setShowAutocomplete(false);
+                                setSearchSubmitted(true);
                             }}
                         >
                         <Text>{item}</Text>
