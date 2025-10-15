@@ -303,7 +303,7 @@ export default function Home() {
   }, [isMenuOpen, setMapCenter, setSelectedPlaceId, setSelectedMarkerPosition, setTemporarySelectedMarker, setShowInfoWindow]);
 
   const handleSetRouteLocation = useCallback((type: 'departure' | 'arrival', placeInfo: SearchResult) => {
-    if (window && (window as any).setRouteLocationFromInfoWindow) {
+    if (Platform.OS === 'web' && window && (window as any).setRouteLocationFromInfoWindow) {
       (window as any).setRouteLocationFromInfoWindow(type, placeInfo);
     }
   }, []);
