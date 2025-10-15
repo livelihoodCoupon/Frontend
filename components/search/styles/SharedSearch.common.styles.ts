@@ -114,7 +114,12 @@ export const commonStyles = StyleSheet.create({
   searchIndicator: {
     position: 'absolute',
     right: 8,
-    top: 8,
+    top: 4,
+  },
+  routeInputClearButton: {
+    position: 'absolute',
+    right: 8,
+    top: 4,
   },
   currentLocationButton: {
     padding: 4,

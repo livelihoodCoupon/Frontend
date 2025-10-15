@@ -229,6 +229,84 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
   const contentContainerStyles = Platform.OS === 'web' ? webStyles.contentContainer : mobileStyles.contentContainer;
   const suggestionsContainerStyles = Platform.OS === 'web' ? webStyles.suggestionsContainer : {};
 
+  const triggerRouteSearch = React.useCallback(async (modeOverride?: 'driving' | 'transit' | 'walking' | 'cycling') => {
+    const transportMode = modeOverride || selectedTransportMode;
+    try {
+      if (!endLocation.trim()) {
+        alert('도착지를 입력해주세요.');
+        return;
+      }
+
+      let startLocationData: SearchResult | string;
+      if (startLocationObject) {
+        startLocationData = startLocationObject;
+      } else if (typeof startLocation === 'string' && startLocation.trim() === '내 위치') {
+        startLocationData = '내 위치';
+      } else if (typeof startLocation === 'string') {
+        let foundStartLocation = startLocationResults.find(item => item.placeName === startLocation);
+        if (!foundStartLocation) {
+          foundStartLocation = endLocationResults.find(item => item.placeName === startLocation);
+        }
+        if (!foundStartLocation) {
+          alert('출발지 정보를 찾을 수 없습니다. 다시 검색해주세요.');
+          return;
+        }
+        startLocationData = foundStartLocation;
+        setStartLocationObject(foundStartLocation); // Save the object
+      } else {
+        throw new Error('Invalid start location');
+      }
+
+      let endLocationData: SearchResult | null = null;
+      if (endLocationObject) {
+        endLocationData = endLocationObject;
+      } else if (endLocation.trim() === '내 위치') {
+        if (!location) {
+          alert('현재 위치 정보를 가져올 수 없습니다.');
+          return;
+        }
+        endLocationData = {
+          placeId: 'current-location',
+          placeName: '내 위치',
+          lat: location.latitude,
+          lng: location.longitude,
+          roadAddress: '내 위치',
+          roadAddressDong: '',
+          lotAddress: '',
+          phone: '',
+          categoryGroupName: '',
+          placeUrl: '',
+          distance: 0
+        };
+      } else {
+        let foundEndLocation = endLocationResults.find(item => item.placeName === endLocation);
+        if (!foundEndLocation) {
+          foundEndLocation = startLocationResults.find(item => item.placeName === endLocation);
+        }
+        if (!foundEndLocation) {
+          alert('도착지 정보를 찾을 수 없습니다. 다시 검색해주세요.');
+          return;
+        }
+        endLocationData = foundEndLocation;
+        setEndLocationObject(foundEndLocation); // Save the object
+      }
+
+      await startRoute({
+        startLocation: startLocationData,
+        endLocation: endLocationData!,
+        transportMode: transportMode,
+        userLocation: location || undefined,
+      });
+
+    } catch (error: any) {
+      alert(error.message || '길찾기 중 오류가 발생했습니다.');
+    }
+  }, [
+    startLocation, endLocation, startLocationObject, endLocationObject,
+    location, startLocationResults, endLocationResults, selectedTransportMode,
+    startRoute, setStartLocationObject, setEndLocationObject
+  ]);
+
   return (
     <View style={[contentContainerStyles, isWebView && contentContainerStyles]}>
       <View style={commonStyles.tabHeader}>
@@ -429,8 +507,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   selectedTransportMode === 'driving' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
                 ]}
                 onPress={() => {
-                  handleTextEdit();
-                  setSelectedTransportMode('driving');
+                  const newMode = 'driving';
+                  setSelectedTransportMode(newMode);
+                  if (routeResult) {
+                    triggerRouteSearch(newMode);
+                  }
                 }}
               >
                 <Ionicons
@@ -468,8 +549,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   selectedTransportMode === 'walking' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
                 ]}
                 onPress={() => {
-                  handleTextEdit();
-                  setSelectedTransportMode('walking');
+                  const newMode = 'walking';
+                  setSelectedTransportMode(newMode);
+                  if (routeResult) {
+                    triggerRouteSearch(newMode);
+                  }
                 }}
               >
                 <Ionicons
@@ -489,8 +573,11 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   selectedTransportMode === 'cycling' && (Platform.OS === 'web' ? webStyles.transportModeButtonSelected : mobileStyles.transportModeButtonSelected)
                 ]}
                 onPress={() => {
-                  handleTextEdit();
-                  setSelectedTransportMode('cycling');
+                  const newMode = 'cycling';
+                  setSelectedTransportMode(newMode);
+                  if (routeResult) {
+                    triggerRouteSearch(newMode);
+                  }
                 }}
               >
                 <Ionicons
@@ -524,8 +611,21 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   selectionColor="transparent"
                   underlineColorAndroid="transparent"
                 />
-                {isSearchingStart && (
+                {isSearchingStart ? (
                   <ActivityIndicator size="small" color="#3690FF" style={commonStyles.searchIndicator} />
+                ) : (
+                  startLocation.length > 0 && (
+                    <TouchableOpacity
+                      style={commonStyles.routeInputClearButton}
+                      onPress={() => {
+                        handleTextEdit();
+                        setStartLocation('');
+                        setStartLocationObject(null);
+                      }}
+                    >
+                      <Ionicons name="close-circle" size={18} color="#B9B9B9" />
+                    </TouchableOpacity>
+                  )
                 )}
               </View>
 
@@ -538,6 +638,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   if (location) {
                     handleTextEdit();
                     setStartLocation('내 위치');
+                    setStartLocationObject(null);
                     setShowStartResults(false);
                   }
                 }}
@@ -545,7 +646,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               >
                 <Ionicons
                   name="compass-outline"
-                  size={16}
+                  size={20}
                   color={location ? "#3690FF" : "#B9B9B9"}
                 />
               </TouchableOpacity>
@@ -568,27 +669,40 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
                   selectionColor="transparent"
                   underlineColorAndroid="transparent"
                 />
-                {isSearchingEnd && (
+                {isSearchingEnd ? (
                   <ActivityIndicator size="small" color="#3690FF" style={commonStyles.searchIndicator} />
+                ) : (
+                  endLocation.length > 0 && (
+                    <TouchableOpacity
+                      style={commonStyles.routeInputClearButton}
+                      onPress={() => {
+                        handleTextEdit();
+                        setEndLocation('');
+                        setEndLocationObject(null);
+                      }}
+                    >
+                      <Ionicons name="close-circle" size={18} color="#B9B9B9" />
+                    </TouchableOpacity>
+                  )
                 )}
               </View>
 
               <TouchableOpacity
                 style={commonStyles.swapButton}
-                onPress={() => {
-                  const tempStart = startLocation;
-                  const tempEnd = endLocation;
-                  if (tempStart === '내 위치') {
-                    setStartLocation(tempEnd);
-                    setEndLocation('내 위치');
-                  } else {
-                    setStartLocation(tempEnd);
-                    setEndLocation(tempStart);
-                  }
-                  handleTextEdit();
-                }}
-              >
-                <Ionicons name="swap-vertical-outline" size={16} color="#3690FF" />
+                              onPress={() => {
+                                  // 텍스트 값 교환
+                                  const tempStartText = startLocation;
+                                  setStartLocation(endLocation);
+                                  setEndLocation(tempStartText);
+                
+                                  // 데이터 객체 교환
+                                  const tempStartObject = startLocationObject;
+                                  setStartLocationObject(endLocationObject);
+                                  setEndLocationObject(tempStartObject);
+                
+                                  handleTextEdit();
+                              }}              >
+                <Ionicons name="swap-vertical-outline" size={20} color="#3690FF" />
               </TouchableOpacity>
             </View>
           </View>
@@ -599,76 +713,7 @@ const SharedSearch: React.FC<SharedSearchProps> = ({
               (!endLocation.trim() || isRouteLoading || !!routeResult) && commonStyles.routeButtonDisabled
             ]}
             disabled={!endLocation.trim() || isRouteLoading || !!routeResult}
-            onPress={async () => {
-              try {
-                if (!endLocation.trim()) {
-                  alert('도착지를 입력해주세요.');
-                  return;
-                }
-
-                let startLocationData: SearchResult | string;
-                if (startLocationObject) {
-                  startLocationData = startLocationObject;
-                } else if (typeof startLocation === 'string' && startLocation.trim() === '내 위치') {
-                  startLocationData = '내 위치';
-                } else if (typeof startLocation === 'string') {
-                  let foundStartLocation = startLocationResults.find(item => item.placeName === startLocation);
-                  if (!foundStartLocation) {
-                    foundStartLocation = endLocationResults.find(item => item.placeName === startLocation);
-                  }
-                  if (!foundStartLocation) {
-                    alert('출발지 정보를 찾을 수 없습니다. 다시 검색해주세요.');
-                    return;
-                  }
-                  startLocationData = foundStartLocation;
-                } else {
-                  throw new Error('Invalid start location');
-                }
-
-                let endLocationData: SearchResult | null = null;
-                if (endLocationObject) {
-                  endLocationData = endLocationObject;
-                } else if (endLocation.trim() === '내 위치') {
-                  if (!location) {
-                    alert('현재 위치 정보를 가져올 수 없습니다.');
-                    return;
-                  }
-                  endLocationData = {
-                    placeId: 'current-location',
-                    placeName: '내 위치',
-                    lat: location.latitude,
-                    lng: location.longitude,
-                    roadAddress: '내 위치',
-                    roadAddressDong: '',
-                    lotAddress: '',
-                    phone: '',
-                    categoryGroupName: '',
-                    placeUrl: '',
-                    distance: 0
-                  };
-                } else {
-                  let foundEndLocation = endLocationResults.find(item => item.placeName === endLocation);
-                  if (!foundEndLocation) {
-                    foundEndLocation = startLocationResults.find(item => item.placeName === endLocation);
-                  }
-                  if (!foundEndLocation) {
-                    alert('도착지 정보를 찾을 수 없습니다. 다시 검색해주세요.');
-                    return;
-                  }
-                  endLocationData = foundEndLocation;
-                }
-
-                await startRoute({
-                  startLocation: startLocationData,
-                  endLocation: endLocationData!,
-                  transportMode: selectedTransportMode,
-                  userLocation: location || undefined,
-                });
-
-              } catch (error: any) {
-                alert(error.message || '길찾기 중 오류가 발생했습니다.');
-              }
-            }}
+            onPress={() => triggerRouteSearch()}
           >
             <Ionicons name="navigate-outline" size={20} color="#fff" />
             <Text style={commonStyles.routeButtonText}>

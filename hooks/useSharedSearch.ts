@@ -129,6 +129,8 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
         console.error('목적지 검색 오류:', error);
         setEndLocationResults([]);
         setShowEndResults(false);
+      } finally {
+        setIsSearchingEnd(false);
       }
     }, 500);
   };
@@ -147,24 +149,37 @@ export const useSharedSearch = (externalRouteResult: any, externalIsRouteLoading
     };
   }, []);
 
+
+
   useEffect(() => {
     const handleSetRouteLocation = (type: 'departure' | 'arrival', placeInfo: SearchResult) => {
+      clearRoute();
       setActiveTab('route'); // Set active tab first
       onToggleSidebar(); // Then toggle sidebar
+
       if (type === 'departure') {
+        // If new departure is same as current arrival, clear arrival
+        if (endLocationObject && endLocationObject.placeId === placeInfo.placeId) {
+          setEndLocation('');
+          setEndLocationObject(null);
+        }
         setStartLocation(placeInfo.placeName);
         setStartLocationObject(placeInfo);
-        console.log('After setting startLocationObject:', placeInfo);
-      } else {
+      } else { // type === 'arrival'
+        // If new arrival is same as current departure, clear departure
+        if (startLocationObject && startLocationObject.placeId === placeInfo.placeId) {
+          setStartLocation('');
+          setStartLocationObject(null);
+        }
         setEndLocation(placeInfo.placeName);
         setEndLocationObject(placeInfo);
-        console.log('After setting endLocationObject:', placeInfo);
+
         if (!startLocation || startLocation.trim() === '') {
           setStartLocation('내 위치');
           setStartLocationObject(null);
-          console.log('startLocation was empty, set startLocationObject to null.');
         }
       }
+
       setShowStartResults(false);
       setShowEndResults(false);
     };

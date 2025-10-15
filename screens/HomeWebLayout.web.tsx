@@ -322,7 +322,9 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
                   }
                 }
               }}>
-              <Text style={webStyles.currentLocationButtonIcon}>📍</Text>
+
+              <Ionicons name="compass-outline" size={50} color="#3690FF" />
+                {/* <Ionicons name="locate" size={24} color="#3690FF" /> */}
             </TouchableOpacity>
           )}
         </View>
