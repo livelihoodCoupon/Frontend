@@ -1,5 +1,6 @@
 // services/parkingApi.ts
 import apiClient from './apiClient';
+import { PageResponse } from '../types/api';
 
 // API 응답 예시를 기반으로 타입 정의
 export interface ParkingLot {
@@ -13,27 +14,22 @@ export interface ParkingLot {
   distance: number;
 }
 
-export interface ParkingLotsResponse {
-  content: ParkingLot[];
-  currentPage: number;
-  totalPages: number;
-  totalElements: number;
-}
 
 export interface SearchParkingLotsParams {
+  lat: number;
+  lng: number;
   query?: string;
-  lat?: number;
-  lng?: number;
+  radius?: number;
   page?: number;
-  userLat?: number;
-  userLng?: number;
+  size?: number;
+  sort?: 'distance' | 'accuracy';
 }
 
 export const searchParkingLots = async (
   params: SearchParkingLotsParams,
-): Promise<ParkingLotsResponse> => {
-  const response = await apiClient.get<ParkingLotsResponse>('/api/searches/parkinglots', {
+): Promise<PageResponse<ParkingLot>> => {
+  const response = await apiClient.get<ApiResponse<PageResponse<ParkingLot>>>('/api/searches/parkinglots-es', {
     params,
   });
-  return response.data;
+  return response.data.data;
 };

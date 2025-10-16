@@ -159,7 +159,11 @@ export default function Home() {
 
   useEffect(() => {
     if (activeSearchTab === 'nearbyParking' && searchCenter && location) {
-      fetchParkingLots(searchCenter.lat, searchCenter.lng, location.latitude, location.longitude);
+      fetchParkingLots(searchCenter.lat, searchCenter.lng, {
+        radius: searchOptions.radius, // Assuming searchOptions contains radius
+        page: 1, // Start from page 1 for a new search
+        sort: 'distance', // Default sort by distance
+      });
     }
   }, [activeSearchTab, searchCenter, location, fetchParkingLots]);
 
@@ -347,6 +351,7 @@ export default function Home() {
   const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
 
   const mapMarkers = useMemo(() => {
+    console.log('mapMarkers useMemo - parkingLots:', parkingLots);
     let sourceMarkers: any[] = [];
     if (activeTab === 'search') {
       if (activeSearchTab === 'searchResults') {

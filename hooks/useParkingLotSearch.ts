@@ -1,87 +1,73 @@
-import { useReducer, useCallback } from 'react';
-import { searchParkingLots, ParkingLot, ParkingLotsResponse } from '../services/parkingApi';
+import { useState, useCallback } from 'react';
+import { searchParkingLots, ParkingLot, SearchParkingLotsParams } from '../services/parkingApi';
+import { PageResponse } from '../types/api';
 
 // 1. 상태(State) 정의
 interface ParkingLotState {
   parkingLots: ParkingLot[];
   loading: boolean;
   error: string | null;
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalElements: number;
-    isLast: boolean;
-  } | null;
+  pagination: (PageResponse<ParkingLot> & { isLast: boolean }) | null;
 }
-
-// 2. 액션(Action) 정의
-type ParkingLotAction =
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: ParkingLotsResponse }
-  | { type: 'FETCH_FAILURE'; payload: string };
-
-// 3. 리듀서(Reducer) 정의
-const initialState: ParkingLotState = {
-  parkingLots: [],
-  loading: false,
-  error: null,
-  pagination: null,
-};
-
-const parkingLotReducer = (state: ParkingLotState, action: ParkingLotAction): ParkingLotState => {
-  switch (action.type) {
-    case 'FETCH_START':
-      return {
-        ...state,
-        loading: true,
-        error: null,
-        parkingLots: [],
-        pagination: null,
-      };
-    case 'FETCH_SUCCESS':
-      const { content, ...pageInfo } = action.payload;
-      return {
-        ...state,
-        loading: false,
-        parkingLots: content,
-        pagination: {
-          ...pageInfo,
-          isLast: pageInfo.currentPage >= pageInfo.totalPages,
-        },
-      };
-    case 'FETCH_FAILURE':
-      return {
-        ...state,
-        loading: false,
-        error: action.payload,
-      };
-    default:
-      return state;
-  }
-};
 
 // 4. 커스텀 훅(Custom Hook) 정의
 export const useParkingLotSearch = () => {
-  const [state, dispatch] = useReducer(parkingLotReducer, initialState);
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<(PageResponse<ParkingLot> & { isLast: boolean }) | null>(null);
 
-  const fetchParkingLots = useCallback(async (lat: number, lng: number, userLat?: number, userLng?: number) => {
-    dispatch({ type: 'FETCH_START' });
+  const fetchParkingLots = useCallback(async (
+    lat: number,
+    lng: number,
+    options?: {
+      query?: string;
+      radius?: number;
+      page?: number;
+      size?: number;
+      sort?: 'distance' | 'accuracy';
+    }
+  ) => {
+    setLoading(true);
+    setError(null);
+    setParkingLots([]); // Reset parkingLots on new search
+    setPagination(null); // Reset pagination on new search
+
     try {
       const response = await searchParkingLots({
         lat,
         lng,
-        userLat,
-        userLng,
-        page: 1,
+        ...options,
       });
-      dispatch({ type: 'FETCH_SUCCESS', payload: response.data });
+      setParkingLots(response.content);
+      setPagination({
+        currentPage: response.currentPage,
+        totalPages: response.totalPages,
+        totalElements: response.totalElements,
+        isLast: response.last,
+        startPage: response.startPage,
+        endPage: response.endPage,
+        hasPrev: response.hasPrev,
+        hasNext: response.hasNext,
+        blockSize: response.blockSize,
+        searchCenterLat: response.searchCenterLat,
+        searchCenterLng: response.searchCenterLng,
+      });
     } catch (err: any) {
-      dispatch({ type: 'FETCH_FAILURE', payload: err.message || '주변 주차장 검색 중 오류가 발생했습니다.' });
+      console.error("주변 주차장 검색 중 오류 발생:", err);
+      setError(err.message || '주변 주차장 검색 중 오류가 발생했습니다.');
+      setParkingLots([]); // Ensure parkingLots is empty on error
+      setPagination(null); // Ensure pagination is reset on error
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   return {
-    ...state,
+    parkingLots,
+    loading,
+    error,
+    pagination,
     fetchParkingLots,
   };
 };
