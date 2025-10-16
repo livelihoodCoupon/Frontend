@@ -217,14 +217,26 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
       };
 
       // 점 마커 이미지용 작은 SVG를 데이터 URI로 생성
-      const createDotMarkerImage = (isSelected: boolean) => {
-        const size = isSelected ? 24 : 16; // Selected 24px, Default 16px
+      const createDotMarkerImage = (markerType: 'default' | 'selected' | 'parking' | 'userLocation') => {
+        const isSelected = markerType === 'selected';
+        const size = isSelected ? 24 : 16;
         const borderWidth = isSelected ? 2 : 1;
-        const fillColor = isSelected ? '#FF385C' : '#007bff'; // Red for selected, Blue for default
-        const borderColor = '#fff'; // White border for both
+        let fillColor = '#007bff'; // default
+        if (markerType === 'selected') {
+          fillColor = '#FF385C'; // red
+        } else if (markerType === 'parking') {
+          fillColor = '#9e45cd'; // DarkOrchid (Purple)
+        }
+
+        const borderColor = '#fff';
         const svg = `
-          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="${size / 2}" cy="${size / 2}" r="${(size - borderWidth * 2) / 2}" fill="${fillColor}" stroke="${borderColor}" stroke-width="${borderWidth}"/>
+          <svg width="${size + 8}" height="${size + 8}" viewBox="-4 -4 ${size + 8} ${size + 8}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="marker-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.4"/>
+              </filter>
+            </defs>
+            <circle cx="${size / 2}" cy="${size / 2}" r="${(size - borderWidth * 2) / 2}" fill="${fillColor}" stroke="${borderColor}" stroke-width="${borderWidth}" filter="url(#marker-shadow)"/>
           </svg>
         `;
         return `data:image/svg+xml;base64,${btoa(svg)}`;
@@ -258,14 +270,14 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
             markerData.lng
           );
 
-          const markerImageSrc = createDotMarkerImage(markerData.markerType === "selected");
-          const imageSize = new window.kakao.maps.Size(markerData.markerType === "selected" ? 16 : 12, markerData.markerType === "selected" ? 16 : 12);
+          const markerImageSrc = createDotMarkerImage(markerData.markerType as any);
+          const imageSize = new window.kakao.maps.Size(markerData.markerType === "selected" ? 25 : 22, markerData.markerType === "selected" ? 30 : 22);
           const imageOption = { offset: new window.kakao.maps.Point(imageSize.width / 2, imageSize.height / 2) }; // 점의 중앙에 오도록 오프셋 설정
 
           const marker = new window.kakao.maps.Marker({
             position: markerPosition,
             image: new window.kakao.maps.MarkerImage(markerImageSrc, imageSize, imageOption),
-            zIndex: markerData.markerType === "selected" ? 100 : 1,
+            zIndex: markerData.markerType === "selected" ? 100 : (markerData.markerType === 'parking' ? 50 : 1),
           });
 
           const customOverlayContent = `

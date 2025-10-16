@@ -47,10 +47,14 @@ const SearchResultItem: React.FC<Props> = ({ item, onPress }) => {
 
   const feeStyle = item.feeInfo ? getFeeInfoStyle(item.feeInfo) : null;
 
+  const isParkingLot = !!item.feeInfo;
+  const iconName = isParkingLot ? "car-outline" : "location-sharp";
+  const iconColor = isParkingLot ? "#9932CC" : "#007bff";
+
   return (
     <Pressable onPress={() => onPress(item)} style={commonStyles.container}>
       <View style={commonStyles.iconContainer}>
-        <Ionicons name="location-sharp" size={24} color="#007bff" />
+        <Ionicons name={iconName} size={24} color={iconColor} />
       </View>
       <View style={commonStyles.infoContainer}>
         <Text style={commonStyles.placeName}>{item.placeName}</Text>

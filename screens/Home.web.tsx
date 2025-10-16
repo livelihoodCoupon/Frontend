@@ -347,7 +347,32 @@ export default function Home() {
   const errorMsg = (locationError || searchError) ? String(locationError || searchError) : null;
 
   const mapMarkers = useMemo(() => {
-    const baseMarkers = activeTab === 'search' ? [
+    let sourceMarkers: any[] = [];
+    if (activeTab === 'search') {
+      if (activeSearchTab === 'searchResults') {
+        sourceMarkers = allMarkers.map(marker => ({
+          ...marker,
+          markerType: marker.placeId === selectedPlaceId ? 'selected' : 'default',
+        }));
+      } else if (activeSearchTab === 'nearbyParking') {
+        sourceMarkers = parkingLots.map(p => ({
+          placeId: String(p.id),
+          placeName: p.parkingLotName,
+          roadAddress: p.roadAddress,
+          lotAddress: p.lotAddress,
+          lat: p.lat,
+          lng: p.lng,
+          distance: p.distance,
+          phone: '', 
+          categoryGroupName: p.feeInfo,
+          feeInfo: p.feeInfo,
+          placeUrl: '',
+          markerType: String(p.id) === selectedPlaceId ? 'selected' : 'parking',
+        }));
+      }
+    }
+
+    const baseMarkers = [
       ...(location ? [{
         placeId: "user-location",
         placeName: "내 위치",
@@ -355,26 +380,14 @@ export default function Home() {
         lng: location.longitude,
         markerType: "userLocation",
       }] : []),
-      ...allMarkers.map(marker => ({
-        placeId: marker.placeId,
-        placeName: marker.placeName,
-        lat: marker.lat,
-        lng: marker.lng,
-        categoryGroupName: marker.categoryGroupName,
-        roadAddress: marker.roadAddress,
-        roadAddressDong: marker.roadAddressDong,
-        lotAddress: marker.lotAddress,
-        phone: marker.phone,
-        placeUrl: marker.placeUrl,
-        markerType: marker.placeId === selectedPlaceId ? 'selected' : 'default'
-      }))
-    ] : [];
+      ...sourceMarkers,
+    ];
 
     if (temporarySelectedMarker && !baseMarkers.some(m => m.placeId === temporarySelectedMarker.placeId)) {
       return [...baseMarkers, { ...temporarySelectedMarker, markerType: 'selected' }];
     }
     return baseMarkers;
-  }, [activeTab, location, allMarkers, selectedPlaceId, temporarySelectedMarker]);
+  }, [activeTab, activeSearchTab, location, allMarkers, parkingLots, selectedPlaceId, temporarySelectedMarker]);
 
   const mapRouteResult = useMemo(() => {
     return activeTab === 'route' ? routeResult : null;
