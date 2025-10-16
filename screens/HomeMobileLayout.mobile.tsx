@@ -1420,12 +1420,12 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                                     // 마커 데이터에서 주차장 정보 추출
                                     parkingLot = {
                                         id: parkingId,
-                                        parkingLotName: parkingMarker.placeName,
+                                        parkingLotNm: parkingMarker.placeName,
                                         lat: parkingMarker.lat,
                                         lng: parkingMarker.lng,
                                         roadAddress: parkingMarker.roadAddress || '',
                                         lotAddress: parkingMarker.lotAddress || '',
-                                        feeInfo: parkingMarker.feeInfo || '',
+                                        parkingChargeInfo: parkingMarker.feeInfo || '',
                                         distance: parkingMarker.distance || 0
                                     };
                                 } else {
@@ -1456,12 +1456,12 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                                     .filter(m => m.placeId.startsWith('parking_'))
                                     .map(m => ({
                                         id: parseInt(m.placeId.replace('parking_', '')),
-                                        parkingLotName: m.placeName,
+                                        parkingLotNm: m.placeName,
                                         lat: m.lat,
                                         lng: m.lng,
                                         roadAddress: m.roadAddress || '',
                                         lotAddress: m.lotAddress || '',
-                                        feeInfo: m.feeInfo || '',
+                                        parkingChargeInfo: m.feeInfo || '',
                                         distance: m.distance || 0
                                     }));
                                 

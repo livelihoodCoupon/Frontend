@@ -20,7 +20,7 @@ export const parkingApi = {
       ...(params.size && { size: params.size.toString() }),
     });
 
-    const response = await apiClient.get(`/api/parkinglots/nearby?${queryParams}`);
+    const response = await apiClient.get(`/api/searches/parkinglots-es?${queryParams}`);
     return response.data;
   },
 

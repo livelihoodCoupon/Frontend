@@ -245,7 +245,7 @@ export class MarkerDataConverter {
     parkingLots.forEach(parkingLot => {
       markers.push({
         placeId: `parking_${parkingLot.id}`,
-        placeName: parkingLot.parkingLotName,
+        placeName: parkingLot.parkingLotNm,
         lat: parkingLot.lat,
         lng: parkingLot.lng,
         categoryGroupName: '주차장',

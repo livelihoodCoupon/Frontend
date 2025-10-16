@@ -585,7 +585,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
                 <View style={styles.placeDetailInfo}>
                   
                   {/* 주차장명 */}
-                  <Text style={styles.placeDetailName}>{selectedParkingLot.parkingLotName}</Text>
+                  <Text style={styles.placeDetailName}>{selectedParkingLot.parkingLotNm}</Text>
                   
                   {/* 길찾기 버튼들 */}
                   <View style={styles.routeButtons}>
@@ -596,7 +596,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
                           // 출발지 설정
                           const parkingLocation = {
                             placeId: `parking_${selectedParkingLot.id}`,
-                            placeName: selectedParkingLot.parkingLotName,
+                            placeName: selectedParkingLot.parkingLotNm,
                             lat: selectedParkingLot.lat,
                             lng: selectedParkingLot.lng,
                             roadAddress: selectedParkingLot.roadAddress,
@@ -623,7 +623,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
                           // 목적지 설정
                           const parkingLocation = {
                             placeId: `parking_${selectedParkingLot.id}`,
-                            placeName: selectedParkingLot.parkingLotName,
+                            placeName: selectedParkingLot.parkingLotNm,
                             lat: selectedParkingLot.lat,
                             lng: selectedParkingLot.lng,
                             roadAddress: selectedParkingLot.roadAddress,
@@ -803,13 +803,13 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
                       </View>
                       <View style={styles.searchResultContent}>
                         <Text style={styles.searchResultName} numberOfLines={1}>
-                          {parkingLot.parkingLotName}
+                          {parkingLot.parkingLotNm}
                         </Text>
                         <Text style={styles.searchResultAddress} numberOfLines={1}>
                           {parkingLot.roadAddress || parkingLot.lotAddress}
                         </Text>
                         <Text style={styles.parkingFeeInfo}>
-                          {parkingLot.feeInfo}
+                          {parkingLot.parkingChargeInfo}
                         </Text>
                       </View>
                       <Text style={styles.searchResultDistance}>

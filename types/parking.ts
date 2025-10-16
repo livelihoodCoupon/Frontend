@@ -1,9 +1,9 @@
 export interface ParkingLot {
   id: number;
-  parkingLotName: string;
+  parkingLotNm: string;
   roadAddress: string;
   lotAddress: string;
-  feeInfo: string;
+  parkingChargeInfo: string;
   lat: number;
   lng: number;
   distance: number;
@@ -11,7 +11,7 @@ export interface ParkingLot {
 
 export interface ParkingLotDetail {
   id: number;
-  parkingLotName: string;
+  parkingLotNm: string;
   roadAddress: string;
   lotAddress: string;
   parkingCapacity: string;
@@ -37,6 +37,15 @@ export interface ParkingLotSearchResponse {
     currentPage: number;
     totalPages: number;
     totalElements: number;
+    startPage: number;
+    endPage: number;
+    hasPrev: boolean;
+    hasNext: boolean;
+    blockSize: number;
+    searchCenterLat: number;
+    searchCenterLng: number;
+    last: boolean;
+    first: boolean;
   };
   timestamp: string;
 }
