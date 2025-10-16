@@ -3,9 +3,10 @@ name: Frontend CD (App)
 on:
   push:
     branches: [ "main","fix/18_cd_test" ]
-  pull_request:
-    branches: [ "main","fix/18_cd_test" ]
-
+#  pull_request:
+#    branches: [ "main" ]
+  workflow_dispatch:
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -26,6 +27,12 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # ec2_host, ec2_user test
+      - name: Check secrets before scp
+        run: |
+          echo "EC2_HOST: ${{ secrets.EC2_HOST }}"
+          echo "EC2_USER: ${{ secrets.EC2_USER }}"
+          
       # 3. 의존성 설치 & 빌드
       - name: Install dependencies and build
         run: |
@@ -48,12 +55,11 @@ jobs:
 
       # 4. EC2에 빌드 결과 전송
       - name: Copy build folder to EC2
-        uses: appleboy/scp-action@v0.1.5
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: |
-            ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           source: ./
           target: ~/frontend/
           overwrite: true
@@ -64,8 +70,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: |
-            ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/frontend
 
