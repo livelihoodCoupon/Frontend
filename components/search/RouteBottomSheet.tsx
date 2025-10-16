@@ -57,6 +57,7 @@ interface RouteBottomSheetProps {
   onSetEndLocation?: (location: string | SearchResult) => void;
   isRouteDetailMode?: boolean;
   // 주차장 관련 props
+  activeTab?: 'search' | 'parking';
   onUpdateMarkers?: (markers: any[]) => void;
   onSelectParkingLot?: (parkingLot: ParkingLot) => void;
   onActiveTabChange?: (tab: 'search' | 'parking') => void;
@@ -94,6 +95,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   onSetStartLocation,
   onSetEndLocation,
   isRouteDetailMode = false,
+  activeTab: propActiveTab,
   onUpdateMarkers,
   onSelectParkingLot,
   onActiveTabChange,
@@ -168,6 +170,13 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   
   // 탭 상태 관리
   const [activeSearchTab, setActiveSearchTab] = useState<'search' | 'parking'>('search');
+  
+  // propActiveTab과 동기화
+  useEffect(() => {
+    if (propActiveTab && propActiveTab !== activeSearchTab) {
+      setActiveSearchTab(propActiveTab);
+    }
+  }, [propActiveTab, activeSearchTab]);
   
   // 주차장 상세 정보 상태
   const [showParkingDetail, setShowParkingDetail] = useState(false);

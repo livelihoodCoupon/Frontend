@@ -48,6 +48,8 @@ interface HomeMobileLayoutProps {
     showPlaceDetail: boolean;
     setShowPlaceDetail: (show: boolean) => void;
     searchQuery: string;
+    activeTab: string;
+    setActiveTab: (tab: string) => void;
     setSearchQuery: (query: string) => void;
     searchResults: SearchResult[];
     allMarkers: SearchResult[];
@@ -95,6 +97,8 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                                                                setBottomSheetOpen,
                                                                bottomSheetHeight,
                                                                setBottomSheetHeight,
+                                                               activeTab,
+                                                               setActiveTab,
                                                                showPlaceDetail,
                                                                setShowPlaceDetail,
                                                                searchQuery,
@@ -148,7 +152,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     }, [currentMarkers]);
     
     // 현재 활성 탭 상태 관리
-    const [activeTab, setActiveTab] = useState<'search' | 'parking'>('search');
+    // activeTab과 setActiveTab은 props로 받음
     
     // 외부에서 주차장 데이터를 관리할 상태
     const [externalParkingLots, setExternalParkingLots] = useState<ParkingLot[]>([]);
@@ -769,6 +773,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         // 키워드 검색 시 주차장 상태 초기화
         console.log('🔄 키워드 검색 - 주차장 상태 초기화');
         setExternalParkingLots([]);
+        console.log('🔄 키워드 검색 - activeTab을 search로 설정');
         setActiveTab('search');
 
         // 길찾기 모드가 아닐 때만 바텀시트 열기
@@ -1215,6 +1220,8 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                 <FloatingSearchBar
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                     onSearch={handleSearch}
                     onRoutePress={handleRoutePress}
                     selectedCategory={selectedCategory}
@@ -1228,6 +1235,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                             // 카테고리 검색 시 주차장 상태 초기화
                             console.log('🔄 카테고리 검색 - 주차장 상태 초기화');
                             setExternalParkingLots([]);
+                            console.log('🔄 카테고리 검색 - activeTab을 search로 설정');
                             setActiveTab('search');
                             
                             // 카테고리 검색 실행
@@ -1427,6 +1435,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                     searchResults={searchResults}
                     searchQuery={searchQuery}
                     onSearchQueryChange={setSearchQuery}
+                    activeTab={activeTab}
                     onSearch={handleSearch}
                     isLoading={isLoading}
                     onCloseSearch={handleCloseSearch}
