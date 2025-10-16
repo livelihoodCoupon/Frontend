@@ -50,9 +50,6 @@ jobs:
           #npm run web-build   
           npx expo export:web       
 
-      #- name: Build Web
-      #  run: npm run web-build
-
       # 4. EC2에 빌드 결과 전송
       - name: Copy build folder to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -66,7 +63,7 @@ jobs:
 
       # 5. EC2에서 npm start 실행
       - name: Run frontend on EC2
-        uses: appleboy/ssh-action@v0.1.6
+        uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
