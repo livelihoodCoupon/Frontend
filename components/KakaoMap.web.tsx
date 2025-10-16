@@ -475,7 +475,7 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
                 </div>
                 <div style="margin-bottom: 6px; display: flex; align-items: center;">
                   <span style="min-width: 50px; font-weight: 500;">운영시간</span>
-                  <span style="margin-left: 14px;">${parkingLotDetail.operDay} ${parkingLotDetail.weekOpenTime}~${parkingLotDetail.weekCloseTime}</span>
+                  <span style="margin-left: 14px;">${parkingLotDetail.operDay} / ${parkingLotDetail.weekOpenTime}~${parkingLotDetail.weekCloseTime}</span>
                 </div>
                 <div style="margin-bottom: 6px; display: flex; align-items: center;">
                   <span style="min-width: 50px; font-weight: 500;">주차요금</span>
@@ -484,6 +484,10 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
                 <div style="margin-bottom: 6px; display: flex; align-items: center;">
                   <span style="min-width: 50px; font-weight: 500;">결제방법</span>
                   <span style="margin-left: 14px;">${parkingLotDetail.paymentMethod || '-'}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">주차 대수</span>
+                  <span style="margin-left: 14px;">${parkingLotDetail.parkingCapacity || '-'}</span>
                 </div>
                 <div>
                   <div id="specialCommentContent" style="display: none; margin-top: 8px; margin-left: 64px; padding: 8px; border: 1px solid #eee; border-radius: 4px; background-color: #f9f9f9;">
