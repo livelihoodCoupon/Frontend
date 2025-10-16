@@ -219,10 +219,15 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         }
     }, [location, handleUpdateMarkers]);
     
-    // 초기 마커 설정 (검색 결과가 있을 때만, 탭이 검색 결과일 때만)
+    // 초기 마커 설정 (검색 결과가 있을 때만, 탭이 검색 결과일 때만, 길찾기 모드가 아닐 때만)
     useEffect(() => {
         // 주차장 탭일 때는 currentMarkers를 건드리지 않음
         if (activeTab === 'parking') {
+            return;
+        }
+        
+        // 길찾기 모드일 때는 검색 결과 마커를 표시하지 않음
+        if (isRouteMode) {
             return;
         }
         
@@ -242,8 +247,19 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
             );
             setCurrentMarkers(emptyMarkers);
         }
-    }, [allMarkers, selectedPlaceId, location, activeTab]);
+    }, [allMarkers, selectedPlaceId, location, activeTab, isRouteMode]);
 
+
+    // 홈화면으로 돌아갈 때 모든 마커 초기화
+    useEffect(() => {
+        if (!hasSearched && !isRouteMode) {
+            // 홈화면 상태: 모든 마커 초기화
+            setExternalParkingLots([]);
+            setCurrentMarkers([]);
+            setSelectedPlaceId(null);
+            setSelectedMarkerPosition(null);
+        }
+    }, [hasSearched, isRouteMode]);
 
     // 바텀시트가 닫힐 때 주차장 마커 초기화
     useEffect(() => {
@@ -569,7 +585,23 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     // Android 뒤로가기 버튼 처리
     useEffect(() => {
         const backAction = () => {
+            // 🔍 상태 로그 출력
+            console.log('🔙 하드웨어 뒤로 가기 버튼 눌림');
+            console.log('📊 현재 상태:');
+            console.log('  - isSearchFocused:', isSearchFocused);
+            console.log('  - showPlaceDetail:', showPlaceDetail);
+            console.log('  - showRouteDetail:', showRouteDetail);
+            console.log('  - hasSearched:', hasSearched);
+            console.log('  - isRouteMode:', isRouteMode);
+            console.log('  - bottomSheetOpen:', bottomSheetOpen);
+            console.log('  - bottomSheetHeight:', bottomSheetHeight);
+            console.log('  - startLocation:', startLocation);
+            console.log('  - endLocation:', endLocation);
+            console.log('  - selectedStartLocation:', selectedStartLocation);
+            console.log('  - selectedEndLocation:', selectedEndLocation);
+            
             if (isSearchFocused) {
+                console.log('✅ 검색 포커스 해제');
                 // 검색 포커스가 있으면 포커스 해제하고 검색어도 지움
                 setIsSearchFocused(false);
                 setShowAutocomplete(false);
@@ -577,33 +609,57 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                 return true; // 이벤트 처리됨
             }
             if (showPlaceDetail) {
+                console.log('✅ 장소 상세 정보 → 장소 결과 리스트');
                 // 장소 상세 정보에서 장소 결과 리스트로 돌아가기
                 setShowPlaceDetail(false);
                 return true; // 이벤트 처리됨
             }
-            if (hasSearched) {
-                // 검색 결과가 있을 때
+            if (showRouteDetail) {
+                console.log('✅ 길찾기 상세 안내 모드');
+                // 길찾기 상세 안내 모드에서
                 if (bottomSheetOpen) {
+                    console.log('  → 바텀시트 접기');
                     // 바텀시트가 열려있으면 접기
                     setBottomSheetOpen(false);
                     setBottomSheetHeight(SMALL_HANDLE_HEIGHT);
                     return true; // 이벤트 처리됨
                 } else {
+                    console.log('  → 길찾기 일반 모드로 복귀');
+                    // 바텀시트가 접혀있으면 길찾기 일반 모드로 복귀
+                    setShowRouteDetail(false);
+                    setIsRouteMode(true); // 길찾기 일반 모드로 설정
+                    return true; // 이벤트 처리됨
+                }
+            }
+            if (isRouteMode && !showRouteDetail) {
+                console.log('✅ 길찾기 일반 모드 → 홈화면');
+                // 길찾기 일반 모드에서만 길찾기 모드 종료
+                handleCloseRouteMode();
+                return true; // 이벤트 처리됨
+            }
+            if (hasSearched && !isRouteMode) {
+                console.log('✅ 검색 결과 모드');
+                // 검색 결과가 있을 때 (길찾기 모드가 아닐 때만)
+                if (bottomSheetOpen) {
+                    console.log('  → 바텀시트 접기');
+                    // 바텀시트가 열려있으면 접기
+                    setBottomSheetOpen(false);
+                    setBottomSheetHeight(SMALL_HANDLE_HEIGHT);
+                    return true; // 이벤트 처리됨
+                } else {
+                    console.log('  → 홈화면으로 복귀');
                     // 바텀시트가 접혀있으면 홈화면으로 복귀
                     handleCloseSearch();
                     return true; // 이벤트 처리됨
                 }
             }
-            if (isRouteMode) {
-                handleCloseRouteMode();
-                return true; // 이벤트 처리됨
-            }
+            console.log('❌ 기본 뒤로가기 동작');
             return false; // 기본 뒤로가기 동작
         };
 
         const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
         return () => backHandler.remove();
-    }, [isSearchFocused, showPlaceDetail, hasSearched, isRouteMode, bottomSheetOpen]);
+    }, [isSearchFocused, showPlaceDetail, showRouteDetail, hasSearched, isRouteMode, bottomSheetOpen]);
 
     // 검색 실행 함수 (UI 상태만 관리)
     const handleSearch = async () => {
