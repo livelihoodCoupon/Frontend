@@ -358,15 +358,15 @@ export default function Home() {
       } else if (activeSearchTab === 'nearbyParking') {
         sourceMarkers = parkingLots.map(p => ({
           placeId: String(p.id),
-          placeName: p.parkingLotName,
+          placeName: p.parkingLotNm,
           roadAddress: p.roadAddress,
           lotAddress: p.lotAddress,
           lat: p.lat,
           lng: p.lng,
           distance: p.distance,
           phone: '', 
-          categoryGroupName: p.feeInfo,
-          feeInfo: p.feeInfo,
+          categoryGroupName: p.parkingChargeInfo,
+            parkingChargeInfo: p.parkingChargeInfo,
           placeUrl: '',
           markerType: String(p.id) === selectedPlaceId ? 'selected' : 'parking',
           isParkingLot: true,

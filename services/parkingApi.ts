@@ -4,10 +4,10 @@ import apiClient from './apiClient';
 // API 응답 예시를 기반으로 타입 정의
 export interface ParkingLot {
   id: number;
-  parkingLotName: string;
+  parkingLotNm: string;
   roadAddress: string;
   lotAddress: string;
-  feeInfo: string;
+  parkingChargeInfo: string;
   lat: number;
   lng: number;
   distance: number;

@@ -21,28 +21,28 @@ const formatDistance = (distance: number) => {
 };
 
 const SearchResultItem: React.FC<Props> = ({ item, onPress }) => {
-  const getFeeInfoStyle = (feeInfo: string) => {
-    if (feeInfo.includes('유료')) {
+  const getParkingChargeInfoStyle = (parkingChargeInfo: string) => {
+    if (parkingChargeInfo.includes('유료')) {
       return { 
-        container: webStyles.feeInfoPaidBackground, 
-        text: webStyles.feeInfoPaidText 
+        container: webStyles.parkingChargeInfoPaidBackground,
+        text: webStyles.parkingChargeInfoPaidText
       };
     }
-    if (feeInfo.includes('무료')) {
+    if (parkingChargeInfo.includes('무료')) {
       return { 
-        container: webStyles.feeInfoFreeBackground, 
-        text: webStyles.feeInfoFreeText 
+        container: webStyles.parkingChargeInfoFreeBackground,
+        text: webStyles.parkingChargeInfoFreeText
       };
     }
     return { 
-      container: webStyles.feeInfoDefaultBackground, 
-      text: webStyles.feeInfoDefaultText 
+      container: webStyles.parkingChargeInfoDefaultBackground,
+      text: webStyles.parkingChargeInfoDefaultText
     };
   };
 
-  const feeStyle = item.feeInfo ? getFeeInfoStyle(item.feeInfo) : null;
+  const feeStyle = item.parkingChargeInfo ? getParkingChargeInfoStyle(item.parkingChargeInfo) : null;
 
-  const isParkingLot = !!item.feeInfo;
+  const isParkingLot = !!item.parkingChargeInfo;
   const iconColor = isParkingLot ? "#9932CC" : "#007bff"; // Purple for parking, blue for default
 
   return (
@@ -70,9 +70,9 @@ const SearchResultItem: React.FC<Props> = ({ item, onPress }) => {
       <View style={commonStyles.infoContainer}>
         <Text style={commonStyles.placeName}>{item.placeName}</Text>
         <Text style={commonStyles.address}>{item.roadAddress || item.lotAddress}</Text>
-        {item.feeInfo && feeStyle && (
-          <View style={[webStyles.feeInfoContainer, feeStyle.container]}>
-            <Text style={[webStyles.feeInfoText, feeStyle.text]}>{item.feeInfo}</Text>
+        {item.parkingChargeInfo && feeStyle && (
+          <View style={[webStyles.parkingChargeInfoContainer, feeStyle.container]}>
+            <Text style={[webStyles.parkingChargeInfoText, feeStyle.text]}>{item.parkingChargeInfo}</Text>
           </View>
         )}
       </View>

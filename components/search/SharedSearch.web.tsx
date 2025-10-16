@@ -503,7 +503,7 @@ const WebSharedSearch: React.FC<SharedSearchProps> = ({
                   <FlatList
                     data={parkingLots.map(p => ({
                       placeId: String(p.id),
-                      placeName: p.parkingLotName,
+                      placeName: p.parkingLotNm,
                       roadAddress: p.roadAddress,
                       lotAddress: p.lotAddress,
                       lat: p.lat,
@@ -511,7 +511,7 @@ const WebSharedSearch: React.FC<SharedSearchProps> = ({
                       distance: p.distance,
                       phone: '', // ParkingLot type doesn't have phone, add if needed
                       categoryGroupName: '주차장', // Set a default category name
-                      feeInfo: p.feeInfo, // Pass the feeInfo correctly
+                        parkingChargeInfo: p.parkingChargeInfo, // Pass the parkingChargeInfo correctly
                       placeUrl: '',
                       roadAddressDong: '',
                     }))}
