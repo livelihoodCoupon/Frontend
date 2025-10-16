@@ -154,9 +154,8 @@ export default function HomeMobile() {
 
     // 지도 중심과 검색 중심 비교하여 "현재위치에서 검색" 버튼 표시
     useEffect(() => {
-        // searchCenter가 설정된 후에만 버튼 표시 여부 계산 (가장 중요한 조건)
-        // 장소 상세 설명 바텀시트 상태일 때는 버튼 비활성화
-        if (searchCenter && mapCenter && searchResults && searchResults.length > 0 && (bottomSheetOpen || bottomSheetHeight > 0) && !showPlaceDetail) {
+        // 상세 정보 모드에서도 버튼이 보이도록 수정
+        if (searchCenter && mapCenter && searchResults && searchResults.length > 0 && (bottomSheetOpen || bottomSheetHeight > 0)) {
             const latDiff = Math.abs(mapCenter.latitude - searchCenter.latitude);
             const lngDiff = Math.abs(mapCenter.longitude - searchCenter.longitude);
             const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
@@ -207,6 +206,9 @@ export default function HomeMobile() {
         setSelectedPlaceId(null);
         setShowInfoWindow(false);
         setSelectedMarkerPosition(null);
+
+        // 키워드 검색 시 무조건 검색 탭으로 진입
+        setActiveTab('search');
 
         if (!mapCenter) {
             alert("지도 중심 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");

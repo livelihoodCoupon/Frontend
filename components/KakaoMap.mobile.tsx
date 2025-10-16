@@ -114,41 +114,37 @@ const MobileKakaoMap = React.memo(forwardRef<any, KakaoMapProps>(({
 
   // 경로 표시 Effect (모바일 WebView)
   useEffect(() => {
-    if (updateTimeout.current) {
-      clearTimeout(updateTimeout.current);
+    console.log('🔍 KakaoMap.mobile.tsx 경로 표시 useEffect 실행');
+    console.log('  - routeResult:', !!routeResult);
+    console.log('  - isMapInitialized:', isMapInitialized);
+    console.log('  - webViewRef.current:', !!webViewRef.current);
+    
+    if (webViewRef.current && isMapInitialized) {
+      if (routeResult && routeResult.coordinates && routeResult.coordinates.length > 0) {
+        console.log('🚗 모바일 경로 표시 시작:', routeResult);
+        
+        // 경로 표시 스크립트
+        const script = `
+          if (typeof drawRoute === 'function') {
+            drawRoute(${JSON.stringify(routeResult)});
+          } else {
+            console.log('drawRoute 함수가 없습니다');
+          }
+          true;
+        `;
+        webViewRef.current.injectJavaScript(script);
+      } else {
+        console.log('🚫 경로 제거');
+        // 경로 제거 스크립트
+        const script = `
+          if (typeof clearRoute === 'function') {
+            clearRoute();
+          }
+          true;
+        `;
+        webViewRef.current.injectJavaScript(script);
+      }
     }
-
-    updateTimeout.current = setTimeout(() => {
-      if (webViewRef.current && htmlContent && isMapInitialized) {
-        if (routeResult && routeResult.coordinates && routeResult.coordinates.length > 0) {
-          
-          // 경로 표시 스크립트
-          const script = `
-            if (typeof drawRoute === 'function') {
-              drawRoute(${JSON.stringify(routeResult)});
-            } else {
-            }
-            true;
-          `;
-          webViewRef.current.injectJavaScript(script);
-        } else {
-          // 경로 제거 스크립트
-          const script = `
-            if (typeof clearRoute === 'function') {
-              clearRoute();
-            }
-            true;
-          `;
-          webViewRef.current.injectJavaScript(script);
-        }
-      }
-    }, 200); // 200ms debounce
-
-    return () => {
-      if (updateTimeout.current) {
-        clearTimeout(updateTimeout.current);
-      }
-    };
   }, [routeResult, isMapInitialized]);
 
   // resetMapLevel prop 처리 (모바일 WebView)

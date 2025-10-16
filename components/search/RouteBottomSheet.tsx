@@ -62,6 +62,7 @@ interface RouteBottomSheetProps {
   onActiveTabChange?: (tab: 'search' | 'parking') => void;
   externalParkingLots?: ParkingLot[]; // 외부에서 주차장 데이터를 전달받을 수 있는 prop
   onParkingLotSelect?: (parkingLot: ParkingLot) => void; // 주차장 마커 클릭 시 호출되는 콜백
+  onMapCenterChange?: (center: { latitude: number; longitude: number }) => void; // 지도 중심 변경
 }
 
 const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
@@ -98,6 +99,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   onActiveTabChange,
   externalParkingLots,
   onParkingLotSelect,
+  onMapCenterChange,
 }) => {
   const { height: SCREEN_HEIGHT } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
@@ -191,27 +193,20 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
     console.log('🎯 주차장 마커 클릭 핸들러 실행:', parkingLot);
     
     // parkingLots에서 실제 주차장 데이터 찾기 (최신 상태 사용)
-    const actualParkingLot = parkingLots.find(p => p.id === parkingLot.id);
+    let actualParkingLot = parkingLots.find(p => p.id === parkingLot.id);
     if (!actualParkingLot) {
       console.log('❌ parkingLots에서 주차장 데이터를 찾을 수 없음');
-      return;
+      // parkingLots에서 찾지 못했지만 전달받은 parkingLot 데이터 사용
+      actualParkingLot = parkingLot;
+      console.log('🔄 전달받은 주차장 데이터 사용:', actualParkingLot);
+    } else {
+      console.log('✅ 실제 주차장 데이터 찾음:', actualParkingLot);
     }
     
-    console.log('✅ 실제 주차장 데이터 찾음:', actualParkingLot);
-    
-    // 선택된 주차장 마커 업데이트
-    const selectedParkingId = `parking_${actualParkingLot.id}`;
-    console.log('📍 선택된 주차장 ID:', selectedParkingId);
-    const parkingMarkers = MarkerDataConverter.convertParkingLotsToMarkers(
-      parkingLots,
-      selectedParkingId,
-      location || undefined
-    );
-    
-    if (onUpdateMarkers) {
-      console.log('🔄 마커 업데이트');
-      onUpdateMarkers(parkingMarkers);
-    }
+    // 마커 업데이트는 HomeMobileLayout에서 이미 처리됨
+    // 여기서는 상세 정보 표시만 처리
+    console.log('📍 선택된 주차장 ID:', `parking_${actualParkingLot.id}`);
+    console.log('ℹ️ 마커 업데이트는 HomeMobileLayout에서 처리됨');
     
     // 주차장 상세 정보 조회
     console.log('📋 주차장 상세 정보 조회');
@@ -222,7 +217,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
     // 상세 정보 표시
     console.log('📱 상세 정보 표시');
     setShowParkingDetail(true);
-  }, [location, onUpdateMarkers, getParkingLotDetail]); // parkingLots 의존성 제거
+  }, [location, onUpdateMarkers, getParkingLotDetail, parkingLots]);
 
   // 전역 함수 등록 (한 번만 실행)
   const isRegistered = useRef(false);
@@ -395,24 +390,50 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
 
   // 주차장 선택 시 마커 업데이트
   const handleParkingSelect = useCallback((parkingLot: ParkingLot) => {
+    console.log('🚗 주차장 선택됨:', parkingLot.parkingLotName);
+    
     if (onSelectParkingLot) {
       onSelectParkingLot(parkingLot);
     }
     
     // 선택된 주차장 마커 업데이트
     const selectedParkingId = `parking_${parkingLot.id}`;
+    console.log('🎯 선택된 주차장 ID:', selectedParkingId);
+    
     const parkingMarkers = MarkerDataConverter.convertParkingLotsToMarkers(
       parkingLots,
       selectedParkingId,
       location || undefined
     );
     
+    console.log('🔄 주차장 마커 업데이트:');
+    console.log('  - parkingMarkers.length:', parkingMarkers.length);
+    console.log('  - selectedParkingId:', selectedParkingId);
+    console.log('  - parkingMarkers:', parkingMarkers.map(m => ({ 
+      placeId: m.placeId, 
+      placeName: m.placeName, 
+      markerType: m.markerType 
+    })));
+    
     if (onUpdateMarkers) {
+      console.log('✅ onUpdateMarkers 호출');
       onUpdateMarkers(parkingMarkers);
+    } else {
+      console.log('❌ onUpdateMarkers 없음');
+    }
+    
+    // 지도 중심을 주차장 위치로 이동 (스크린 높이의 15% 정도 더 아래로)
+    const latitudeOffset = (SCREEN_HEIGHT * 0.15) / 111000; // 대략적인 위도 오프셋 계산
+    console.log('🗺️ 지도 중심 이동:', { lat: parkingLot.lat, lng: parkingLot.lng, offset: latitudeOffset });
+    if (onMapCenterChange) {
+      onMapCenterChange({ 
+        latitude: parkingLot.lat - latitudeOffset, 
+        longitude: parkingLot.lng 
+      });
     }
     
     handleParkingDetail(parkingLot);
-  }, [onSelectParkingLot, handleParkingDetail, parkingLots, location, onUpdateMarkers]);
+  }, [onSelectParkingLot, handleParkingDetail, parkingLots, location, onUpdateMarkers, onMapCenterChange]);
 
   
   // 검색 모드가 아닐 때는 바텀시트를 완전히 숨김
