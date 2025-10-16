@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getParkingLotDetailsById, ParkingLotDetail } from '../services/parkingApi';
+import { getParkingLotDetailsById, ParkingLotDetail } from '../services/WebParkingApi';
 
 /**
  * 주차장 상세 정보를 가져오는 커스텀 훅

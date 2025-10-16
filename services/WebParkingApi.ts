@@ -1,4 +1,4 @@
-// services/parkingApi.ts
+// services/WebParkingApi.ts
 import apiClient from './apiClient';
 import {ApiResponse, PageResponse} from '../types/api';
 

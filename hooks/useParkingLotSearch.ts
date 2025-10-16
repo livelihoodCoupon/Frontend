@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { searchParkingLots, ParkingLot, SearchParkingLotsParams } from '../services/parkingApi';
+import { searchParkingLots, ParkingLot, SearchParkingLotsParams } from '../services/WebParkingApi';
 import { PageResponse } from '../types/api';
 
 // 1. 상태(State) 정의
