@@ -383,7 +383,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     };
 
     // 자동완성 제안 가져오기
-    const fetchAutocompleteSuggestions = async (query: string) => {
+    const fetchAutocompleteSuggestions = useCallback(async (query: string) => {
         if (query.length < 2) {
             setAutocompleteSuggestions([]);
             setShowAutocomplete(false);
@@ -400,7 +400,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
             setAutocompleteSuggestions([]);
             setShowAutocomplete(false);
         }
-    };
+    }, []);
 
     // 자동완성 제안 선택 핸들러 (useCallback 최적화)
     const handleSuggestionSelect = useCallback((suggestion: string) => {
@@ -422,7 +422,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         } else {
             setShowAutocomplete(false);
         }
-    }, [searchQuery, isSearchFocused, hasSearched]);
+    }, [searchQuery, isSearchFocused, hasSearched, fetchAutocompleteSuggestions]);
 
 
     // 자동 축소 기능 제거 - 현재 위치가 지도 중심이 되도록 유지
@@ -496,7 +496,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         if (showPlaceDetail) {
             setShowPlaceDetail(false);
         }
-    }, [searchQuery, selectedCategory, setShowPlaceDetail]);
+    }, [searchQuery, selectedCategory]);
 
     // 길찾기 모드 관련 함수들 (useCallback 최적화)
     const handleRoutePress = useCallback(() => {
@@ -573,7 +573,47 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
 
         // 교통수단 변경 시 유효한 경로가 있으면 자동으로 길찾기 실행
         if (startLocation && endLocation && startLocation.trim() && endLocation.trim()) {
-            handleStartRoute();
+            // handleStartRoute 대신 직접 길찾기 실행
+            if (startRoute) {
+                const startLocationData = (!startLocation || startLocation === '내 위치') ? {
+                    placeId: 'current_location',
+                    placeName: '내 위치',
+                    lat: location?.latitude || 0,
+                    lng: location?.longitude || 0,
+                    roadAddress: '현재 위치',
+                    lotAddress: '',
+                    phone: '',
+                    categoryGroupName: '내 위치',
+                    placeUrl: '',
+                    distance: 0,
+                    roadAddressDong: ''
+                } : startLocationResults.find(r => r.placeName === startLocation) ||
+                    (selectedStartLocation && selectedStartLocation.placeName === startLocation ? selectedStartLocation : null);
+
+                const endLocationData = (!endLocation || endLocation === '내 위치') ? {
+                    placeId: 'current_location',
+                    placeName: '내 위치',
+                    lat: location?.latitude || 0,
+                    lng: location?.longitude || 0,
+                    roadAddress: '현재 위치',
+                    lotAddress: '',
+                    phone: '',
+                    categoryGroupName: '내 위치',
+                    placeUrl: '',
+                    distance: 0,
+                    roadAddressDong: ''
+                } : endLocationResults.find(r => r.placeName === endLocation) ||
+                    (selectedEndLocation && selectedEndLocation.placeName === endLocation ? selectedEndLocation : null);
+
+                if (startLocationData && endLocationData) {
+                    startRoute({
+                        startLocation: startLocationData,
+                        endLocation: endLocationData,
+                        transportMode: mode as any,
+                        userLocation: location
+                    });
+                }
+            }
         }
     };
 
@@ -835,6 +875,21 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                 (selectedEndLocation && selectedEndLocation.placeName === endLocation ? selectedEndLocation : null);
 
             if (endLocationData && startRoute) {
+                // 동일한 좌표인지 체크
+                const isSameLocation = result.lat === endLocationData.lat && result.lng === endLocationData.lng;
+                
+                if (isSameLocation) {
+                    Alert.alert(
+                        '길찾기 불가',
+                        '출발지와 도착지가 동일합니다.\n다른 목적지를 선택해주세요.',
+                        [{ text: '확인', style: 'default' }]
+                    );
+                    setEndLocation('');
+                    setEndLocationResults([]);
+                    setSelectedEndLocation(null);
+                    return;
+                }
+
                 startRoute({
                     startLocation: result,
                     endLocation: endLocationData,
@@ -853,12 +908,51 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         // 목적지 선택 시 출발지가 이미 설정되어 있으면 바로 길찾기 실행
         if (startLocation && startLocation !== '내 위치') {
             // 출발지 데이터 찾기
-            const startLocationData = startLocationResults.find(r => r.placeName === startLocation);
+            const startLocationData = startLocationResults.find(r => r.placeName === startLocation) ||
+                (selectedStartLocation && selectedStartLocation.placeName === startLocation ? selectedStartLocation : null);
+            
             if (startLocationData && startRoute) {
-                startRoute(startLocationData, result);
+                // 동일한 좌표인지 체크
+                const isSameLocation = startLocationData.lat === result.lat && startLocationData.lng === result.lng;
+                
+                if (isSameLocation) {
+                    Alert.alert(
+                        '길찾기 불가',
+                        '출발지와 도착지가 동일합니다.\n다른 목적지를 선택해주세요.',
+                        [{ text: '확인', style: 'default' }]
+                    );
+                    setEndLocation('');
+                    setEndLocationResults([]);
+                    setSelectedEndLocation(null);
+                    return;
+                }
+
+                startRoute({
+                    startLocation: startLocationData,
+                    endLocation: result,
+                    transportMode: selectedTransportMode as any,
+                    userLocation: location
+                });
             }
         } else if (startLocation === '내 위치') {
             if (startRoute) {
+                // 동일한 좌표인지 체크 (내 위치와 목적지)
+                const isSameLocation = location && 
+                    Math.abs(location.latitude - result.lat) < 0.0001 && 
+                    Math.abs(location.longitude - result.lng) < 0.0001;
+                
+                if (isSameLocation) {
+                    Alert.alert(
+                        '길찾기 불가',
+                        '출발지와 도착지가 동일합니다.\n다른 목적지를 선택해주세요.',
+                        [{ text: '확인', style: 'default' }]
+                    );
+                    setEndLocation('');
+                    setEndLocationResults([]);
+                    setSelectedEndLocation(null);
+                    return;
+                }
+
                 startRoute({
                     startLocation: '내 위치',
                     endLocation: result,
@@ -971,14 +1065,13 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                     return;
                 }
 
-
                 // 정상적인 경우에만 길찾기 실행
                 handleStartRoute();
             }
         }
     }, [selectedStartLocation, selectedEndLocation, selectedTransportMode, startLocation, endLocation, location]);
 
-    const handleStartRoute = () => {
+    const handleStartRoute = useCallback(() => {
         if (!endLocation) {
             return;
         }
@@ -1015,7 +1108,6 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         } : endLocationResults.find(r => r.placeName === endLocation) ||
             (selectedEndLocation && selectedEndLocation.placeName === endLocation ? selectedEndLocation : null);
 
-
         if (startLocationData && endLocationData && startRoute) {
             // 거리 계산 (대략적인 직선 거리)
             const distance = Math.sqrt(
@@ -1048,36 +1140,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                 });
             }
         }
-    };
-
-    // 하드웨어 뒤로가기 버튼 처리 (중복 제거됨)
-    // useEffect(() => {
-    //     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-    //     if (showRouteDetail) {
-    //         if (bottomSheetOpen) {
-    //             setBottomSheetOpen(false);
-    //             setBottomSheetHeight(SMALL_HANDLE_HEIGHT);
-    //             return true;
-    //         } else {
-    //             setShowRouteDetail(false);
-    //             setIsRouteMode(true); // 길찾기 모드로 돌아가기
-    //             return true;
-    //         }
-    //     }
-    //     if (isRouteMode) {
-    //         // 길찾기 모드 -> 홈화면으로 돌아가기 (무조건)
-    //         // ... (중복 제거됨)
-    //         return true;
-    //     }
-    //     if (showPlaceDetail) {
-    //         setShowPlaceDetail(false);
-    //         return true;
-    //     }
-    //     // ... (중복 제거됨)
-    //     return false;
-    // });
-    // return () => backHandler.remove();
-    // }, [showRouteDetail, showPlaceDetail, setShowPlaceDetail, bottomSheetOpen, isRouteMode, bottomSheetHeight, allMarkers, clearSearchResults]);
+    }, [startLocation, endLocation, location, startLocationResults, selectedStartLocation, endLocationResults, selectedEndLocation, selectedTransportMode, startRoute]);
 
 
 
