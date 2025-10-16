@@ -218,52 +218,36 @@ export const useSearch = () => {
         );
       };
 
-      // "정확도순" 검색 시 반경을 1000km로 고정
-      if (state.searchOptions.sort === 'accuracy') {
-        const finalSearchData = await search(1000);
+      let finalSearchData: (PageResponse<SearchResult> & { requestLat: number; requestLng: number; forceLocationSearch: boolean }) | null = null;
+      let effectiveRadiusForSearch = state.searchOptions.radius; // Keep track of the radius that yielded results
+
+      const radiiToTry = state.searchOptions.sort === 'accuracy' ? [1000] : [1, 10, 50, 100, 1000];
+
+      for (const r of radiiToTry) {
+        const currentSearchRadius = state.searchOptions.sort === 'accuracy' ? 1000 : r;
+        const searchResult = await search(currentSearchRadius);
+        if (searchResult.content.length > 0) {
+          finalSearchData = { ...searchResult, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false };
+          effectiveRadiusForSearch = currentSearchRadius; // Store the radius that found results
+          break;
+        }
+      }
+
+      if (!finalSearchData) {
+        // If no results found even after trying all radii, perform a final search with 1000km
+        // This also covers the case where 'accuracy' sort found no results in its single 1000km attempt
+        const searchResult = await search(1000);
+        finalSearchData = { ...searchResult, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false };
+        effectiveRadiusForSearch = 1000;
         if (finalSearchData.content.length === 0) {
           alert("검색 결과가 없습니다.");
         }
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
-        return;
       }
 
-      let finalSearchData = null;
-
-      // 1. Try 1km
-      finalSearchData = await search(1);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
-        return;
-      }
-
-      // 2. Try 10km
-      finalSearchData = await search(10);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
-        return;
-      }
-
-      // 2.5. Try 50km
-      finalSearchData = await search(50);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
-        return;
-      }
-
-      // 3. Try 100km
-      finalSearchData = await search(100);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
-        return;
-      }
-
-      // 4. No results up to 100km, try 1000km automatically
-      finalSearchData = await search(1000);
-      if (finalSearchData.content.length === 0) {
-        alert("검색 결과가 없습니다.");
-      }
-      dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
+      // Update searchOptions with the effective radius that found results
+      // This is crucial for fetchNextPage to use the correct radius
+      dispatch({ type: 'SET_SEARCH_OPTIONS', payload: { radius: effectiveRadiusForSearch } });
+      dispatch({ type: 'SEARCH_SUCCESS', payload: finalSearchData });
 
     } catch (err: any) {
       dispatch({ type: 'SEARCH_FAILURE', payload: err.message || "검색 중 오류가 발생했습니다." });
@@ -367,45 +351,35 @@ export const useSearch = () => {
         );
       };
 
-      if (state.searchOptions.sort === 'accuracy') {
-        const finalSearchData = await search(1000);
+      let finalSearchData: (PageResponse<SearchResult> & { requestLat: number; requestLng: number; forceLocationSearch: boolean }) | null = null;
+      let effectiveRadiusForSearch = state.searchOptions.radius; // Keep track of the radius that yielded results
+
+      const radiiToTry = state.searchOptions.sort === 'accuracy' ? [1000] : [1, 10, 50, 100, 1000];
+
+      for (const r of radiiToTry) {
+        const currentSearchRadius = state.searchOptions.sort === 'accuracy' ? 1000 : r;
+        const searchResult = await search(currentSearchRadius);
+        if (searchResult.content.length > 0) {
+          finalSearchData = { ...searchResult, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false };
+          effectiveRadiusForSearch = currentSearchRadius; // Store the radius that found results
+          break;
+        }
+      }
+
+      if (!finalSearchData) {
+        // If no results found even after trying all radii, perform a final search with 1000km
+        const searchResult = await search(1000);
+        finalSearchData = { ...searchResult, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false };
+        effectiveRadiusForSearch = 1000;
         if (finalSearchData.content.length === 0) {
           alert("검색 결과가 없습니다.");
         }
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false } });
-        return;
       }
 
-      let finalSearchData;
-      finalSearchData = await search(1);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false } });
-        return;
-      }
-
-      finalSearchData = await search(10);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false } });
-        return;
-      }
-
-      finalSearchData = await search(50);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false } });
-        return;
-      }
-
-      finalSearchData = await search(100);
-      if (finalSearchData.content.length > 0) {
-        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false } });
-        return;
-      }
-
-      finalSearchData = await search(1000);
-      if (finalSearchData.content.length === 0) {
-        alert("검색 결과가 없습니다.");
-      }
-      dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false } });
+      // Update searchOptions with the effective radius that found results
+      // This is crucial for fetchNextPage to use the correct radius
+      dispatch({ type: 'SET_SEARCH_OPTIONS', payload: { radius: effectiveRadiusForSearch } });
+      dispatch({ type: 'SEARCH_SUCCESS', payload: finalSearchData });
 
     } catch (err: any) {
       console.error('Search error:', err);
