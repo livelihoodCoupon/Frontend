@@ -34,7 +34,6 @@ export default function HomeMobile() {
     
     // activeTab 변경 감지
     useEffect(() => {
-        console.log('🔄 activeTab 변경됨:', activeTab);
     }, [activeTab]);
     const setMapCenterToStore = usePlaceStore((s) => s.setMapCenter);
 
@@ -230,13 +229,12 @@ export default function HomeMobile() {
         setBottomSheetOpen(true); // 검색 후 하단 시트 열기
     }, [mapCenter, location, performSearch, setSelectedPlaceId, setShowInfoWindow, setSelectedMarkerPosition]);
 
-    // 검색어를 직접 전달하는 검색 함수 (useSearch 훅 사용)
+
     const performSearchWithQuery = useCallback(async (query: string, latitude: number, longitude: number, userLatitude: number, userLongitude: number) => {
         // 검색어 설정
         setSearchQuery(query);
         
-        // 검색어를 직접 전달하여 검색 실행
-        await performSearch(latitude, longitude, userLatitude, userLongitude, query);
+        await performSearch(latitude, longitude, userLatitude, userLongitude, query as any);
     }, [performSearch, setSearchQuery]);
 
     // 카테고리 검색을 위한 함수

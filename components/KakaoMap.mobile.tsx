@@ -114,14 +114,9 @@ const MobileKakaoMap = React.memo(forwardRef<any, KakaoMapProps>(({
 
   // 경로 표시 Effect (모바일 WebView)
   useEffect(() => {
-    console.log('🔍 KakaoMap.mobile.tsx 경로 표시 useEffect 실행');
-    console.log('  - routeResult:', !!routeResult);
-    console.log('  - isMapInitialized:', isMapInitialized);
-    console.log('  - webViewRef.current:', !!webViewRef.current);
     
     if (webViewRef.current && isMapInitialized) {
       if (routeResult && routeResult.coordinates && routeResult.coordinates.length > 0) {
-        console.log('🚗 모바일 경로 표시 시작:', routeResult);
         
         // 경로 표시 스크립트
         const script = `
@@ -134,7 +129,6 @@ const MobileKakaoMap = React.memo(forwardRef<any, KakaoMapProps>(({
         `;
         webViewRef.current.injectJavaScript(script);
       } else {
-        console.log('🚫 경로 제거');
         // 경로 제거 스크립트
         const script = `
           if (typeof clearRoute === 'function') {
@@ -224,11 +218,9 @@ const MobileKakaoMap = React.memo(forwardRef<any, KakaoMapProps>(({
               setIsMapInitialized(true); // initMap 성공 후 초기화 완료로 설정
             }
             if (data.type === 'get_current_map_center_for_search') {
-              console.log('=== WebView에서 메시지 수신 ===');
               console.log('받은 지도 중심:', data.latitude, data.longitude);
               // 현재 지도 중심을 가져와서 검색 함수에 전달
               if ((global as any).handleSearchInAreaWithCurrentCenter) {
-                console.log('전역 함수 호출 시도');
                 (global as any).handleSearchInAreaWithCurrentCenter({
                   latitude: data.latitude,
                   longitude: data.longitude

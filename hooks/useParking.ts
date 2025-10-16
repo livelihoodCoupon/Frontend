@@ -16,16 +16,13 @@ export const useParking = (onSearchComplete?: (parkingLots: ParkingLot[]) => voi
   // 주변 주차장 검색
   const searchNearbyParkingLots = useCallback(async (params: ParkingLotSearchParams) => {
     try {
-      console.log('🔍 useParking: 주차장 검색 시작', params);
       setIsLoading(true);
       setError(null);
       
       const response = await parkingApi.searchNearbyParkingLots(params);
-      console.log('🔍 useParking: API 응답', response);
       
       if (response.success) {
         const newParkingLots = response.data.content;
-        console.log('🔍 useParking: 주차장 결과', newParkingLots.length, '개');
         setParkingLots(newParkingLots);
         setPagination({
           currentPage: response.data.currentPage,
@@ -35,11 +32,9 @@ export const useParking = (onSearchComplete?: (parkingLots: ParkingLot[]) => voi
         
         // 검색 완료 후 콜백 실행
         if (onSearchComplete) {
-          console.log('🔍 useParking: 콜백 실행');
           onSearchComplete(newParkingLots);
         }
       } else {
-        console.log('❌ useParking: API 응답 실패');
         setError('주차장 검색에 실패했습니다.');
         // 에러 시에도 빈 배열로 콜백 실행
         if (onSearchComplete) {
@@ -47,7 +42,6 @@ export const useParking = (onSearchComplete?: (parkingLots: ParkingLot[]) => voi
         }
       }
     } catch (err) {
-      console.error('🚨 useParking: 주차장 검색 오류:', err);
       setError('주차장 검색 중 오류가 발생했습니다.');
       // 에러 시에도 빈 배열로 콜백 실행
       if (onSearchComplete) {

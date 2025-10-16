@@ -199,32 +199,22 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
 
   // 주차장 마커 클릭 핸들러를 useCallback으로 메모이제이션
   const handleParkingLotSelect = useCallback((parkingLot: ParkingLot) => {
-    console.log('🎯 주차장 마커 클릭 핸들러 실행:', parkingLot);
     
     // parkingLots에서 실제 주차장 데이터 찾기 (최신 상태 사용)
     let actualParkingLot = parkingLots.find(p => p.id === parkingLot.id);
     if (!actualParkingLot) {
-      console.log('❌ parkingLots에서 주차장 데이터를 찾을 수 없음');
       // parkingLots에서 찾지 못했지만 전달받은 parkingLot 데이터 사용
       actualParkingLot = parkingLot;
-      console.log('🔄 전달받은 주차장 데이터 사용:', actualParkingLot);
-    } else {
-      console.log('✅ 실제 주차장 데이터 찾음:', actualParkingLot);
     }
     
     // 마커 업데이트는 HomeMobileLayout에서 이미 처리됨
     // 여기서는 상세 정보 표시만 처리
-    console.log('📍 선택된 주차장 ID:', `parking_${actualParkingLot.id}`);
-    console.log('ℹ️ 마커 업데이트는 HomeMobileLayout에서 처리됨');
     
     // 주차장 상세 정보 조회
-    console.log('📋 주차장 상세 정보 조회');
     getParkingLotDetail(actualParkingLot.id);
     // 주차장 탭으로 전환
-    console.log('🔄 주차장 탭으로 전환');
     setActiveSearchTab('parking');
     // 상세 정보 표시
-    console.log('📱 상세 정보 표시');
     setShowParkingDetail(true);
   }, [location, onUpdateMarkers, getParkingLotDetail, parkingLots]);
 
@@ -232,9 +222,7 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
   const isRegistered = useRef(false);
   useEffect(() => {
     if (onParkingLotSelect && !isRegistered.current) {
-      console.log('🔧 주차장 마커 클릭 핸들러 등록');
       (global as any).handleParkingLotSelect = handleParkingLotSelect;
-      console.log('✅ 전역 함수 등록 완료');
       isRegistered.current = true;
     }
   }, [onParkingLotSelect, handleParkingLotSelect]);
@@ -341,7 +329,6 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
       return;
     }
 
-    console.log('🚗 주차장 검색 시작 (RouteBottomSheet):', location);
     await searchNearbyParkingLots({
       lat: location.latitude,
       lng: location.longitude,
@@ -399,15 +386,13 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
 
   // 주차장 선택 시 마커 업데이트
   const handleParkingSelect = useCallback((parkingLot: ParkingLot) => {
-    console.log('🚗 주차장 선택됨:', parkingLot.parkingLotName);
-    
+
     if (onSelectParkingLot) {
       onSelectParkingLot(parkingLot);
     }
     
     // 선택된 주차장 마커 업데이트
     const selectedParkingId = `parking_${parkingLot.id}`;
-    console.log('🎯 선택된 주차장 ID:', selectedParkingId);
     
     const parkingMarkers = MarkerDataConverter.convertParkingLotsToMarkers(
       parkingLots,
@@ -415,25 +400,13 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
       location || undefined
     );
     
-    console.log('🔄 주차장 마커 업데이트:');
-    console.log('  - parkingMarkers.length:', parkingMarkers.length);
-    console.log('  - selectedParkingId:', selectedParkingId);
-    console.log('  - parkingMarkers:', parkingMarkers.map(m => ({ 
-      placeId: m.placeId, 
-      placeName: m.placeName, 
-      markerType: m.markerType 
-    })));
-    
     if (onUpdateMarkers) {
-      console.log('✅ onUpdateMarkers 호출');
       onUpdateMarkers(parkingMarkers);
     } else {
-      console.log('❌ onUpdateMarkers 없음');
     }
     
     // 지도 중심을 주차장 위치로 이동 (스크린 높이의 15% 정도 더 아래로)
     const latitudeOffset = (SCREEN_HEIGHT * 0.15) / 111000; // 대략적인 위도 오프셋 계산
-    console.log('🗺️ 지도 중심 이동:', { lat: parkingLot.lat, lng: parkingLot.lng, offset: latitudeOffset });
     if (onMapCenterChange) {
       onMapCenterChange({ 
         latitude: parkingLot.lat - latitudeOffset, 
