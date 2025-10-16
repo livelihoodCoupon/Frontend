@@ -464,7 +464,7 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
                 ">×</button>
               </div>
               
-              <div style="margin-bottom: 8px;">
+              <div style="margin-bottom: 20px;">
                 <div style="margin-bottom: 6px; display: flex; align-items: center;">
                   <span style="min-width: 50px; font-weight: 500;">주소</span>
                   <span style="margin-left: 14px;">${parkingLotDetail.roadAddress || parkingLotDetail.lotAddress || '-'}</span>
@@ -485,9 +485,11 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
                   <span style="min-width: 50px; font-weight: 500;">결제방법</span>
                   <span style="margin-left: 14px;">${parkingLotDetail.paymentMethod || '-'}</span>
                 </div>
-                <div style="margin-bottom: 6px; display: flex; align-items: center;">
-                  <span style="min-width: 50px; font-weight: 500;">특이사항</span>
-                  <span style="margin-left: 14px;">${parkingLotDetail.specialComment || '-'}</span>
+                <div style="margin-bottom: 6px;">
+                  
+                  <div id="specialCommentContent" style="display: none; margin-top: 8px; margin-left: 64px; padding: 8px; border: 1px solid #eee; border-radius: 4px; background-color: #f9f9f9;">
+                    <span style="flex-grow: 1; white-space: normal; word-break: break-word;">${parkingLotDetail.specialComment ? parkingLotDetail.specialComment.replace(/([*-])/g, '<br/>$1') : '-'}</span>
+                  </div>
                 </div>
               </div>
               
