@@ -2,9 +2,9 @@ name: Frontend CD (App)
 
 on:
   push:
-    branches: [ "main", "fix/14_cd_test" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "fix/14_cd_test" ]
+    branches: [ "main" ]
 
 jobs:
   deploy:
