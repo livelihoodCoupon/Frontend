@@ -2,9 +2,9 @@ name: Frontend CD (App)
 
 on:
   push:
-    branches: [ "main","fix/18_cd_test" ]
-#  pull_request:
-#    branches: [ "main" ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
   
 jobs:
