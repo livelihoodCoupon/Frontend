@@ -160,7 +160,7 @@ export default function Home() {
   useEffect(() => {
     if (activeSearchTab === 'nearbyParking' && searchCenter && location) {
       fetchParkingLots(searchCenter.lat, searchCenter.lng, {
-        radius: searchOptions.radius, // Assuming searchOptions contains radius
+        radius: 5, // 주차장 검색 시 반경 5km로 고정
         page: 1, // Start from page 1 for a new search
         sort: 'distance', // Default sort by distance
       });
