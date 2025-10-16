@@ -174,6 +174,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   setTemporarySelectedMarker,
   onCategorySearch,
   onMapReady,
+  onRecentlyViewedPlaceClick,
 }) => {
     const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
     const recentlyViewedButtonRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
@@ -251,7 +252,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
               onCategoryClick={onCategorySearch}
             />
           </Animated.View>
-          <View style={webStyles.mapContainer}>          {mapCenter ? (
+          <View style={webStyles.mapContainer}>{mapCenter ? (
             <>
               <KakaoMap
                 ref={mapRef}
@@ -298,8 +299,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
                     fontSize: 15, // Apply font size here
                     color: '#F8FAFE', // Apply color here
                     fontWeight: 'bold', // Apply font weight here
-                  }}>최근 본 장소</Text>
-                </View>
+                  }}>최근 본 장소</Text></View>
               </TouchableOpacity>
               {/* Recently Viewed Places Component */}
               {showRecentlyViewed && (
