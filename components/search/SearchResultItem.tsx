@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { SearchResult } from '../../types/search';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Text as SvgText } from 'react-native-svg'; // Import Svg components
 import { commonStyles } from './styles/SearchResultItem.common.styles';
 import { webStyles } from './styles/SearchResultItem.web.styles';
 import { mobileStyles } from './styles/SearchResultItem.mobile.styles';
@@ -33,12 +34,6 @@ const SearchResultItem: React.FC<Props> = ({ item, onPress }) => {
         text: webStyles.feeInfoFreeText 
       };
     }
-    if (feeInfo.includes('혼합')) {
-      return { 
-        container: webStyles.feeInfoMixedBackground, 
-        text: webStyles.feeInfoMixedText 
-      };
-    }
     return { 
       container: webStyles.feeInfoDefaultBackground, 
       text: webStyles.feeInfoDefaultText 
@@ -48,13 +43,29 @@ const SearchResultItem: React.FC<Props> = ({ item, onPress }) => {
   const feeStyle = item.feeInfo ? getFeeInfoStyle(item.feeInfo) : null;
 
   const isParkingLot = !!item.feeInfo;
-  const iconName = isParkingLot ? "car-outline" : "location-sharp";
-  const iconColor = isParkingLot ? "#9932CC" : "#007bff";
+  const iconColor = isParkingLot ? "#9932CC" : "#007bff"; // Purple for parking, blue for default
 
   return (
     <Pressable onPress={() => onPress(item)} style={commonStyles.container}>
       <View style={commonStyles.iconContainer}>
-        <Ionicons name={iconName} size={24} color={iconColor} />
+        {isParkingLot ? (
+          <Svg width="24" height="24" viewBox="0 0 24 24">
+            <Circle cx="12" cy="12" r="13" fill={iconColor} stroke="#fff" strokeWidth="2"/>
+            <SvgText
+              x="12.5"
+              y="18"
+              fontFamily="Arial, sans-serif"
+              fontSize="17"
+              fontWeight="bold"
+              textAnchor="middle"
+              fill="#fff"
+            >
+              P
+            </SvgText>
+          </Svg>
+        ) : (
+          <Ionicons name="location-sharp" size={24} color={iconColor} />
+        )}
       </View>
       <View style={commonStyles.infoContainer}>
         <Text style={commonStyles.placeName}>{item.placeName}</Text>

@@ -353,6 +353,7 @@ export default function Home() {
         sourceMarkers = allMarkers.map(marker => ({
           ...marker,
           markerType: marker.placeId === selectedPlaceId ? 'selected' : 'default',
+          isParkingLot: false,
         }));
       } else if (activeSearchTab === 'nearbyParking') {
         sourceMarkers = parkingLots.map(p => ({
@@ -368,6 +369,7 @@ export default function Home() {
           feeInfo: p.feeInfo,
           placeUrl: '',
           markerType: String(p.id) === selectedPlaceId ? 'selected' : 'parking',
+          isParkingLot: true,
         }));
       }
     }
