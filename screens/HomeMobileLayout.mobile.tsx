@@ -152,6 +152,11 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
     const handleActiveTabChange = useCallback((tab: 'search' | 'parking') => {
         setActiveTab(tab);
     }, []);
+
+    // 주차장 마커 클릭 핸들러
+    const handleParkingLotSelect = useCallback((parkingLot: ParkingLot) => {
+        console.log('🏠 HomeMobileLayout: 주차장 마커 클릭:', parkingLot);
+    }, []);
     
     // 주차장 검색 함수 (현재 지도 중심 기준)
     const handleParkingSearchInArea = useCallback(async (mapCenter: { latitude: number; longitude: number }) => {
@@ -798,12 +803,35 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
         setEndLocationResults([]);
     };
 
-    // 출발지와 목적지가 모두 설정되면 자동으로 길찾기 실행
+    // 출발지와 목적지가 모두 설정되면 자동으로 길찾기 실행 (중복 실행 방지)
+    const prevRouteParams = useRef<{
+        startLocation: string;
+        endLocation: string;
+        selectedTransportMode: string;
+    } | null>(null);
+
     useEffect(() => {
         // 출발지와 목적지가 모두 설정되어 있고, 둘 다 유효한 데이터일 때만 실행
         if (startLocation && endLocation &&
             (selectedStartLocation || startLocation === '내 위치') &&
             (selectedEndLocation || endLocation === '내 위치')) {
+
+            // 이전 파라미터와 비교하여 중복 실행 방지
+            const currentParams = {
+                startLocation,
+                endLocation,
+                selectedTransportMode
+            };
+
+            if (prevRouteParams.current &&
+                prevRouteParams.current.startLocation === currentParams.startLocation &&
+                prevRouteParams.current.endLocation === currentParams.endLocation &&
+                prevRouteParams.current.selectedTransportMode === currentParams.selectedTransportMode) {
+                console.log('🔄 동일한 파라미터로 인한 중복 실행 방지');
+                return;
+            }
+
+            prevRouteParams.current = currentParams;
 
             // selectedStartLocation과 selectedEndLocation을 우선적으로 사용
             const finalStartData = selectedStartLocation;
@@ -858,6 +886,11 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                     setSelectedEndLocation(null);
                     return;
                 }
+
+                console.log('🚗 자동 길찾기 실행:', {
+                    start: finalStartDataWithCurrentLocation.placeName,
+                    end: finalEndDataWithCurrentLocation.placeName
+                });
 
                 // 정상적인 경우에만 길찾기 실행
                 handleStartRoute();
@@ -1187,9 +1220,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                     }}
                     onActiveTabChange={handleActiveTabChange}
                     externalParkingLots={externalParkingLots}
-                    onParkingLotSelect={(parkingLot) => {
-                        console.log('주차장 마커 클릭:', parkingLot);
-                    }}
+                    onParkingLotSelect={handleParkingLotSelect}
                 />
             )}
 
@@ -1242,10 +1273,7 @@ const MobileHomeMobileLayout: React.FC<HomeMobileLayoutProps> = ({
                     }}
                     onActiveTabChange={handleActiveTabChange}
                     externalParkingLots={externalParkingLots}
-                    onParkingLotSelect={(parkingLot) => {
-                        // 주차장 마커 클릭 시 상세 정보 표시
-                        console.log('Parking lot marker clicked:', parkingLot);
-                    }}
+                    onParkingLotSelect={handleParkingLotSelect}
                     onSetStartLocation={(location) => {
                         if (typeof location === 'string') {
                             setStartLocation(location);

@@ -186,53 +186,54 @@ const RouteBottomSheet: React.FC<RouteBottomSheetProps> = ({
     return () => backHandler.remove();
   }, [showParkingDetail]);
 
-  // 주차장 마커 클릭 시 상세 정보 표시
+  // 주차장 마커 클릭 핸들러를 useCallback으로 메모이제이션
+  const handleParkingLotSelect = useCallback((parkingLot: ParkingLot) => {
+    console.log('🎯 주차장 마커 클릭 핸들러 실행:', parkingLot);
+    
+    // parkingLots에서 실제 주차장 데이터 찾기 (최신 상태 사용)
+    const actualParkingLot = parkingLots.find(p => p.id === parkingLot.id);
+    if (!actualParkingLot) {
+      console.log('❌ parkingLots에서 주차장 데이터를 찾을 수 없음');
+      return;
+    }
+    
+    console.log('✅ 실제 주차장 데이터 찾음:', actualParkingLot);
+    
+    // 선택된 주차장 마커 업데이트
+    const selectedParkingId = `parking_${actualParkingLot.id}`;
+    console.log('📍 선택된 주차장 ID:', selectedParkingId);
+    const parkingMarkers = MarkerDataConverter.convertParkingLotsToMarkers(
+      parkingLots,
+      selectedParkingId,
+      location || undefined
+    );
+    
+    if (onUpdateMarkers) {
+      console.log('🔄 마커 업데이트');
+      onUpdateMarkers(parkingMarkers);
+    }
+    
+    // 주차장 상세 정보 조회
+    console.log('📋 주차장 상세 정보 조회');
+    getParkingLotDetail(actualParkingLot.id);
+    // 주차장 탭으로 전환
+    console.log('🔄 주차장 탭으로 전환');
+    setActiveSearchTab('parking');
+    // 상세 정보 표시
+    console.log('📱 상세 정보 표시');
+    setShowParkingDetail(true);
+  }, [location, onUpdateMarkers, getParkingLotDetail]); // parkingLots 의존성 제거
+
+  // 전역 함수 등록 (한 번만 실행)
+  const isRegistered = useRef(false);
   useEffect(() => {
-    if (onParkingLotSelect) {
+    if (onParkingLotSelect && !isRegistered.current) {
       console.log('🔧 주차장 마커 클릭 핸들러 등록');
-      // 주차장 마커 클릭 시 상세 정보 표시
-      const handleParkingLotSelect = (parkingLot: ParkingLot) => {
-        console.log('🎯 주차장 마커 클릭 핸들러 실행:', parkingLot);
-        
-        // parkingLots에서 실제 주차장 데이터 찾기
-        const actualParkingLot = parkingLots.find(p => p.id === parkingLot.id);
-        if (!actualParkingLot) {
-          console.log('❌ parkingLots에서 주차장 데이터를 찾을 수 없음');
-          return;
-        }
-        
-        console.log('✅ 실제 주차장 데이터 찾음:', actualParkingLot);
-        
-        // 선택된 주차장 마커 업데이트
-        const selectedParkingId = `parking_${actualParkingLot.id}`;
-        console.log('📍 선택된 주차장 ID:', selectedParkingId);
-        const parkingMarkers = MarkerDataConverter.convertParkingLotsToMarkers(
-          parkingLots,
-          selectedParkingId,
-          location || undefined
-        );
-        
-        if (onUpdateMarkers) {
-          console.log('🔄 마커 업데이트');
-          onUpdateMarkers(parkingMarkers);
-        }
-        
-        // 주차장 상세 정보 조회
-        console.log('📋 주차장 상세 정보 조회');
-        getParkingLotDetail(actualParkingLot.id);
-        // 주차장 탭으로 전환
-        console.log('🔄 주차장 탭으로 전환');
-        setActiveSearchTab('parking');
-        // 상세 정보 표시
-        console.log('📱 상세 정보 표시');
-        setShowParkingDetail(true);
-      };
-      
-      // 전역 함수로 등록
       (global as any).handleParkingLotSelect = handleParkingLotSelect;
       console.log('✅ 전역 함수 등록 완료');
+      isRegistered.current = true;
     }
-  }, [onParkingLotSelect, getParkingLotDetail, parkingLots, location, onUpdateMarkers]);
+  }, [onParkingLotSelect, handleParkingLotSelect]);
   
   const showPlaceDetail = propShowPlaceDetail || false;
   
