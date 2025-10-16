@@ -180,6 +180,16 @@ export const useSearch = () => {
         );
       };
 
+      // "정확도순" 검색 시 반경을 1000km로 고정
+      if (state.searchOptions.sort === 'accuracy') {
+        const finalSearchData = await search(1000);
+        if (finalSearchData.content.length === 0) {
+          alert("검색 결과가 없습니다.");
+        }
+        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: effectiveForceLocationSearch || false } });
+        return;
+      }
+
       let finalSearchData = null;
 
       // 1. Try 1km
@@ -324,6 +334,16 @@ export const useSearch = () => {
           state.searchOptions.forceLocationSearch
         );
       };
+
+      // "정확도순" 검색 시 반경을 1000km로 고정
+      if (state.searchOptions.sort === 'accuracy') {
+        const finalSearchData = await search(1000);
+        if (finalSearchData.content.length === 0) {
+          alert("검색 결과가 없습니다.");
+        }
+        dispatch({ type: 'SEARCH_SUCCESS', payload: { ...finalSearchData, requestLat: latitude, requestLng: longitude, forceLocationSearch: state.searchOptions.forceLocationSearch || false } });
+        return;
+      }
 
       let finalSearchData;
       // 1. Try 1km
