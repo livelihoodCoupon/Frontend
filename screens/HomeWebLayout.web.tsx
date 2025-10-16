@@ -179,6 +179,13 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
     const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
     const recentlyViewedButtonRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
   
+    const handleCategoryClick = (categoryName: string) => {
+      if (activeTab === 'route') {
+        setActiveTab('search');
+      }
+      onCategorySearch(categoryName);
+    };
+
     const searchButtonTranslateX = isMenuOpen ? SIDE_MENU_WIDTH / 2 : 0;
   
     return (
@@ -249,7 +256,7 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
           </Animated.View>
           <Animated.View style={[webStyles.categorySearchContainer, { transform: [{ translateX: sideMenuAnimation }] }]}>
             <CategorySearchWeb 
-              onCategoryClick={onCategorySearch}
+              onCategoryClick={handleCategoryClick}
             />
           </Animated.View>
           <View style={webStyles.mapContainer}>{mapCenter ? (
