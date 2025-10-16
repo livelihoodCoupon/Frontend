@@ -13,6 +13,7 @@ export type SearchResult = {
   categoryGroupName: string;
   placeUrl: string;
   distance: number;
+  feeInfo?: string; // Add feeInfo here
 };
 
 export interface SearchOptions {

@@ -67,6 +67,11 @@ interface HomeWebLayoutProps {
   handleSearchInArea: () => void;
   activeTab: 'search' | 'route';
   setActiveTab: (tab: 'search' | 'route') => void;
+  activeSearchTab: 'searchResults' | 'nearbyParking';
+  setActiveSearchTab: (tab: 'searchResults' | 'nearbyParking') => void;
+  parkingLots: any[]; // Replace 'any' with the actual ParkingLot type
+  parkingLotsLoading: boolean;
+  parkingLotsError: string | null;
   // New props from useSharedSearch
   startLocation: string;
   setStartLocation: (location: string) => void;
@@ -143,6 +148,11 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
   handleSearchInArea,
   activeTab,
   setActiveTab,
+  activeSearchTab,
+  setActiveSearchTab,
+  parkingLots,
+  parkingLotsLoading,
+  parkingLotsError,
   // New props from useSharedSearch
   startLocation,
   setStartLocation,
@@ -225,6 +235,11 @@ const HomeWebLayout: React.FC<HomeWebLayoutProps> = ({
               clearRoute={clearRoute}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
+              activeSearchTab={activeSearchTab}
+              setActiveSearchTab={setActiveSearchTab}
+              parkingLots={parkingLots}
+              parkingLotsLoading={parkingLotsLoading}
+              parkingLotsError={parkingLotsError}
               startLocation={startLocation}
               setStartLocation={setStartLocation}
               endLocation={endLocation}

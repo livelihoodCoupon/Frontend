@@ -7,6 +7,7 @@ import {
 import { usePlaceStore } from "../store/placeStore";
 import { useCurrentLocation } from "../hooks/useCurrentLocation";
 import { useSearch } from "../hooks/useSearch";
+import { useParkingLotSearch } from '../hooks/useParkingLotSearch';
 import { useRoute } from "../hooks/useRoute";
 import { useSharedSearch } from "../hooks/useSharedSearch"; // Import useSharedSearch
 import HomeWebLayout from "./HomeWebLayout";
@@ -128,6 +129,8 @@ export default function Home() {
     setStartLocationObject,
     endLocationObject,
     setEndLocationObject,
+    activeSearchTab,
+    setActiveSearchTab,
   } = useSharedSearch(
     routeResult,
     isRouteLoading,
@@ -136,6 +139,13 @@ export default function Home() {
     clearRoute,
     onToggleSidebarCallback
   );
+
+  const {
+    parkingLots,
+    loading: parkingLotsLoading,
+    error: parkingLotsError,
+    fetchParkingLots,
+  } = useParkingLotSearch();
 
   const [showSearchInAreaButton, setShowSearchInAreaButton] = useState(false);
   const [temporarySelectedMarker, setTemporarySelectedMarker] = useState<MarkerData | null>(null);
@@ -146,6 +156,13 @@ export default function Home() {
     setMapCenterState(center);
     setMapCenterToStore(center);
   }, [setMapCenterToStore]);
+
+  useEffect(() => {
+    if (activeSearchTab === 'nearbyParking' && searchCenter && location) {
+      fetchParkingLots(searchCenter.lat, searchCenter.lng, location.latitude, location.longitude);
+    }
+  }, [activeSearchTab, searchCenter, location, fetchParkingLots]);
+
 
   const clearSearchResults = useCallback(() => {
     setSearchQuery("");
@@ -229,6 +246,7 @@ export default function Home() {
   const handleSearch = useCallback(async (query?: string) => {
     Keyboard.dismiss();
     setShowSearchInAreaButton(false);
+    setActiveSearchTab('searchResults'); // 검색 시 항상 검색 결과 탭으로 초기화
     if (!mapCenter) {
       alert("지도 중심 정보를 가져오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
@@ -414,6 +432,11 @@ export default function Home() {
         handleSearchInArea={handleSearchInArea}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        activeSearchTab={activeSearchTab}
+        setActiveSearchTab={setActiveSearchTab}
+        parkingLots={parkingLots}
+        parkingLotsLoading={parkingLotsLoading}
+        parkingLotsError={parkingLotsError}
         startLocation={startLocation}
         setStartLocation={setStartLocation}
         endLocation={endLocation}

@@ -20,6 +20,33 @@ const formatDistance = (distance: number) => {
 };
 
 const SearchResultItem: React.FC<Props> = ({ item, onPress }) => {
+  const getFeeInfoStyle = (feeInfo: string) => {
+    if (feeInfo.includes('유료')) {
+      return { 
+        container: webStyles.feeInfoPaidBackground, 
+        text: webStyles.feeInfoPaidText 
+      };
+    }
+    if (feeInfo.includes('무료')) {
+      return { 
+        container: webStyles.feeInfoFreeBackground, 
+        text: webStyles.feeInfoFreeText 
+      };
+    }
+    if (feeInfo.includes('혼합')) {
+      return { 
+        container: webStyles.feeInfoMixedBackground, 
+        text: webStyles.feeInfoMixedText 
+      };
+    }
+    return { 
+      container: webStyles.feeInfoDefaultBackground, 
+      text: webStyles.feeInfoDefaultText 
+    };
+  };
+
+  const feeStyle = item.feeInfo ? getFeeInfoStyle(item.feeInfo) : null;
+
   return (
     <Pressable onPress={() => onPress(item)} style={commonStyles.container}>
       <View style={commonStyles.iconContainer}>
@@ -28,6 +55,11 @@ const SearchResultItem: React.FC<Props> = ({ item, onPress }) => {
       <View style={commonStyles.infoContainer}>
         <Text style={commonStyles.placeName}>{item.placeName}</Text>
         <Text style={commonStyles.address}>{item.roadAddress || item.lotAddress}</Text>
+        {item.feeInfo && feeStyle && (
+          <View style={[webStyles.feeInfoContainer, feeStyle.container]}>
+            <Text style={[webStyles.feeInfoText, feeStyle.text]}>{item.feeInfo}</Text>
+          </View>
+        )}
       </View>
       <View style={commonStyles.distanceContainer}>
         <Text style={commonStyles.distanceText}>{formatDistance(item.distance)}</Text>
