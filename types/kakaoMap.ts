@@ -17,6 +17,7 @@ export type MarkerData = {
   lotAddress?: string; // 지번 주소
   phone?: string; // 전화번호
   placeUrl?: string; // 장소 URL
+  parkingChargeInfo?: string; // 주차 요금 정보
 };
 
 /**

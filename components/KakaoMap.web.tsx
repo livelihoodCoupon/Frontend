@@ -1,3 +1,5 @@
+import {useParkingLotDetail} from "../hooks/useParkingLotDetail";
+
 const debounce = <T extends (...args: any[]) => any>(func: T, delay: number) => {
   let timeout: NodeJS.Timeout;
   return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
@@ -60,6 +62,12 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
   const { addPlace } = useRecentlyViewedPlaces();
 
   const onMapIdleRef = useRef(onMapIdle);
+
+  // 주차장 상세 정보 훅
+  const { data: parkingLotDetail, isLoading: isParkingLotDetailLoading } = useParkingLotDetail(
+    selectedPlaceId && selectedMarkerLat && selectedMarkerLng && markers?.find(m => m.placeId === selectedPlaceId)?.isParkingLot
+      ? Number(selectedPlaceId) : null
+  );
 
   useImperativeHandle(ref, () => ({
     panBy: (dx, dy) => {
@@ -401,145 +409,297 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
         return;
       }
 
+      // 주차장 마커이고 상세 정보를 불러오는 중이면, 오버레이를 띄우지 않고 대기
+      if (selectedMarker.isParkingLot && isParkingLotDetailLoading) {
+        return;
+      }
+
       // Add the selected place to recently viewed list
       console.log("Calling addPlace with selectedMarker:", selectedMarker.placeName, "(" + selectedMarker.placeId + ")");
       addPlace(selectedMarker);
 
       // InfoWindow HTML 콘텐츠 생성
-      const infoWindowContent = `
-        <div style="
-          position: relative;
-          background-color: white;
-          border-radius: 8px;
-          padding: 16px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-          font-size: 14px;
-          color: #333;
-          width: 340px;
-          border: 1px solid #ddd;
-          z-index: 1000;
-        ">
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-          ">
-            <h3 style="
-              margin: 0;
-              font-size: 18px;
-              font-weight: bold;
-              flex: 1;
-            ">${selectedMarker.placeName}</h3>
-            <button onclick="window.closeInfoWindow()" style="
-              background: none;
-              border: none;
-              font-size: 25px;
-              color: #666;
-              cursor: pointer;
-              padding: 0;
-              margin-left: 8px;
-              width: 24px;
-              height: 24px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">×</button>
-          </div>
-          
-          <div style="margin-bottom: 8px;">
-            <div style="margin-bottom: 6px; display: flex; align-items: center;">
-              <span style="min-width: 50px; font-weight: 500;">주소</span>
-              <span style="margin-left: 14px;">${selectedMarker.roadAddress || selectedMarker.lotAddress || '-'}</span>
-            </div>
-            <div style="margin-bottom: 6px; display: flex; align-items: center;">
-              <span style="min-width: 50px; font-weight: 500;">전화</span>
-              <span style="color: #28a745; margin-left: 14px;">${selectedMarker.phone || '-'}</span>
-            </div>
-            <div style="margin-bottom: 6px; display: flex; align-items: center;">
-              <span style="min-width: 50px; font-weight: 500;">카테고리</span>
-              <span style="margin-left: 14px;">${selectedMarker.categoryGroupName || '-'}</span>
-            </div>
-            ${selectedMarker.placeUrl ? `
-              <div style="margin-bottom: 6px; display: flex; align-items: center;">
-                <span style="min-width: 50px; font-weight: 500;">상세보기</span>
-                <a href="${selectedMarker.placeUrl}" target="_blank" style="color: #007bff; margin-left: 14px;">카카오맵에서 보기</a>
-              </div>
-            ` : ''}
-          </div>
-          
-          <div style="
-            position: absolute;
-            bottom: 15px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-          ">
-            <div id="routeDropdown" style="
-              position: absolute;
-              bottom: 35px;
-              right: 0;
-              background: white;
+      let infoWindowContent = '';
+
+      if (selectedMarker.isParkingLot) {
+        if (parkingLotDetail) {
+          infoWindowContent = `
+            <div style="
+              position: relative;
+              background-color: white;
+              border-radius: 8px;
+              padding: 16px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+              font-size: 14px;
+              color: #333;
+              width: 340px;
               border: 1px solid #ddd;
-              border-radius: 6px;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-              display: none;
-              min-width: 100px;
-              z-index: 1001;
+              z-index: 1000;
             ">
-              <button onclick="window.selectRouteOption('departure')" style="
-                display: block;
-                width: 100%;
-                padding: 8px 12px;
-                border: none;
-                background: none;
-                text-align: center;
-                cursor: pointer;
-                font-size: 13px;
-                color: #333;
-                border-bottom: 1px solid #eee;
-              ">출발</button>
-              <button onclick="window.selectRouteOption('arrival')" style="
-                display: block;
-                width: 100%;
-                padding: 8px 12px;
-                border: none;
-                background: none;
-                text-align: center;
-                cursor: pointer;
-                font-size: 13px;
-                color: #333;
-              ">도착</button>
+              <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+              ">
+                <h3 style="
+                  margin: 0;
+                  font-size: 18px;
+                  font-weight: bold;
+                  flex: 1;
+                ">${parkingLotDetail.parkingLotNm}</h3>
+                <button onclick="window.closeInfoWindow()" style="
+                  background: none;
+                  border: none;
+                  font-size: 25px;
+                  color: #666;
+                  cursor: pointer;
+                  padding: 0;
+                  margin-left: 8px;
+                  width: 24px;
+                  height: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                ">×</button>
+              </div>
+              
+              <div style="margin-bottom: 8px;">
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">주소</span>
+                  <span style="margin-left: 14px;">${parkingLotDetail.roadAddress || parkingLotDetail.lotAddress || '-'}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">전화</span>
+                  <span style="color: #28a745; margin-left: 14px;">${parkingLotDetail.phoneNumber || '-'}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">운영시간</span>
+                  <span style="margin-left: 14px;">${parkingLotDetail.operDay} ${parkingLotDetail.weekOpenTime}~${parkingLotDetail.weekCloseTime}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">주차요금</span>
+                  <span style="color: #28a745; margin-left: 14px;">${parkingLotDetail.parkingChargeInfo || '정보 없음'}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">결제방법</span>
+                  <span style="margin-left: 14px;">${parkingLotDetail.paymentMethod || '-'}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">특이사항</span>
+                  <span style="margin-left: 14px;">${parkingLotDetail.specialComment || '-'}</span>
+                </div>
+              </div>
+              
+              <div style="
+                position: absolute;
+                bottom: 15px;
+                right: 20px;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+              ">
+                <div id="routeDropdown" style="
+                  position: absolute;
+                  bottom: 35px;
+                  right: 0;
+                  background: white;
+                  border: 1px solid #ddd;
+                  border-radius: 6px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                  display: none;
+                  min-width: 100px;
+                  z-index: 1001;
+                ">
+                  <button onclick="window.selectRouteOption('departure')" style="
+                    display: block;
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: none;
+                    background: none;
+                    text-align: center;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: #333;
+                    border-bottom: 1px solid #eee;
+                  ">출발</button>
+                  <button onclick="window.selectRouteOption('arrival')" style="
+                    display: block;
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: none;
+                    background: none;
+                    text-align: center;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: #333;
+                  ">도착</button>
+                </div>
+                <button onclick="window.toggleRouteDropdown()" style="
+                  background-color: #007bff;
+                  color: white;
+                  border: none;
+                  border-radius: 5px;
+                  padding: 6px 12px;
+                  font-size: 12px;
+                  cursor: pointer;
+                ">
+                  길찾기
+                </button>
+              </div>
+              
+              <div style="
+                position: absolute;
+                bottom: -6px;
+                left: 50%;
+                transform: translateX(-50%) rotate(45deg);
+                width: 12px;
+                height: 12px;
+                background-color: white;
+                border-right: 1px solid #ddd;
+                border-bottom: 1px solid #ddd;
+                box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.05);
+                z-index: -1;
+              "></div>
             </div>
-            <button onclick="window.toggleRouteDropdown()" style="
-              background-color: #007bff;
-              color: white;
-              border: none;
-              border-radius: 5px;
-              padding: 6px 12px;
-              font-size: 12px;
-              cursor: pointer;
+          `;
+        }
+      } else { // This is the new else block for non-parking lot markers
+          infoWindowContent = `
+            <div style="
+              position: relative;
+              background-color: white;
+              border-radius: 8px;
+              padding: 16px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+              font-size: 14px;
+              color: #333;
+              width: 340px;
+              border: 1px solid #ddd;
+              z-index: 1000;
             ">
-              길찾기
-            </button>
-          </div>
-          
-          <div style="
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%) rotate(45deg);
-            width: 12px;
-            height: 12px;
-            background-color: white;
-            border-right: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
-            box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.05);
-            z-index: -1;
-          "></div>
-        </div>
-      `;
+              <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+              ">
+                <h3 style="
+                  margin: 0;
+                  font-size: 18px;
+                  font-weight: bold;
+                  flex: 1;
+                ">${selectedMarker.placeName}</h3>
+                <button onclick="window.closeInfoWindow()" style="
+                  background: none;
+                  border: none;
+                  font-size: 25px;
+                  color: #666;
+                  cursor: pointer;
+                  padding: 0;
+                  margin-left: 8px;
+                  width: 24px;
+                  height: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                ">×</button>
+              </div>
+              
+              <div style="margin-bottom: 8px;">
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">주소</span>
+                  <span style="margin-left: 14px;">${selectedMarker.roadAddress || selectedMarker.lotAddress || '-'}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">전화</span>
+                  <span style="color: #28a745; margin-left: 14px;">${selectedMarker.phone || '-'}</span>
+                </div>
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                  <span style="min-width: 50px; font-weight: 500;">카테고리</span>
+                  <span style="margin-left: 14px;">${selectedMarker.categoryGroupName || '-'}</span>
+                </div>
+                ${selectedMarker.placeUrl ? `
+                  <div style="margin-bottom: 6px; display: flex; align-items: center;">
+                    <span style="min-width: 50px; font-weight: 500;">상세보기</span>
+                    <a href="${selectedMarker.placeUrl}" target="_blank" style="color: #007bff; margin-left: 14px;">카카오맵에서 보기</a>
+                  </div>
+                ` : ''}
+              </div>
+              
+              <div style="
+                position: absolute;
+                bottom: 15px;
+                right: 20px;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+              ">
+                <div id="routeDropdown" style="
+                  position: absolute;
+                  bottom: 35px;
+                  right: 0;
+                  background: white;
+                  border: 1px solid #ddd;
+                  border-radius: 6px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                  display: none;
+                  min-width: 100px;
+                  z-index: 1001;
+                ">
+                  <button onclick="window.selectRouteOption('departure')" style="
+                    display: block;
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: none;
+                    background: none;
+                    text-align: center;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: #333;
+                    border-bottom: 1px solid #eee;
+                  ">출발</button>
+                  <button onclick="window.selectRouteOption('arrival')" style="
+                    display: block;
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: none;
+                    background: none;
+                    text-align: center;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: #333;
+                  ">도착</button>
+                </div>
+                <button onclick="window.toggleRouteDropdown()" style="
+                  background-color: #007bff;
+                  color: white;
+                  border: none;
+                  border-radius: 5px;
+                  padding: 6px 12px;
+                  font-size: 12px;
+                  cursor: pointer;
+                ">
+                  길찾기
+                </button>
+              </div>
+              
+              <div style="
+                position: absolute;
+                bottom: -6px;
+                left: 50%;
+                transform: translateX(-50%) rotate(45deg);
+                width: 12px;
+                height: 12px;
+                background-color: white;
+                border-right: 1px solid #ddd;
+                border-bottom: 1px solid #ddd;
+                box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.05);
+                z-index: -1;
+              "></div>
+            </div>
+          `;
+        }
 
       // InfoWindow 닫기 함수를 전역에 등록
       (window as any).closeInfoWindow = () => {
@@ -644,7 +804,7 @@ const WebKakaoMap = forwardRef<MapHandles, KakaoMapProps>(({
       infoWindowOverlayInstance.current.setMap(null);
       infoWindowOverlayInstance.current = null;
     }
-  }, [showInfoWindow, selectedPlaceId, selectedMarkerLat, selectedMarkerLng, markers, onCloseInfoWindow]);
+  }, [showInfoWindow, selectedPlaceId, selectedMarkerLat, selectedMarkerLng, markers, onCloseInfoWindow, isParkingLotDetailLoading, parkingLotDetail]);
 
   // 경로 표시 Effect
   useEffect(() => {
